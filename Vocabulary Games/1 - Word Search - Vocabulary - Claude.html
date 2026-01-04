@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sopa de Letras - Spanish Word Search</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Quicksand:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --terracotta: #D35400;
+            --turquoise: #17A2B8;
+            --gold: #F4D03F;
+            --warm-cream: #FDF6E9;
+            --deep-teal: #1A5F6E;
+            --coral: #E74C3C;
+            --sage: #27AE60;
+            --purple-accent: #8E44AD;
+            --soft-shadow: 0 8px 32px rgba(26, 95, 110, 0.15);
+            --grid-size: 15;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background: var(--warm-cream);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Decorative background pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(211, 84, 0, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(23, 162, 184, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(244, 208, 63, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, var(--terracotta) 0%, var(--coral) 100%);
+            padding: 1.5rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before,
+        header::after {
+            content: '◆ ◇ ◆ ◇ ◆ ◇ ◆ ◇ ◆ ◇ ◆ ◇ ◆ ◇ ◆ ◇ ◆ ◇ ◆';
+            position: absolute;
+            left: 0;
+            right: 0;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.4);
+            letter-spacing: 0.5rem;
+        }
+
+        header::before { top: 0.25rem; }
+        header::after { bottom: 0.25rem; }
+
+        h1 {
+            font-family: 'Fredoka', sans-serif;
+            font-weight: 700;
+            font-size: 2.5rem;
+            color: white;
+            text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.15);
+            letter-spacing: 2px;
+        }
+
+        h1 span {
+            display: inline-block;
+            animation: bounce 0.6s ease-in-out infinite alternate;
+        }
+
+        h1 span:nth-child(2) { animation-delay: 0.1s; }
+        h1 span:nth-child(3) { animation-delay: 0.2s; }
+        h1 span:nth-child(4) { animation-delay: 0.3s; }
+
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-3px); }
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1rem;
+            margin-top: 0.5rem;
+            font-weight: 500;
+        }
+
+        /* Main Container */
+        .game-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        /* Grid Section */
+        .grid-section {
+            background: white;
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: var(--soft-shadow);
+            position: relative;
+        }
+
+        .grid-section::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            background: linear-gradient(135deg, var(--turquoise), var(--gold), var(--terracotta), var(--sage));
+            border-radius: 24px;
+            z-index: -1;
+        }
+
+        #word-grid {
+            display: grid;
+            grid-template-columns: repeat(var(--grid-size), 1fr);
+            gap: 3px;
+            background: var(--deep-teal);
+            padding: 6px;
+            border-radius: 12px;
+            user-select: none;
+            touch-action: none;
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            font-family: 'Fredoka', sans-serif;
+            font-weight: 600;
+            font-size: clamp(0.9rem, 2vw, 1.2rem);
+            color: var(--deep-teal);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-transform: uppercase;
+        }
+
+        .cell:hover {
+            background: #E8F6F8;
+            transform: scale(1.05);
+        }
+
+        .cell.selecting {
+            background: var(--gold);
+            color: var(--deep-teal);
+            transform: scale(1.08);
+            box-shadow: 0 0 12px rgba(244, 208, 63, 0.6);
+        }
+
+        .cell.found {
+            background: linear-gradient(135deg, var(--sage) 0%, #2ECC71 100%);
+            color: white;
+            animation: found-pulse 0.4s ease;
+        }
+
+        @keyframes found-pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        /* Sidebar */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .theme-selector {
+            background: white;
+            border-radius: 16px;
+            padding: 1.25rem;
+            box-shadow: var(--soft-shadow);
+        }
+
+        .theme-selector label {
+            display: block;
+            font-family: 'Fredoka', sans-serif;
+            font-weight: 600;
+            color: var(--deep-teal);
+            margin-bottom: 0.75rem;
+            font-size: 1.1rem;
+        }
+
+        .theme-selector select {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            font-family: 'Quicksand', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            border: 3px solid var(--turquoise);
+            border-radius: 10px;
+            background: white;
+            color: var(--deep-teal);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%231A5F6E' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+        }
+
+        .theme-selector select:hover {
+            border-color: var(--terracotta);
+        }
+
+        .theme-selector select:focus {
+            outline: none;
+            border-color: var(--terracotta);
+            box-shadow: 0 0 0 4px rgba(211, 84, 0, 0.15);
+        }
+
+        .word-list-container {
+            background: white;
+            border-radius: 16px;
+            padding: 1.25rem;
+            box-shadow: var(--soft-shadow);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .word-list-header {
+            font-family: 'Fredoka', sans-serif;
+            font-weight: 600;
+            color: var(--deep-teal);
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .word-list-header::before {
+            content: '📝';
+        }
+
+        .word-list-subheader {
+            font-size: 0.85rem;
+            color: #777;
+            margin-bottom: 1rem;
+            font-style: italic;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #E8F6F8;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--sage), var(--turquoise));
+            border-radius: 4px;
+            transition: width 0.4s ease;
+            width: 0%;
+        }
+
+        #word-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .word-item {
+            padding: 0.75rem 1rem;
+            background: #F8FAFA;
+            border-radius: 10px;
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--deep-teal);
+            transition: all 0.3s ease;
+            border-left: 4px solid var(--turquoise);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .word-item .english-clue {
+            color: var(--deep-teal);
+        }
+
+        .word-item .spanish-answer {
+            font-family: 'Fredoka', sans-serif;
+            color: #999;
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .word-item.found {
+            background: linear-gradient(90deg, rgba(39, 174, 96, 0.15), rgba(39, 174, 96, 0.05));
+            border-left-color: var(--sage);
+        }
+
+        .word-item.found .english-clue {
+            text-decoration: line-through;
+            color: var(--sage);
+        }
+
+        .word-item.found .spanish-answer {
+            opacity: 1;
+            color: var(--sage);
+        }
+
+        /* Stats */
+        .stats {
+            background: linear-gradient(135deg, var(--deep-teal), var(--turquoise));
+            border-radius: 16px;
+            padding: 1.25rem;
+            color: white;
+            text-align: center;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .stat {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 0.75rem;
+        }
+
+        .stat-value {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+
+        /* New Game Button */
+        .new-game-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--terracotta), var(--coral));
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-family: 'Fredoka', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(211, 84, 0, 0.3);
+        }
+
+        .new-game-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(211, 84, 0, 0.4);
+        }
+
+        .new-game-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Victory Overlay */
+        .victory-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(26, 95, 110, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s ease;
+        }
+
+        .victory-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .victory-content {
+            text-align: center;
+            color: white;
+            transform: scale(0.8);
+            transition: transform 0.4s ease;
+        }
+
+        .victory-overlay.show .victory-content {
+            transform: scale(1);
+        }
+
+        .victory-title {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 4px 4px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .victory-subtitle {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .victory-stats {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.85;
+        }
+
+        .play-again-btn {
+            padding: 1rem 3rem;
+            background: var(--gold);
+            border: none;
+            border-radius: 50px;
+            color: var(--deep-teal);
+            font-family: 'Fredoka', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 20px rgba(244, 208, 63, 0.4);
+        }
+
+        .play-again-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 25px rgba(244, 208, 63, 0.5);
+        }
+
+        /* Confetti */
+        .confetti {
+            position: fixed;
+            width: 12px;
+            height: 12px;
+            pointer-events: none;
+            z-index: 1001;
+            animation: confetti-fall 3s ease-out forwards;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 900px) {
+            .game-container {
+                grid-template-columns: 1fr;
+                padding: 1rem;
+            }
+
+            .sidebar {
+                order: -1;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .cell {
+                font-size: clamp(0.75rem, 3vw, 1rem);
+            }
+
+            .word-list-container {
+                max-height: 250px;
+            }
+        }
+
+        @media (max-width: 500px) {
+            header {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .grid-section {
+                padding: 0.75rem;
+            }
+
+            #word-grid {
+                gap: 2px;
+                padding: 4px;
+            }
+
+            .cell {
+                border-radius: 4px;
+                font-size: clamp(0.65rem, 4vw, 0.9rem);
+            }
+        }
+
+        /* Instructions tooltip */
+        .instructions {
+            background: linear-gradient(135deg, #FEF9E7, #FCF3CF);
+            border: 2px dashed var(--gold);
+            border-radius: 12px;
+            padding: 1rem;
+            font-size: 0.9rem;
+            color: var(--deep-teal);
+            line-height: 1.5;
+        }
+
+        .instructions strong {
+            color: var(--terracotta);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>
+            <span>S</span><span>o</span><span>p</span><span>a</span>
+            <span>&nbsp;</span>
+            <span>d</span><span>e</span>
+            <span>&nbsp;</span>
+            <span>L</span><span>e</span><span>t</span><span>r</span><span>a</span><span>s</span>
+        </h1>
+        <p class="subtitle">Spanish Word Search Game</p>
+    </header>
+
+    <main class="game-container">
+        <section class="grid-section">
+            <div id="word-grid"></div>
+        </section>
+
+        <aside class="sidebar">
+            <div class="theme-selector">
+                <label for="theme-select">🎨 Elige un Tema:</label>
+                <select id="theme-select"></select>
+            </div>
+
+            <div class="instructions">
+                <strong>¿Cómo jugar?</strong> Read the English clue, then find the Spanish word in the grid! Click and drag from the first letter to the last. Words go → ↓ or ↘
+            </div>
+
+            <div class="word-list-container">
+                <h2 class="word-list-header">Find These Words</h2>
+                <p class="word-list-subheader">English clue → Spanish word in grid</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <div id="word-list"></div>
+            </div>
+
+            <div class="stats">
+                <div class="stats-grid">
+                    <div class="stat">
+                        <div class="stat-value" id="found-count">0</div>
+                        <div class="stat-label">Encontradas</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="total-count">0</div>
+                        <div class="stat-label">Total</div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="new-game-btn" id="new-game-btn">🔄 Nuevo Juego</button>
+        </aside>
+    </main>
+
+    <div class="victory-overlay" id="victory-overlay">
+        <div class="victory-content">
+            <div class="victory-title">🎉 ¡Felicidades!</div>
+            <div class="victory-subtitle">¡Ganaste!</div>
+            <div class="victory-stats" id="victory-stats"></div>
+            <button class="play-again-btn" id="play-again-btn">Jugar de Nuevo</button>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // VOCABULARY DATA - English clues, Spanish answers
+        // ============================================
+        const themes = {
+            animales: {
+                name: 'Los Animales',
+                emoji: '🐾',
+                words: [
+                    { spanish: 'perro', english: 'dog' },
+                    { spanish: 'gato', english: 'cat' },
+                    { spanish: 'pajaro', english: 'bird' },
+                    { spanish: 'pez', english: 'fish' },
+                    { spanish: 'vaca', english: 'cow' },
+                    { spanish: 'cerdo', english: 'pig' },
+                    { spanish: 'leon', english: 'lion' },
+                    { spanish: 'tigre', english: 'tiger' }
+                ]
+            },
+            comida: {
+                name: 'La Comida',
+                emoji: '🍎',
+                words: [
+                    { spanish: 'pan', english: 'bread' },
+                    { spanish: 'leche', english: 'milk' },
+                    { spanish: 'queso', english: 'cheese' },
+                    { spanish: 'manzana', english: 'apple' },
+                    { spanish: 'taco', english: 'taco' },
+                    { spanish: 'arroz', english: 'rice' },
+                    { spanish: 'agua', english: 'water' },
+                    { spanish: 'fruta', english: 'fruit' }
+                ]
+            },
+            escuela: {
+                name: 'La Escuela',
+                emoji: '📚',
+                words: [
+                    { spanish: 'lapiz', english: 'pencil' },
+                    { spanish: 'libro', english: 'book' },
+                    { spanish: 'papel', english: 'paper' },
+                    { spanish: 'maestro', english: 'teacher' },
+                    { spanish: 'silla', english: 'chair' },
+                    { spanish: 'mesa', english: 'table' },
+                    { spanish: 'clase', english: 'class' },
+                    { spanish: 'goma', english: 'eraser' }
+                ]
+            },
+            colores: {
+                name: 'Los Colores',
+                emoji: '🎨',
+                words: [
+                    { spanish: 'rojo', english: 'red' },
+                    { spanish: 'azul', english: 'blue' },
+                    { spanish: 'verde', english: 'green' },
+                    { spanish: 'amarillo', english: 'yellow' },
+                    { spanish: 'negro', english: 'black' },
+                    { spanish: 'blanco', english: 'white' },
+                    { spanish: 'morado', english: 'purple' },
+                    { spanish: 'naranja', english: 'orange' }
+                ]
+            },
+            numeros: {
+                name: 'Los Números',
+                emoji: '🔢',
+                words: [
+                    { spanish: 'uno', english: 'one' },
+                    { spanish: 'dos', english: 'two' },
+                    { spanish: 'tres', english: 'three' },
+                    { spanish: 'cuatro', english: 'four' },
+                    { spanish: 'cinco', english: 'five' },
+                    { spanish: 'seis', english: 'six' },
+                    { spanish: 'siete', english: 'seven' },
+                    { spanish: 'ocho', english: 'eight' }
+                ]
+            },
+            familia: {
+                name: 'La Familia',
+                emoji: '👨‍👩‍👧‍👦',
+                words: [
+                    { spanish: 'madre', english: 'mother' },
+                    { spanish: 'padre', english: 'father' },
+                    { spanish: 'hermano', english: 'brother' },
+                    { spanish: 'hermana', english: 'sister' },
+                    { spanish: 'abuelo', english: 'grandfather' },
+                    { spanish: 'abuela', english: 'grandmother' },
+                    { spanish: 'hijo', english: 'son' },
+                    { spanish: 'hija', english: 'daughter' }
+                ]
+            },
+            cuerpo: {
+                name: 'El Cuerpo',
+                emoji: '🫀',
+                words: [
+                    { spanish: 'cabeza', english: 'head' },
+                    { spanish: 'mano', english: 'hand' },
+                    { spanish: 'pie', english: 'foot' },
+                    { spanish: 'ojo', english: 'eye' },
+                    { spanish: 'nariz', english: 'nose' },
+                    { spanish: 'boca', english: 'mouth' },
+                    { spanish: 'oreja', english: 'ear' },
+                    { spanish: 'brazo', english: 'arm' }
+                ]
+            },
+            ropa: {
+                name: 'La Ropa',
+                emoji: '👕',
+                words: [
+                    { spanish: 'camisa', english: 'shirt' },
+                    { spanish: 'zapatos', english: 'shoes' },
+                    { spanish: 'vestido', english: 'dress' },
+                    { spanish: 'falda', english: 'skirt' },
+                    { spanish: 'gorra', english: 'cap' },
+                    { spanish: 'abrigo', english: 'coat' },
+                    { spanish: 'calcetines', english: 'socks' },
+                    { spanish: 'pantalon', english: 'pants' }
+                ]
+            },
+            clima: {
+                name: 'El Clima',
+                emoji: '🌤️',
+                words: [
+                    { spanish: 'sol', english: 'sun' },
+                    { spanish: 'lluvia', english: 'rain' },
+                    { spanish: 'nieve', english: 'snow' },
+                    { spanish: 'viento', english: 'wind' },
+                    { spanish: 'nube', english: 'cloud' },
+                    { spanish: 'frio', english: 'cold' },
+                    { spanish: 'calor', english: 'hot' },
+                    { spanish: 'tormenta', english: 'storm' }
+                ]
+            },
+            casa: {
+                name: 'La Casa',
+                emoji: '🏠',
+                words: [
+                    { spanish: 'cocina', english: 'kitchen' },
+                    { spanish: 'cuarto', english: 'room' },
+                    { spanish: 'puerta', english: 'door' },
+                    { spanish: 'ventana', english: 'window' },
+                    { spanish: 'cama', english: 'bed' },
+                    { spanish: 'sofa', english: 'sofa' },
+                    { spanish: 'bano', english: 'bathroom' },
+                    { spanish: 'jardin', english: 'garden' }
+                ]
+            },
+            dias: {
+                name: 'Los Días',
+                emoji: '📅',
+                words: [
+                    { spanish: 'lunes', english: 'Monday' },
+                    { spanish: 'martes', english: 'Tuesday' },
+                    { spanish: 'miercoles', english: 'Wednesday' },
+                    { spanish: 'jueves', english: 'Thursday' },
+                    { spanish: 'viernes', english: 'Friday' },
+                    { spanish: 'sabado', english: 'Saturday' },
+                    { spanish: 'domingo', english: 'Sunday' },
+                    { spanish: 'semana', english: 'week' }
+                ]
+            },
+            naturaleza: {
+                name: 'La Naturaleza',
+                emoji: '🌳',
+                words: [
+                    { spanish: 'arbol', english: 'tree' },
+                    { spanish: 'flor', english: 'flower' },
+                    { spanish: 'rio', english: 'river' },
+                    { spanish: 'montana', english: 'mountain' },
+                    { spanish: 'playa', english: 'beach' },
+                    { spanish: 'lago', english: 'lake' },
+                    { spanish: 'bosque', english: 'forest' },
+                    { spanish: 'cielo', english: 'sky' }
+                ]
+            },
+            verbos: {
+                name: 'Los Verbos',
+                emoji: '🏃',
+                words: [
+                    { spanish: 'comer', english: 'to eat' },
+                    { spanish: 'beber', english: 'to drink' },
+                    { spanish: 'correr', english: 'to run' },
+                    { spanish: 'caminar', english: 'to walk' },
+                    { spanish: 'dormir', english: 'to sleep' },
+                    { spanish: 'hablar', english: 'to speak' },
+                    { spanish: 'leer', english: 'to read' },
+                    { spanish: 'escribir', english: 'to write' }
+                ]
+            },
+            profesiones: {
+                name: 'Las Profesiones',
+                emoji: '👩‍⚕️',
+                words: [
+                    { spanish: 'doctor', english: 'doctor' },
+                    { spanish: 'policia', english: 'police' },
+                    { spanish: 'bombero', english: 'firefighter' },
+                    { spanish: 'cocinero', english: 'chef' },
+                    { spanish: 'artista', english: 'artist' },
+                    { spanish: 'abogado', english: 'lawyer' },
+                    { spanish: 'piloto', english: 'pilot' },
+                    { spanish: 'cantante', english: 'singer' }
+                ]
+            }
+        };
+
+        // Spanish alphabet for random letters
+        const spanishAlphabet = 'abcdefghijklmnopqrstuvwxyz';
+
+        // ============================================
+        // GAME STATE
+        // ============================================
+        const GRID_SIZE = 15;
+        let grid = [];
+        let currentTheme = 'animales';
+        let wordsToFind = [];
+        let foundWords = new Set();
+        let wordPositions = []; // Stores {word, english, positions: [{row, col}, ...]}
+        
+        // Selection state
+        let isSelecting = false;
+        let selectionStart = null;
+        let selectionPath = [];
+        let startTime = null;
+
+        // ============================================
+        // GRID GENERATION ALGORITHM
+        // ============================================
+        
+        // Direction vectors: horizontal, vertical, diagonal
+        const directions = [
+            { dr: 0, dc: 1, name: 'horizontal' },   // left to right
+            { dr: 1, dc: 0, name: 'vertical' },     // top to bottom
+            { dr: 1, dc: 1, name: 'diagonal' }      // top-left to bottom-right
+        ];
+
+        function createEmptyGrid() {
+            return Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(''));
+        }
+
+        function canPlaceWord(grid, word, startRow, startCol, direction) {
+            const { dr, dc } = direction;
+            
+            // Check if word fits within grid boundaries
+            const endRow = startRow + (word.length - 1) * dr;
+            const endCol = startCol + (word.length - 1) * dc;
+            
+            if (endRow >= GRID_SIZE || endCol >= GRID_SIZE) return false;
+            if (startRow < 0 || startCol < 0) return false;
+
+            // Check each position
+            for (let i = 0; i < word.length; i++) {
+                const row = startRow + i * dr;
+                const col = startCol + i * dc;
+                const currentCell = grid[row][col];
+                
+                // Cell must be empty or have the same letter
+                if (currentCell !== '' && currentCell !== word[i]) {
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+
+        function placeWord(grid, word, startRow, startCol, direction) {
+            const { dr, dc } = direction;
+            const positions = [];
+            
+            for (let i = 0; i < word.length; i++) {
+                const row = startRow + i * dr;
+                const col = startCol + i * dc;
+                grid[row][col] = word[i];
+                positions.push({ row, col });
+            }
+            
+            return positions;
+        }
+
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function placeAllWords(wordData) {
+            const grid = createEmptyGrid();
+            const placements = [];
+            
+            // Sort words by length (longest first) for better placement
+            const sortedWords = [...wordData].sort((a, b) => b.spanish.length - a.spanish.length);
+            
+            for (const item of sortedWords) {
+                const word = item.spanish;
+                let placed = false;
+                const shuffledDirections = shuffleArray(directions);
+                
+                // Try multiple random positions
+                for (let attempts = 0; attempts < 100 && !placed; attempts++) {
+                    const direction = shuffledDirections[attempts % shuffledDirections.length];
+                    const startRow = Math.floor(Math.random() * GRID_SIZE);
+                    const startCol = Math.floor(Math.random() * GRID_SIZE);
+                    
+                    if (canPlaceWord(grid, word, startRow, startCol, direction)) {
+                        const positions = placeWord(grid, word, startRow, startCol, direction);
+                        placements.push({ word, english: item.english, positions });
+                        placed = true;
+                    }
+                }
+                
+                // If random placement failed, try systematic approach
+                if (!placed) {
+                    outer:
+                    for (const direction of shuffledDirections) {
+                        for (let row = 0; row < GRID_SIZE; row++) {
+                            for (let col = 0; col < GRID_SIZE; col++) {
+                                if (canPlaceWord(grid, word, row, col, direction)) {
+                                    const positions = placeWord(grid, word, row, col, direction);
+                                    placements.push({ word, english: item.english, positions });
+                                    placed = true;
+                                    break outer;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                if (!placed) {
+                    console.warn(`Could not place word: ${word}`);
+                }
+            }
+            
+            return { grid, placements };
+        }
+
+        function fillEmptySpaces(grid) {
+            for (let row = 0; row < GRID_SIZE; row++) {
+                for (let col = 0; col < GRID_SIZE; col++) {
+                    if (grid[row][col] === '') {
+                        grid[row][col] = spanishAlphabet[Math.floor(Math.random() * spanishAlphabet.length)];
+                    }
+                }
+            }
+            return grid;
+        }
+
+        // ============================================
+        // GAME INITIALIZATION & RENDERING
+        // ============================================
+
+        function populateThemeSelector() {
+            const select = document.getElementById('theme-select');
+            select.innerHTML = '';
+            
+            for (const [key, theme] of Object.entries(themes)) {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = `${theme.emoji} ${theme.name}`;
+                select.appendChild(option);
+            }
+        }
+
+        function initGame() {
+            const theme = themes[currentTheme];
+            wordsToFind = [...theme.words];
+            foundWords.clear();
+            startTime = Date.now();
+            
+            // Generate grid
+            const result = placeAllWords(wordsToFind);
+            grid = fillEmptySpaces(result.grid);
+            wordPositions = result.placements;
+            
+            renderGrid();
+            renderWordList();
+            updateStats();
+            hideVictory();
+        }
+
+        function renderGrid() {
+            const gridElement = document.getElementById('word-grid');
+            gridElement.innerHTML = '';
+            
+            for (let row = 0; row < GRID_SIZE; row++) {
+                for (let col = 0; col < GRID_SIZE; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.textContent = grid[row][col];
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    gridElement.appendChild(cell);
+                }
+            }
+        }
+
+        function renderWordList() {
+            const listElement = document.getElementById('word-list');
+            listElement.innerHTML = '';
+            
+            for (const wordItem of wordsToFind) {
+                const item = document.createElement('div');
+                item.className = 'word-item';
+                item.id = `word-${wordItem.spanish}`;
+                
+                const englishSpan = document.createElement('span');
+                englishSpan.className = 'english-clue';
+                englishSpan.textContent = wordItem.english;
+                
+                const spanishSpan = document.createElement('span');
+                spanishSpan.className = 'spanish-answer';
+                spanishSpan.textContent = wordItem.spanish;
+                
+                item.appendChild(englishSpan);
+                item.appendChild(spanishSpan);
+                
+                if (foundWords.has(wordItem.spanish)) {
+                    item.classList.add('found');
+                }
+                listElement.appendChild(item);
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('found-count').textContent = foundWords.size;
+            document.getElementById('total-count').textContent = wordsToFind.length;
+            
+            const progress = (foundWords.size / wordsToFind.length) * 100;
+            document.getElementById('progress-fill').style.width = `${progress}%`;
+        }
+
+        // ============================================
+        // SELECTION HANDLING
+        // ============================================
+
+        function getCellFromEvent(e) {
+            const touch = e.touches ? e.touches[0] : e;
+            const element = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (element && element.classList.contains('cell')) {
+                return {
+                    row: parseInt(element.dataset.row),
+                    col: parseInt(element.dataset.col),
+                    element
+                };
+            }
+            return null;
+        }
+
+        function isValidSelectionPath(start, end) {
+            const dr = Math.sign(end.row - start.row);
+            const dc = Math.sign(end.col - start.col);
+            
+            // Must be horizontal, vertical, or diagonal
+            if (dr !== 0 && dc !== 0 && Math.abs(dr) !== Math.abs(dc)) {
+                return false;
+            }
+            
+            // Check it's a straight line
+            const rowDiff = Math.abs(end.row - start.row);
+            const colDiff = Math.abs(end.col - start.col);
+            
+            if (rowDiff !== 0 && colDiff !== 0 && rowDiff !== colDiff) {
+                return false;
+            }
+            
+            return true;
+        }
+
+        function getSelectionPath(start, end) {
+            if (!isValidSelectionPath(start, end)) {
+                return [start];
+            }
+            
+            const path = [];
+            const dr = Math.sign(end.row - start.row);
+            const dc = Math.sign(end.col - start.col);
+            const steps = Math.max(Math.abs(end.row - start.row), Math.abs(end.col - start.col));
+            
+            for (let i = 0; i <= steps; i++) {
+                path.push({
+                    row: start.row + i * dr,
+                    col: start.col + i * dc
+                });
+            }
+            
+            return path;
+        }
+
+        function highlightPath(path, className) {
+            // Clear previous highlights
+            document.querySelectorAll('.cell.selecting').forEach(cell => {
+                cell.classList.remove('selecting');
+            });
+            
+            // Apply new highlights
+            for (const pos of path) {
+                const cell = document.querySelector(`.cell[data-row="${pos.row}"][data-col="${pos.col}"]`);
+                if (cell && !cell.classList.contains('found')) {
+                    cell.classList.add(className);
+                }
+            }
+        }
+
+        function clearSelectionHighlight() {
+            document.querySelectorAll('.cell.selecting').forEach(cell => {
+                cell.classList.remove('selecting');
+            });
+        }
+
+        function getSelectedWord(path) {
+            return path.map(pos => grid[pos.row][pos.col]).join('');
+        }
+
+        function checkSelection(path) {
+            const selectedWord = getSelectedWord(path);
+            
+            // Check if selected word matches any unfound word
+            for (const wordData of wordPositions) {
+                if (foundWords.has(wordData.word)) continue;
+                
+                const wordFromPositions = wordData.positions.map(p => grid[p.row][p.col]).join('');
+                
+                // Check forward match
+                if (selectedWord === wordFromPositions && 
+                    path.length === wordData.positions.length &&
+                    path.every((p, i) => p.row === wordData.positions[i].row && p.col === wordData.positions[i].col)) {
+                    return wordData.word;
+                }
+            }
+            
+            return null;
+        }
+
+        function markWordAsFound(word) {
+            foundWords.add(word);
+            
+            // Find the word's positions and mark cells
+            const wordData = wordPositions.find(w => w.word === word);
+            if (wordData) {
+                for (const pos of wordData.positions) {
+                    const cell = document.querySelector(`.cell[data-row="${pos.row}"][data-col="${pos.col}"]`);
+                    if (cell) {
+                        cell.classList.remove('selecting');
+                        cell.classList.add('found');
+                    }
+                }
+            }
+            
+            // Mark in word list
+            const wordItem = document.getElementById(`word-${word}`);
+            if (wordItem) {
+                wordItem.classList.add('found');
+            }
+            
+            updateStats();
+            
+            // Check for victory
+            if (foundWords.size === wordsToFind.length) {
+                setTimeout(showVictory, 500);
+            }
+        }
+
+        // ============================================
+        // EVENT HANDLERS
+        // ============================================
+
+        function handleSelectionStart(e) {
+            e.preventDefault();
+            const cell = getCellFromEvent(e);
+            if (cell) {
+                isSelecting = true;
+                selectionStart = { row: cell.row, col: cell.col };
+                selectionPath = [selectionStart];
+                highlightPath(selectionPath, 'selecting');
+            }
+        }
+
+        function handleSelectionMove(e) {
+            if (!isSelecting || !selectionStart) return;
+            e.preventDefault();
+            
+            const cell = getCellFromEvent(e);
+            if (cell) {
+                const newPath = getSelectionPath(selectionStart, { row: cell.row, col: cell.col });
+                if (JSON.stringify(newPath) !== JSON.stringify(selectionPath)) {
+                    selectionPath = newPath;
+                    highlightPath(selectionPath, 'selecting');
+                }
+            }
+        }
+
+        function handleSelectionEnd(e) {
+            if (!isSelecting) return;
+            e.preventDefault();
+            
+            // Check if selection matches a word
+            const foundWord = checkSelection(selectionPath);
+            
+            if (foundWord) {
+                markWordAsFound(foundWord);
+                playSuccessSound();
+            } else {
+                clearSelectionHighlight();
+            }
+            
+            isSelecting = false;
+            selectionStart = null;
+            selectionPath = [];
+        }
+
+        // ============================================
+        // VICTORY & EFFECTS
+        // ============================================
+
+        function showVictory() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            
+            document.getElementById('victory-stats').textContent = 
+                `Tiempo: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            document.getElementById('victory-overlay').classList.add('show');
+            createConfetti();
+        }
+
+        function hideVictory() {
+            document.getElementById('victory-overlay').classList.remove('show');
+        }
+
+        function createConfetti() {
+            const colors = ['#D35400', '#17A2B8', '#F4D03F', '#27AE60', '#E74C3C', '#8E44AD'];
+            const shapes = ['◆', '●', '■', '▲', '★'];
+            
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                    confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                    confetti.textContent = shapes[Math.floor(Math.random() * shapes.length)];
+                    confetti.style.fontSize = (Math.random() * 10 + 10) + 'px';
+                    confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                    document.body.appendChild(confetti);
+                    
+                    setTimeout(() => confetti.remove(), 4000);
+                }, i * 50);
+            }
+        }
+
+        function playSuccessSound() {
+            // Create a simple success beep using Web Audio API
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+                
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.3);
+            } catch (e) {
+                // Audio not supported, silently fail
+            }
+        }
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const gridElement = document.getElementById('word-grid');
+            
+            // Populate theme selector
+            populateThemeSelector();
+            
+            // Mouse events
+            gridElement.addEventListener('mousedown', handleSelectionStart);
+            gridElement.addEventListener('mousemove', handleSelectionMove);
+            document.addEventListener('mouseup', handleSelectionEnd);
+            
+            // Touch events
+            gridElement.addEventListener('touchstart', handleSelectionStart, { passive: false });
+            gridElement.addEventListener('touchmove', handleSelectionMove, { passive: false });
+            document.addEventListener('touchend', handleSelectionEnd);
+            
+            // Theme selector
+            document.getElementById('theme-select').addEventListener('change', (e) => {
+                currentTheme = e.target.value;
+                initGame();
+            });
+            
+            // New game button
+            document.getElementById('new-game-btn').addEventListener('click', initGame);
+            document.getElementById('play-again-btn').addEventListener('click', () => {
+                hideVictory();
+                initGame();
+            });
+            
+            // Start the game
+            initGame();
+        });
+    </script>
+</body>
+</html>

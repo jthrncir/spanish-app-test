@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¡Golpea la Palabra!</title>
+    <!-- Tailwind CSS for layout utilities -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font for a playful look -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --dirt-color: #8B4513;
+            --grass-color: #4ADE80;
+            --mole-color: #D2691E;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #87CEEB; /* Sky blue */
+            background-image: linear-gradient(#87CEEB, #E0F7FA);
+            overflow-x: hidden;
+            user-select: none; /* Prevent text selection during frantic clicking */
+        }
+
+        h1, h2, .game-font {
+            font-family: 'Fredoka One', cursive;
+        }
+
+        /* --- THE GRID --- */
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            /* Perspective gives a slight 3D feel */
+            perspective: 1000px; 
+        }
+
+        /* --- THE HOLE --- */
+        .hole {
+            position: relative;
+            overflow: hidden;
+            aspect-ratio: 1 / 0.8; /* Make holes slightly shorter than wide */
+            z-index: 1;
+        }
+
+        /* The dirt pile visual overlay */
+        .dirt-pile {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 40px;
+            background: var(--dirt-color);
+            border-radius: 50% 50% 10px 10px;
+            z-index: 20; /* In front of the mole */
+            box-shadow: inset 0 -5px 10px rgba(0,0,0,0.3);
+        }
+
+        /* --- THE MOLE --- */
+        .mole {
+            width: 70%;
+            height: 100%;
+            background: var(--mole-color);
+            position: absolute;
+            top: 100%; /* Hidden by default */
+            left: 15%;
+            border-radius: 40% 40% 10px 10px;
+            transition: top 0.1s; /* JS handles speed now, but keep a base */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 10px;
+            cursor: pointer;
+            z-index: 10;
+            box-shadow: inset -5px -5px 10px rgba(0,0,0,0.2);
+        }
+
+        .mole.up {
+            top: 10%; /* Pops up */
+        }
+
+        /* Mole Face */
+        .mole-face {
+            font-size: 2rem;
+            margin-top: 5px;
+            pointer-events: none; /* Let click pass through to mole */
+        }
+
+        /* The Sign the mole holds */
+        .sign {
+            background: #fff;
+            border: 3px solid #333;
+            padding: 5px 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: 800;
+            font-size: 1rem;
+            color: #333;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+            transform: rotate(-5deg); /* Jaunty angle */
+            margin-bottom: 5px;
+            pointer-events: none;
+            width: 90%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* --- ANIMATIONS & FEEDBACK --- */
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px) rotate(-5deg); }
+            50% { transform: translateX(5px) rotate(5deg); }
+            75% { transform: translateX(-5px) rotate(-5deg); }
+            100% { transform: translateX(0); }
+        }
+
+        .shake {
+            animation: shake 0.3s ease-in-out;
+        }
+
+        .hit-correct {
+            background-color: #4ADE80 !important; /* Green flash */
+        }
+
+        .hit-wrong {
+            background-color: #F87171 !important; /* Red flash */
+        }
+
+        /* --- UI ELEMENTS --- */
+        .prompt-box {
+            background: #FFFBEB;
+            border: 4px dashed #F59E0B;
+            transform: rotate(-1deg);
+            box-shadow: 5px 5px 0px rgba(0,0,0,0.1);
+        }
+        
+        button:active {
+            transform: translateY(2px);
+        }
+
+        /* Custom Select for Difficulty */
+        .difficulty-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FFD700%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem top 50%;
+            background-size: 0.65rem auto;
+        }
+
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center">
+
+    <!-- START SCREEN OVERLAY -->
+    <div id="start-screen" class="fixed inset-0 bg-black bg-opacity-80 z-50 flex flex-col justify-center items-center text-white p-4">
+        <h1 class="text-6xl mb-4 text-yellow-400 text-center text-shadow">¡Golpea la Palabra!</h1>
+        <p class="text-xl mb-6 max-w-lg text-center">
+            Moles will pop up holding signs. <br>
+            Look at the prompt and hit only the matching words!<br>
+            <span class="text-green-400 font-bold">+10 Puntos</span> for correct hits. <br>
+            <span class="text-red-400 font-bold">-5 Puntos</span> for mistakes.
+        </p>
+
+        <!-- Difficulty Selector -->
+        <div class="mb-8 flex flex-col items-center">
+            <label for="difficulty" class="text-yellow-300 font-bold mb-2 uppercase tracking-wide">Velocidad / Speed:</label>
+            <select id="difficulty" class="difficulty-select game-font bg-gray-800 text-white border-2 border-yellow-500 rounded-lg px-8 py-3 text-xl focus:outline-none focus:border-yellow-300 cursor-pointer text-center w-64">
+                <option value="slow">🐢 Lento (Slow)</option>
+                <option value="medium" selected>🐇 Medio (Medium)</option>
+                <option value="fast">🐆 Rápido (Fast)</option>
+                <option value="insane">🚀 ¡Locura! (Insane)</option>
+            </select>
+        </div>
+
+        <button onclick="startGame()" class="game-font bg-green-500 hover:bg-green-600 text-white text-3xl py-4 px-10 rounded-full border-b-4 border-green-700 transition shadow-lg animate-bounce">
+            ¡JUGAR!
+        </button>
+    </div>
+
+    <!-- GAME HEADER -->
+    <header class="w-full max-w-4xl p-4 flex justify-between items-center bg-white shadow-md rounded-b-xl mb-6">
+        <div class="text-center">
+            <h2 class="text-gray-500 text-sm font-bold uppercase tracking-wider">Puntuación</h2>
+            <div class="text-4xl text-blue-600 game-font" id="score-board">0</div>
+        </div>
+        
+        <h1 class="hidden md:block text-3xl text-gray-800 game-font tracking-tighter transform -rotate-2">
+            🔨 ¡Golpea!
+        </h1>
+
+        <div class="text-center">
+            <h2 class="text-gray-500 text-sm font-bold uppercase tracking-wider">Tiempo</h2>
+            <div class="text-4xl text-red-500 game-font" id="timer">60</div>
+        </div>
+    </header>
+
+    <!-- PROMPT BOX -->
+    <div class="prompt-box w-11/12 max-w-2xl p-6 mb-8 rounded-lg text-center relative">
+        <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-white px-3 py-1 text-xs font-bold rounded uppercase">
+            Misión Actual
+        </div>
+        <h2 class="text-3xl md:text-4xl text-gray-800 game-font">
+            ¡Busca: <span id="target-category" class="text-purple-600 uppercase underline decoration-wavy">...</span>!
+        </h2>
+    </div>
+
+    <!-- GAME GRID -->
+    <div class="game-grid w-full px-4 mb-10">
+        <!-- Generates 9 holes via JS or HTML, hardcoding for clarity -->
+        <div class="hole"><div class="mole"><div class="sign">?</div><div class="mole-face">😎</div></div><div class="dirt-pile"></div></div>
+        <div class="hole"><div class="mole"><div class="sign">?</div><div class="mole-face">🤓</div></div><div class="dirt-pile"></div></div>
+        <div class="hole"><div class="mole"><div class="sign">?</div><div class="mole-face">🤠</div></div><div class="dirt-pile"></div></div>
+        <div class="hole"><div class="mole"><div class="sign">?</div><div class="mole-face">🤪</div></div><div class="dirt-pile"></div></div>
+        <div class="hole"><div class="mole"><div class="sign">?</div><div class="mole-face">🧐</div></div><div class="dirt-pile"></div></div>
+        <div class="hole"><div class="mole"><div class="sign">?</div><div class="mole-face">😮</div></div><div class="dirt-pile"></div></div>
+        <div class="hole"><div class="mole"><div class="sign">?</div><div class="mole-face">🥸</div></div><div class="dirt-pile"></div></div>
+        <div class="hole"><div class="mole"><div class="sign">?</div><div class="mole-face">🤠</div></div><div class="dirt-pile"></div></div>
+        <div class="hole"><div class="mole"><div class="sign">?</div><div class="mole-face">😎</div></div><div class="dirt-pile"></div></div>
+    </div>
+
+    <script>
+        // --- DATA STRUCTURES ---
+        const vocabulary = {
+            'La Comida': ['El Taco', 'La Manzana', 'El Pan', 'El Queso', 'La Leche', 'El Arroz', 'La Pizza', 'La Fruta'],
+            'Los Animales': ['El Perro', 'El Gato', 'La Vaca', 'El Cerdo', 'El Mono', 'El Pez', 'El León', 'La Oveja'],
+            'La Ropa': ['La Camisa', 'Los Pantalones', 'Los Zapatos', 'El Sombrero', 'El Vestido', 'Los Calcetines', 'La Falda', 'El Abrigo']
+        };
+
+        const categoryKeys = Object.keys(vocabulary);
+
+        // --- SPEED SETTINGS ---
+        // Min/Max duration (in ms) that a mole stays UP
+        const speedConfig = {
+            slow: { min: 1500, max: 2000 },
+            medium: { min: 800, max: 1500 },
+            fast: { min: 600, max: 1000 },
+            insane: { min: 400, max: 800 }
+        };
+
+        // --- AUDIO ENGINE (Synthesizer Fallback) ---
+        // This ensures sound works even if files are missing
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Placeholder objects for external files
+        const sounds = {
+            popup: new Audio('sound_popup.mp3'),
+            correct: new Audio('sound_hit_correct.mp3'),
+            wrong: new Audio('sound_hit_wrong.mp3'),
+            gameover: new Audio('sound_gameover.mp3')
+        };
+
+        // Helper: Play Synth Sound
+        function playSynth(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            const now = audioCtx.currentTime;
+
+            if (type === 'popup') {
+                // Short "bloop"
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+
+            } else if (type === 'correct') {
+                // High happy "ding"
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.setValueAtTime(800, now + 0.1);
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+
+            } else if (type === 'wrong') {
+                // Low "buzz"
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.linearRampToValueAtTime(100, now + 0.2);
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+                
+            } else if (type === 'gameover') {
+                // Little melody
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.setValueAtTime(400, now + 0.2);
+                osc.frequency.setValueAtTime(500, now + 0.4);
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.setValueAtTime(0, now + 0.6);
+                osc.start(now);
+                osc.stop(now + 0.6);
+            }
+        }
+
+        // Updated PlaySound: Tries file, falls back to synth
+        function playSound(name) {
+            const audio = sounds[name];
+            // Try to play file
+            const playPromise = audio.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    // File failed (missing or error), use Synth instead
+                    playSynth(name);
+                });
+            }
+        }
+
+        // --- GAME STATE ---
+        const holes = document.querySelectorAll('.hole');
+        const scoreBoard = document.querySelector('#score-board');
+        const timerBoard = document.querySelector('#timer');
+        const moles = document.querySelectorAll('.mole');
+        const startScreen = document.getElementById('start-screen');
+        const targetDisplay = document.getElementById('target-category');
+        const difficultySelect = document.getElementById('difficulty');
+
+        let lastHole;
+        let timeUp = false;
+        let score = 0;
+        let timeLeft = 60;
+        let currentTargetCategory = '';
+        let peepTimer;
+        let gameTimer;
+        let currentSpeed = speedConfig.medium; // Default
+
+        // --- GAME ENGINE ---
+
+        function randomTime(min, max) {
+            return Math.round(Math.random() * (max - min) + min);
+        }
+
+        function randomHole(holes) {
+            const idx = Math.floor(Math.random() * holes.length);
+            const hole = holes[idx];
+            if (hole === lastHole) {
+                return randomHole(holes);
+            }
+            lastHole = hole;
+            return hole;
+        }
+
+        function getRandomWord(category) {
+            const list = vocabulary[category];
+            return list[Math.floor(Math.random() * list.length)];
+        }
+
+        function getRandomCategoryExcept(excludeCategory) {
+            const otherCategories = categoryKeys.filter(k => k !== excludeCategory);
+            const randomKey = otherCategories[Math.floor(Math.random() * otherCategories.length)];
+            return randomKey;
+        }
+
+        function peep() {
+            // Use current speed settings
+            const time = randomTime(currentSpeed.min, currentSpeed.max);
+            const hole = randomHole(holes);
+            const mole = hole.querySelector('.mole');
+            const sign = mole.querySelector('.sign');
+            
+            // Adjust transition speed in CSS via JS for snappier feel on higher speeds
+            // Fast = 0.1s pop up, Slow = 0.4s pop up
+            const animSpeed = currentSpeed.min < 600 ? '0.1s' : '0.3s';
+            mole.style.transition = `top ${animSpeed} cubic-bezier(0.175, 0.885, 0.32, 1.275)`;
+
+            // --- SELECTION ALGORITHM ---
+            const isTarget = Math.random() > 0.4; // 60% Target, 40% Distractor
+            let wordText = "";
+            let wordCategory = "";
+
+            if (isTarget) {
+                wordCategory = currentTargetCategory;
+                wordText = getRandomWord(currentTargetCategory);
+            } else {
+                wordCategory = getRandomCategoryExcept(currentTargetCategory);
+                wordText = getRandomWord(wordCategory);
+            }
+
+            sign.textContent = wordText;
+            mole.dataset.category = wordCategory;
+
+            // Animate Up
+            mole.classList.add('up');
+            playSound('popup');
+
+            peepTimer = setTimeout(() => {
+                mole.classList.remove('up');
+                setTimeout(() => {
+                    mole.classList.remove('hit-correct', 'hit-wrong');
+                }, 400); 
+                
+                if (!timeUp) peep();
+            }, time);
+        }
+
+        function startGame() {
+            // Apply Speed Setting
+            const selectedDifficulty = difficultySelect.value;
+            currentSpeed = speedConfig[selectedDifficulty];
+
+            // Reset State
+            scoreBoard.textContent = 0;
+            score = 0;
+            timeUp = false;
+            timeLeft = 60;
+            timerBoard.textContent = timeLeft;
+            startScreen.classList.add('hidden');
+
+            // Initialize Audio Context (must be done after user interaction)
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            // Pick a Target Category
+            currentTargetCategory = categoryKeys[Math.floor(Math.random() * categoryKeys.length)];
+            targetDisplay.textContent = currentTargetCategory;
+
+            // Start Loops
+            peep();
+            
+            gameTimer = setInterval(() => {
+                timeLeft--;
+                timerBoard.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function endGame() {
+            timeUp = true;
+            clearInterval(gameTimer);
+            clearTimeout(peepTimer);
+            
+            setTimeout(() => {
+                startScreen.classList.remove('hidden');
+                const title = startScreen.querySelector('h1');
+                const p = startScreen.querySelector('p');
+                const btn = startScreen.querySelector('button');
+                
+                // Hide difficulty selector on game over screen to simplify, or keep it
+                // We will keep it so they can change speed for next round
+                
+                title.textContent = "¡Tiempo!";
+                p.innerHTML = `Puntuación Final: <span class="text-4xl text-yellow-400 font-bold block mt-2">${score}</span>`;
+                btn.textContent = "Jugar de Nuevo";
+                
+                playSound('gameover');
+            }, 1000);
+        }
+
+        function bonk(e) {
+            if(!e.isTrusted) return; 
+            const mole = this;
+            
+            if(!mole.classList.contains('up')) return; 
+
+            const moleCategory = mole.dataset.category;
+            const hole = mole.parentElement;
+
+            if (moleCategory === currentTargetCategory) {
+                score += 10;
+                mole.classList.remove('up');
+                mole.classList.add('hit-correct');
+                playSound('correct');
+            } else {
+                score -= 5;
+                mole.classList.remove('up');
+                hole.classList.add('shake');
+                mole.classList.add('hit-wrong');
+                playSound('wrong');
+                
+                setTimeout(() => {
+                    hole.classList.remove('shake');
+                }, 500);
+            }
+            
+            setTimeout(() => {
+                mole.classList.remove('hit-correct', 'hit-wrong');
+            }, 500);
+
+            scoreBoard.textContent = score;
+        }
+
+        moles.forEach(mole => mole.addEventListener('click', bonk));
+        moles.forEach(mole => mole.addEventListener('touchstart', bonk));
+
+    </script>
+</body>
+</html>

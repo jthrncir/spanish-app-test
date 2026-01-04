@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Constructor de Frases - Sentence Builder</title>
+    <!-- Fonts for a friendly, educational look -->
+    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&family=Fredoka+One&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        :root {
+            --bg-color: #E0F7FA;
+            --board-color: #f0f4f8;
+            --board-border: #90A4AE;
+            --magnet-shadow: 2px 3px 0px rgba(0,0,0,0.2);
+            --magnet-shadow-lifted: 5px 8px 10px rgba(0,0,0,0.3);
+            --primary: #FF6B6B;
+            --secondary: #4ECDC4;
+        }
+
+        body {
+            font-family: 'Varela Round', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#B2EBF2 2px, transparent 2px);
+            background-size: 20px 20px;
+            overflow: hidden; /* Prevent scrolling during drag */
+            touch-action: none;
+        }
+
+        /* The Board - Fridge Style */
+        #game-board {
+            background: linear-gradient(135deg, #ffffff 0%, #f0f4f8 100%);
+            box-shadow: 
+                inset 0 0 20px rgba(0,0,0,0.05),
+                0 10px 20px rgba(0,0,0,0.1);
+            border: 8px solid var(--board-border);
+            border-radius: 20px;
+            position: relative;
+        }
+
+        /* Magnet Styles */
+        .magnet {
+            position: absolute;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+            cursor: grab;
+            user-select: none;
+            box-shadow: var(--magnet-shadow);
+            border-bottom: 2px solid #ddd;
+            transition: transform 0.1s, box-shadow 0.1s;
+            touch-action: none; /* Critical for mobile drag */
+            z-index: 10;
+            white-space: nowrap;
+        }
+
+        .magnet:active, .magnet.dragging {
+            cursor: grabbing;
+            transform: scale(1.1) rotate(-2deg);
+            box-shadow: var(--magnet-shadow-lifted);
+            z-index: 100 !important;
+        }
+
+        /* Animations */
+        @keyframes bounce-happy {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        @keyframes shake-sad {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px) rotate(-5deg); }
+            75% { transform: translateX(5px) rotate(5deg); }
+        }
+
+        .animate-bounce-magnet {
+            animation: bounce-happy 0.5s ease-in-out infinite;
+        }
+
+        .animate-shake-magnet {
+            animation: shake-sad 0.4s ease-in-out;
+        }
+
+        /* Overlay for Level Complete */
+        #level-overlay {
+            backdrop-filter: blur(5px);
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .pattern-bg {
+             background-image: repeating-linear-gradient(45deg, #ccc 0, #ccc 1px, transparent 0, transparent 50%);
+             background-size: 10px 10px;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col items-center justify-between p-4">
+
+    <!-- Header & Score -->
+    <header class="w-full max-w-4xl flex justify-between items-center mb-2">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-bold text-slate-700" style="font-family: 'Fredoka One', cursive;">
+                Constructor de Frases
+            </h1>
+            <p class="text-slate-500 text-sm">Translate the sentence using the magnets!</p>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="bg-white px-4 py-2 rounded-full shadow-sm border border-slate-200">
+                <span class="text-slate-500 font-bold">Level: </span>
+                <span id="level-indicator" class="text-blue-500 font-bold text-xl">1</span>
+            </div>
+            <button id="audio-toggle" class="p-2 bg-white rounded-full shadow hover:bg-slate-50 transition">
+                <i data-lucide="volume-2" class="text-slate-600"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- English Prompt -->
+    <div class="w-full max-w-4xl mb-4 text-center">
+        <div class="inline-block bg-yellow-100 border-2 border-yellow-300 text-yellow-800 px-6 py-3 rounded-xl shadow-sm text-xl md:text-2xl font-bold">
+            "<span id="english-prompt">Loading...</span>"
+        </div>
+    </div>
+
+    <!-- Main Game Area -->
+    <div id="game-container" class="relative w-full max-w-4xl flex-grow flex flex-col gap-4">
+        
+        <!-- The Fridge (Target Zone) -->
+        <div id="game-board" class="w-full h-1/2 min-h-[200px] flex flex-col items-center justify-start pt-4 relative overflow-hidden">
+            <div class="absolute top-2 left-4 text-slate-300 font-bold uppercase tracking-widest pointer-events-none select-none">
+                Fridge Zone
+            </div>
+            <!-- Decorative magnets -->
+            <div class="absolute top-2 right-4 w-6 h-6 rounded-full bg-red-400 shadow-sm"></div>
+            <div class="absolute top-8 right-2 w-6 h-6 rounded-full bg-blue-400 shadow-sm"></div>
+        </div>
+
+        <!-- The Pile (Source Zone) -->
+        <div id="magnet-bank" class="w-full h-1/3 bg-slate-200 rounded-xl border-4 border-slate-300 relative pattern-bg shadow-inner">
+            <div class="absolute top-2 left-1/2 transform -translate-x-1/2 text-slate-400 font-bold text-sm bg-slate-200 px-2 rounded">
+                Word Bank
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Action Bar -->
+    <div class="w-full max-w-4xl mt-4 flex justify-center pb-4">
+        <button id="check-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full shadow-[0_4px_0_rgb(21,128,61)] active:shadow-[0_0px_0_rgb(21,128,61)] active:translate-y-[4px] transition-all text-xl flex items-center gap-2">
+            <i data-lucide="check-circle"></i>
+            VERIFICAR
+        </button>
+    </div>
+
+    <!-- Level Complete Overlay -->
+    <div id="level-overlay" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl text-center border-4 border-yellow-400 max-w-sm mx-4 transform transition-all scale-110">
+            <div class="text-6xl mb-4">🎉</div>
+            <h2 class="text-3xl font-bold text-slate-800 mb-2">¡Muy Bien!</h2>
+            <p class="text-slate-600 mb-6">You translated the sentence correctly.</p>
+            <button id="next-level-btn" class="w-full bg-blue-500 text-white font-bold py-3 rounded-lg hover:bg-blue-600 transition shadow-lg">
+                Siguiente Nivel
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- Game Data (100 Sentences) ---
+        // Generated list of simple sentences for grades 6-9
+        const rawSentences = [
+            { e: "The red car is fast", c: ["El", "carro", "rojo", "es", "rápido"], d: ["La", "grande"] },
+            { e: "I have a happy cat", c: ["Yo", "tengo", "un", "gato", "feliz"], d: ["una", "perro", "triste"] },
+            { e: "She reads a good book", c: ["Ella", "lee", "un", "buen", "libro"], d: ["Él", "escribe", "una"] },
+            { e: "My brother likes pizza", c: ["A", "mi", "hermano", "le", "gusta", "la", "pizza"], d: ["gusta", "el", "hermana"] },
+            { e: "The sky is very blue", c: ["El", "cielo", "es", "muy", "azul"], d: ["La", "verde", "está"] },
+            { e: "We live in a big house", c: ["Nosotros", "vivimos", "en", "una", "casa", "grande"], d: ["un", "pequeña", "viven"] },
+            { e: "They are my friends", c: ["Ellos", "son", "mis", "amigos"], d: ["Ellas", "es", "amigas"] },
+            { e: "I eat an apple", c: ["Yo", "como", "una", "manzana"], d: ["un", "come", "roja"] },
+            { e: "The dog sleeps on the bed", c: ["El", "perro", "duerme", "en", "la", "cama"], d: ["La", "gato", "el"] },
+            { e: "She speaks Spanish well", c: ["Ella", "habla", "bien", "el", "español"], d: ["mal", "hablo", "la"] },
+            { e: "He is a tall teacher", c: ["Él", "es", "un", "maestro", "alto"], d: ["una", "maestra", "alta"] },
+            { e: "Today is Monday", c: ["Hoy", "es", "lunes"], d: ["mañana", "son", "martes"] },
+            { e: "The water is cold", c: ["El", "agua", "está", "fría"], d: ["La", "es", "caliente"] },
+            { e: "I want more coffee", c: ["Yo", "quiero", "más", "café"], d: ["quieres", "menos", "té"] },
+            { e: "The window is open", c: ["La", "ventana", "está", "abierta"], d: ["El", "abierto", "es"] },
+            { e: "We study every day", c: ["Nosotros", "estudiamos", "todos", "los", "días"], d: ["estudian", "toda", "las"] },
+            { e: "You are very nice", c: ["Tú", "eres", "muy", "amable"], d: ["Usted", "son", "malo"] },
+            { e: "The flowers are beautiful", c: ["Las", "flores", "son", "hermosas"], d: ["Los", "es", "bonito"] },
+            { e: "My mother cooks dinner", c: ["Mi", "madre", "cocina", "la", "cena"], d: ["padre", "el", "cocinan"] },
+            { e: "It is three o'clock", c: ["Son", "las", "tres"], d: ["Es", "la", "dos"] },
+            { e: "Where is the library?", c: ["¿Dónde", "está", "la", "biblioteca?"], d: ["es", "el", "bibliotecas"] },
+            { e: "I like to play soccer", c: ["Me", "gusta", "jugar", "al", "fútbol"], d: ["juega", "el", "baloncesto"] },
+            { e: "The shoes are black", c: ["Los", "zapatos", "son", "negros"], d: ["Las", "es", "blancos"] },
+            { e: "She writes a letter", c: ["Ella", "escribe", "una", "carta"], d: ["Él", "leen", "un"] },
+            { e: "He runs in the park", c: ["Él", "corre", "en", "el", "parque"], d: ["Ella", "la", "corren"] },
+            { e: "We drink orange juice", c: ["Nosotros", "bebemos", "jugo", "de", "naranja"], d: ["beben", "agua", "manzana"] },
+            { e: "The cat is under the table", c: ["El", "gato", "está", "debajo", "de", "la", "mesa"], d: ["sobre", "del", "una"] },
+            { e: "Do you have a pen?", c: ["¿Tienes", "un", "bolígrafo?"], d: ["Tengo", "una", "lápiz"] },
+            { e: "The girl sings well", c: ["La", "niña", "canta", "bien"], d: ["El", "niño", "cantan"] },
+            { e: "My father works here", c: ["Mi", "padre", "trabaja", "aquí"], d: ["madre", "allí", "trabajan"] },
+            { e: "I need help please", c: ["Necesito", "ayuda", "por", "favor"], d: ["Necesitas", "ayudar", "gracias"] },
+            { e: "The sun is hot", c: ["El", "sol", "está", "caliente"], d: ["La", "luna", "frío"] },
+            { e: "She buys new clothes", c: ["Ella", "compra", "ropa", "nueva"], d: ["Él", "vende", "nuevo"] },
+            { e: "We are tired", c: ["Nosotros", "estamos", "cansados"], d: ["somos", "cansadas", "están"] },
+            { e: "The exam is difficult", c: ["El", "examen", "es", "difícil"], d: ["La", "fácil", "son"] },
+            { e: "I see a bird", c: ["Yo", "veo", "un", "pájaro"], d: ["ves", "una", "perro"] },
+            { e: "The store is closed", c: ["La", "tienda", "está", "cerrada"], d: ["El", "abierta", "es"] },
+            { e: "Do you like music?", c: ["¿Te", "gusta", "la", "música?"], d: ["Me", "el", "canción"] },
+            { e: "He drinks a lot of water", c: ["Él", "bebe", "mucha", "agua"], d: ["Ella", "mucho", "leche"] },
+            { e: "The milk is white", c: ["La", "leche", "es", "blanca"], d: ["El", "blanco", "está"] },
+            { e: "I am a student", c: ["Yo", "soy", "estudiante"], d: ["estoy", "un", "profesor"] },
+            { e: "We go to the beach", c: ["Nosotros", "vamos", "a", "la", "playa"], d: ["van", "el", "escuela"] },
+            { e: "The bread is delicious", c: ["El", "pan", "es", "delicioso"], d: ["La", "está", "deliciosa"] },
+            { e: "She wears a red dress", c: ["Ella", "usa", "un", "vestido", "rojo"], d: ["Él", "una", "azul"] },
+            { e: "My family is small", c: ["Mi", "familia", "es", "pequeña"], d: ["grande", "son", "pequeño"] },
+            { e: "It is very late", c: ["Es", "muy", "tarde"], d: ["Son", "temprano", "está"] },
+            { e: "They run fast", c: ["Ellos", "corren", "rápido"], d: ["Ellas", "corre", "lento"] },
+            { e: "The boy eats pizza", c: ["El", "niño", "come", "pizza"], d: ["La", "niña", "comen"] },
+            { e: "I don't understand", c: ["Yo", "no", "entiendo"], d: ["sí", "entiendes", "comprendo"] },
+            { e: "Where do you live?", c: ["¿Dónde", "vives?"], d: ["viven", "vive", "cómo"] },
+            { e: "The chair is green", c: ["La", "silla", "es", "verde"], d: ["El", "sillo", "roja"] },
+            { e: "We play cards", c: ["Nosotros", "jugamos", "a", "las", "cartas"], d: ["juegan", "los", "carta"] },
+            { e: "The computer is new", c: ["La", "computadora", "es", "nueva"], d: ["El", "ordenador", "nuevo"] },
+            { e: "He has blue eyes", c: ["Él", "tiene", "los", "ojos", "azules"], d: ["Ella", "las", "verde"] },
+            { e: "I love chocolate", c: ["Me", "encanta", "el", "chocolate"], d: ["gusta", "la", "dulce"] },
+            { e: "The train arrives now", c: ["El", "tren", "llega", "ahora"], d: ["La", "llegar", "mañana"] },
+            { e: "She is my sister", c: ["Ella", "es", "mi", "hermana"], d: ["Él", "su", "hermano"] },
+            { e: "The lesson is easy", c: ["La", "lección", "es", "fácil"], d: ["El", "difícil", "clase"] },
+            { e: "We eat breakfast", c: ["Nosotros", "desayunamos"], d: ["comemos", "cenamos", "desayuno"] },
+            { e: "The phone is ringing", c: ["El", "teléfono", "está", "sonando"], d: ["La", "es", "sonar"] },
+            { e: "I have two dogs", c: ["Tengo", "dos", "perros"], d: ["Tienes", "tres", "gatos"] },
+            { e: "The moon is bright", c: ["La", "luna", "es", "brillante"], d: ["El", "sol", "oscuro"] },
+            { e: "He walks to school", c: ["Él", "camina", "a", "la", "escuela"], d: ["Ella", "caminar", "el"] },
+            { e: "The food is hot", c: ["La", "comida", "está", "caliente"], d: ["El", "es", "fría"] },
+            { e: "I wash my hands", c: ["Me", "lavo", "las", "manos"], d: ["Te", "lavas", "pies"] },
+            { e: "They are happy", c: ["Ellos", "están", "felices"], d: ["son", "feliz", "tristes"] },
+            { e: "The pen is blue", c: ["El", "bolígrafo", "es", "azul"], d: ["La", "pluma", "rojo"] },
+            { e: "She listens to music", c: ["Ella", "escucha", "música"], d: ["Él", "oye", "canciones"] },
+            { e: "We visit our grandmother", c: ["Visitamos", "a", "nuestra", "abuela"], d: ["Visitan", "su", "abuelo"] },
+            { e: "The clock is old", c: ["El", "reloj", "es", "viejo"], d: ["La", "hora", "nuevo"] },
+            { e: "I am hungry", c: ["Tengo", "hambre"], d: ["Estoy", "sed", "comida"] },
+            { e: "The baby is sleeping", c: ["El", "bebé", "está", "durmiendo"], d: ["La", "niño", "dormir"] },
+            { e: "Do you want water?", c: ["¿Quieres", "agua?"], d: ["Quiere", "jugo", "beber"] },
+            { e: "She is a doctor", c: ["Ella", "es", "doctora"], d: ["Él", "un", "doctor"] },
+            { e: "The trees are tall", c: ["Los", "árboles", "son", "altos"], d: ["Las", "es", "alto"] },
+            { e: "I read the newspaper", c: ["Yo", "leo", "el", "periódico"], d: ["leyendo", "un", "libro"] },
+            { e: "We clean the house", c: ["Limpiamos", "la", "casa"], d: ["Limipian", "el", "cuarto"] },
+            { e: "The night is dark", c: ["La", "noche", "es", "oscura"], d: ["El", "día", "clara"] },
+            { e: "He plays the guitar", c: ["Él", "toca", "la", "guitarra"], d: ["juega", "el", "piano"] },
+            { e: "I write a book", c: ["Escribo", "un", "libro"], d: ["Escribes", "una", "carta"] },
+            { e: "The bus is late", c: ["El", "autobús", "llega", "tarde"], d: ["La", "es", "temprano"] },
+            { e: "She dances well", c: ["Ella", "baila", "bien"], d: ["Él", "bailar", "mal"] },
+            { e: "We are friends", c: ["Somos", "amigos"], d: ["Estamos", "amigas", "son"] },
+            { e: "The city is big", c: ["La", "ciudad", "es", "grande"], d: ["El", "pueblo", "pequeña"] },
+            { e: "I take the bus", c: ["Tomo", "el", "autobús"], d: ["Tomas", "la", "coche"] },
+            { e: "The river is long", c: ["El", "río", "es", "largo"], d: ["La", "mar", "corto"] },
+            { e: "Do you speak English?", c: ["¿Hablas", "inglés?"], d: ["Habla", "español", "idioma"] },
+            { e: "She helps her mother", c: ["Ella", "ayuda", "a", "su", "madre"], d: ["Él", "ayudar", "padre"] },
+            { e: "We watch TV", c: ["Vemos", "la", "televisión"], d: ["Miramos", "el", "cine"] },
+            { e: "The coffee is good", c: ["El", "café", "es", "bueno"], d: ["La", "está", "malo"] },
+            { e: "I like summer", c: ["Me", "gusta", "el", "verano"], d: ["gustan", "la", "invierno"] },
+            { e: "He is strong", c: ["Él", "es", "fuerte"], d: ["Ella", "son", "débil"] },
+            { e: "The cheese is yellow", c: ["El", "queso", "es", "amarillo"], d: ["La", "blanco", "está"] },
+            { e: "I open the door", c: ["Abro", "la", "puerta"], d: ["Abre", "el", "ventana"] },
+            { e: "They work hard", c: ["Ellos", "trabajan", "duro"], d: ["Ellas", "trabaja", "mucho"] },
+            { e: "The map is old", c: ["El", "mapa", "es", "viejo"], d: ["La", "nuevo", "papel"] },
+            { e: "She runs every morning", c: ["Ella", "corre", "cada", "mañana"], d: ["Él", "correr", "día"] },
+            { e: "We buy food", c: ["Compramos", "comida"], d: ["Compran", "bebida", "vender"] },
+            { e: "The grass is green", c: ["El", "césped", "es", "verde"], d: ["La", "hierba", "azul"] },
+            { e: "I answer the question", c: ["Contesto", "la", "pregunta"], d: ["Pregunto", "el", "respuesta"] }
+        ];
+
+        // Process data into Level Objects
+        const levels = rawSentences.map((s, index) => ({
+            id: index + 1,
+            english: s.e,
+            correctOrder: s.c,
+            distractors: s.d
+        }));
+
+        // --- Audio Synthesizer (No external files needed) ---
+        class GameAudio {
+            constructor() {
+                this.ctx = null;
+                this.enabled = true;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            playTone(freq, type, duration, startTime = 0, vol = 0.1) {
+                if (!this.enabled || !this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime + startTime);
+                
+                gain.gain.setValueAtTime(vol, this.ctx.currentTime + startTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + startTime + duration);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                
+                osc.start(this.ctx.currentTime + startTime);
+                osc.stop(this.ctx.currentTime + startTime + duration);
+            }
+
+            playPop() {
+                this.init();
+                // Short, high-pitched sine
+                this.playTone(800, 'sine', 0.1);
+            }
+
+            playThud() {
+                this.init();
+                // Low, dull square
+                this.playTone(100, 'square', 0.15, 0, 0.15);
+            }
+
+            playSuccess() {
+                this.init();
+                // Major Arpeggio
+                this.playTone(523.25, 'sine', 0.3, 0);   // C5
+                this.playTone(659.25, 'sine', 0.3, 0.1); // E5
+                this.playTone(783.99, 'sine', 0.4, 0.2); // G5
+                this.playTone(1046.50, 'sine', 0.6, 0.3); // C6
+            }
+
+            playFail() {
+                this.init();
+                // Dissonant descending
+                this.playTone(300, 'sawtooth', 0.4, 0);
+                this.playTone(280, 'sawtooth', 0.4, 0.1);
+                this.playTone(200, 'sawtooth', 0.5, 0.2);
+            }
+
+            playWarp() {
+                this.init();
+                if (!this.enabled || !this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(200, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.4);
+                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.4);
+                
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.4);
+            }
+        }
+
+        const sfx = new GameAudio();
+
+        // --- State Management ---
+        let currentLevelIndex = 0;
+        let activeDrag = null; // The element currently being dragged
+        let dragOffset = { x: 0, y: 0 };
+        let zIndexCounter = 100;
+        let shuffledLevels = [];
+
+        // --- DOM Elements ---
+        const dom = {
+            englishPrompt: document.getElementById('english-prompt'),
+            gameBoard: document.getElementById('game-board'),
+            magnetBank: document.getElementById('magnet-bank'),
+            checkBtn: document.getElementById('check-btn'),
+            levelIndicator: document.getElementById('level-indicator'),
+            overlay: document.getElementById('level-overlay'),
+            nextBtn: document.getElementById('next-level-btn'),
+            audioToggle: document.getElementById('audio-toggle'),
+            container: document.getElementById('game-container')
+        };
+
+        // --- Initialization ---
+        function init() {
+            lucide.createIcons();
+            
+            // Randomize Level Order
+            shuffledLevels = shuffleArray([...levels]);
+            
+            // Start First Level
+            loadLevel(currentLevelIndex);
+            
+            // Global pointer events for dragging
+            window.addEventListener('pointermove', onPointerMove);
+            window.addEventListener('pointerup', onPointerUp);
+            
+            // Button Listeners
+            dom.checkBtn.addEventListener('click', validateSentence);
+            dom.nextBtn.addEventListener('click', nextLevel);
+            
+            // Audio Toggle
+            dom.audioToggle.addEventListener('click', () => {
+                sfx.enabled = !sfx.enabled;
+                const icon = dom.audioToggle.querySelector('i');
+                if(sfx.enabled) {
+                    icon.setAttribute('data-lucide', 'volume-2');
+                    dom.audioToggle.classList.remove('bg-red-100');
+                    // Initialize audio context on first click if needed
+                    sfx.init();
+                } else {
+                    icon.setAttribute('data-lucide', 'volume-x');
+                    dom.audioToggle.classList.add('bg-red-100');
+                }
+                lucide.createIcons();
+            });
+        }
+
+        // --- Level Loading ---
+        function loadLevel(index) {
+            // Loop back if we finish all 100
+            if (index >= shuffledLevels.length) {
+                currentLevelIndex = 0;
+                index = 0;
+                shuffledLevels = shuffleArray([...levels]); // Reshuffle for new run
+            }
+
+            const level = shuffledLevels[index];
+            dom.levelIndicator.textContent = `${index + 1}/${shuffledLevels.length}`;
+            dom.englishPrompt.textContent = level.english;
+            dom.overlay.classList.add('hidden');
+
+            // --- CLEAR BOARD LOGIC ---
+            // We wipe the innerHTML of the container zones. 
+            // This ensures any magnets from previous levels are gone.
+            dom.gameBoard.innerHTML = `
+                <div class="absolute top-2 left-4 text-slate-300 font-bold uppercase tracking-widest pointer-events-none select-none">Fridge Zone</div>
+                <div class="absolute top-2 right-4 w-6 h-6 rounded-full bg-red-400 shadow-sm"></div>
+                <div class="absolute top-8 right-2 w-6 h-6 rounded-full bg-blue-400 shadow-sm"></div>
+            `;
+            dom.magnetBank.innerHTML = `
+                <div class="absolute top-2 left-1/2 transform -translate-x-1/2 text-slate-400 font-bold text-sm bg-slate-200 px-2 rounded">Word Bank</div>
+            `;
+
+            // Clean up any magnets hanging around in the main container (if any)
+            const existingMagnets = document.querySelectorAll('.magnet');
+            existingMagnets.forEach(m => m.remove());
+
+            // Prepare words (correct + distractors)
+            let allWords = [...level.correctOrder, ...level.distractors];
+            allWords = shuffleArray(allWords);
+
+            // Create Magnet Elements
+            // We give the DOM a moment to settle so bounding client rects are accurate
+            setTimeout(() => {
+                allWords.forEach(word => createMagnet(word));
+            }, 50);
+        }
+
+        function createMagnet(text) {
+            const el = document.createElement('div');
+            el.classList.add('magnet');
+            el.textContent = text;
+            el.setAttribute('data-word', text); // Store value
+            
+            dom.container.appendChild(el);
+
+            const bankRect = dom.magnetBank.getBoundingClientRect();
+            const containerRect = dom.container.getBoundingClientRect();
+
+            // Calculate position relative to container
+            // Add some randomness but keep inside bank
+            const buffer = 20;
+            const minX = bankRect.left - containerRect.left + buffer;
+            const maxX = minX + bankRect.width - 100;
+            const minY = bankRect.top - containerRect.top + buffer + 20; // +20 for label
+            const maxY = minY + bankRect.height - 60;
+
+            const randomX = Math.random() * (maxX - minX) + minX;
+            const randomY = Math.random() * (maxY - minY) + minY;
+            const randomRot = (Math.random() * 6) - 3; // -3 to 3 deg
+
+            el.style.left = `${randomX}px`;
+            el.style.top = `${randomY}px`;
+            el.style.transform = `rotate(${randomRot}deg)`;
+
+            // Attach interaction start
+            el.addEventListener('pointerdown', onPointerDown);
+        }
+
+        // --- Drag & Drop Logic ---
+        
+        function onPointerDown(e) {
+            e.preventDefault(); // Prevent text selection
+            
+            const el = e.target;
+            if (!el.classList.contains('magnet')) return;
+
+            sfx.playPop(); // Play sound
+            activeDrag = el;
+            
+            // Bring to front
+            zIndexCounter++;
+            el.style.zIndex = zIndexCounter;
+            el.classList.add('dragging');
+
+            const rect = el.getBoundingClientRect();
+            
+            dragOffset.x = e.clientX - rect.left;
+            dragOffset.y = e.clientY - rect.top;
+        }
+
+        function onPointerMove(e) {
+            if (!activeDrag) return;
+            e.preventDefault();
+
+            const containerRect = dom.container.getBoundingClientRect();
+            
+            let newX = e.clientX - containerRect.left - dragOffset.x;
+            let newY = e.clientY - containerRect.top - dragOffset.y;
+
+            // Keep inside container
+            newX = Math.max(0, Math.min(newX, containerRect.width - activeDrag.offsetWidth));
+            newY = Math.max(0, Math.min(newY, containerRect.height - activeDrag.offsetHeight));
+
+            activeDrag.style.left = `${newX}px`;
+            activeDrag.style.top = `${newY}px`;
+        }
+
+        function onPointerUp(e) {
+            if (!activeDrag) return;
+
+            sfx.playThud(); // Play sound
+            activeDrag.classList.remove('dragging');
+            
+            // Visual Snap Logic
+            const magnetRect = activeDrag.getBoundingClientRect();
+            const boardRect = dom.gameBoard.getBoundingClientRect();
+
+            if (isIntersecting(magnetRect, boardRect)) {
+                const randomRot = (Math.random() * 2) - 1;
+                activeDrag.style.transform = `rotate(${randomRot}deg)`;
+            } else {
+                const randomRot = (Math.random() * 10) - 5;
+                activeDrag.style.transform = `rotate(${randomRot}deg)`;
+            }
+
+            activeDrag = null;
+        }
+
+        // --- Validation Logic ---
+
+        function validateSentence() {
+            const level = shuffledLevels[currentLevelIndex];
+            const boardRect = dom.gameBoard.getBoundingClientRect();
+            const magnets = document.querySelectorAll('.magnet');
+            
+            // 1. Find magnets visually inside the board area
+            const magnetsOnBoard = [];
+
+            magnets.forEach(mag => {
+                const magRect = mag.getBoundingClientRect();
+                const centerX = magRect.left + magRect.width / 2;
+                const centerY = magRect.top + magRect.height / 2;
+
+                if (
+                    centerX >= boardRect.left && 
+                    centerX <= boardRect.right &&
+                    centerY >= boardRect.top &&
+                    centerY <= boardRect.bottom
+                ) {
+                    magnetsOnBoard.push({
+                        element: mag,
+                        x: magRect.left,
+                        word: mag.getAttribute('data-word')
+                    });
+                }
+            });
+
+            // 2. Sort by X position (Left to Right)
+            magnetsOnBoard.sort((a, b) => a.x - b.x);
+
+            // 3. Extract words
+            const userSentence = magnetsOnBoard.map(m => m.word);
+
+            // 4. Compare
+            const isCorrect = arraysEqual(userSentence, level.correctOrder);
+
+            if (isCorrect) {
+                handleSuccess(magnetsOnBoard);
+            } else {
+                handleFailure(magnetsOnBoard.length > 0 ? magnetsOnBoard : []);
+            }
+        }
+
+        function handleSuccess(magnetsData) {
+            sfx.playSuccess(); // Play Sound
+            
+            // Animate only the magnets on the board
+            magnetsData.forEach(m => {
+                m.element.classList.add('animate-bounce-magnet');
+            });
+
+            // Show overlay after delay
+            setTimeout(() => {
+                sfx.playWarp();
+                dom.overlay.classList.remove('hidden');
+            }, 1500);
+        }
+
+        function handleFailure(magnetsData) {
+            sfx.playFail(); // Play Sound
+            
+            const targets = magnetsData.length > 0 
+                ? magnetsData.map(m => m.element) 
+                : document.querySelectorAll('.magnet');
+
+            targets.forEach(el => {
+                el.classList.add('animate-shake-magnet');
+                setTimeout(() => el.classList.remove('animate-shake-magnet'), 400);
+            });
+        }
+
+        function nextLevel() {
+            currentLevelIndex++;
+            loadLevel(currentLevelIndex);
+        }
+
+        // --- Utilities ---
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function arraysEqual(a, b) {
+            if (a.length !== b.length) return false;
+            for (let i = 0; i < a.length; i++) {
+                if (a[i] !== b[i]) return false;
+            }
+            return true;
+        }
+
+        function isIntersecting(r1, r2) {
+            return !(r2.left > r1.right || 
+                     r2.right < r1.left || 
+                     r2.top > r1.bottom || 
+                     r2.bottom < r1.top);
+        }
+
+        // Start
+        init();
+
+    </script>
+</body>
+</html>

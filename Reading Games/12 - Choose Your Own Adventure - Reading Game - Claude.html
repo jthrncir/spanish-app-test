@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Búsqueda de la Tarea Perdida</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg-dark: #1a1a2e;
+            --terminal-bg: #0f0f1a;
+            --glow-green: #39ff14;
+            --glow-cyan: #00fff7;
+            --glow-pink: #ff6ec7;
+            --glow-yellow: #ffd93d;
+            --text-primary: #e8e8e8;
+            --text-dim: #8888aa;
+            --button-bg: #2d2d44;
+            --button-hover: #3d3d5c;
+            --border-color: #4a4a6a;
+            --scanline-opacity: 0.03;
+        }
+
+        body {
+            min-height: 100vh;
+            background: var(--bg-dark);
+            background-image: 
+                radial-gradient(ellipse at 20% 20%, rgba(57, 255, 20, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(255, 110, 199, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(0, 255, 247, 0.05) 0%, transparent 70%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 700px;
+            background: var(--terminal-bg);
+            border-radius: 20px;
+            border: 3px solid var(--border-color);
+            box-shadow: 
+                0 0 60px rgba(57, 255, 20, 0.15),
+                0 0 100px rgba(0, 255, 247, 0.1),
+                inset 0 0 80px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* CRT Scanline Effect */
+        .game-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, var(--scanline-opacity)) 2px,
+                rgba(0, 0, 0, var(--scanline-opacity)) 4px
+            );
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* CRT Flicker Animation */
+        .game-container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(57, 255, 20, 0.02);
+            pointer-events: none;
+            z-index: 9;
+            animation: flicker 0.15s infinite;
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.97; }
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2a2a4a 0%, #1a1a2e 100%);
+            padding: 25px 30px;
+            border-bottom: 2px solid var(--border-color);
+            text-align: center;
+            position: relative;
+        }
+
+        .header::before {
+            content: '📚 🔍 ❓';
+            display: block;
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .title {
+            font-family: 'VT323', monospace;
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            color: var(--glow-cyan);
+            text-shadow: 
+                0 0 10px var(--glow-cyan),
+                0 0 20px var(--glow-cyan),
+                0 0 40px rgba(0, 255, 247, 0.5);
+            letter-spacing: 2px;
+            animation: glow-pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes glow-pulse {
+            0%, 100% { 
+                text-shadow: 
+                    0 0 10px var(--glow-cyan),
+                    0 0 20px var(--glow-cyan),
+                    0 0 40px rgba(0, 255, 247, 0.5);
+            }
+            50% { 
+                text-shadow: 
+                    0 0 15px var(--glow-cyan),
+                    0 0 30px var(--glow-cyan),
+                    0 0 60px rgba(0, 255, 247, 0.7);
+            }
+        }
+
+        .subtitle {
+            font-family: 'VT323', monospace;
+            font-size: 1rem;
+            color: var(--text-dim);
+            margin-top: 8px;
+            letter-spacing: 1px;
+        }
+
+        .story-container {
+            padding: 35px 30px;
+            min-height: 200px;
+        }
+
+        #story-text {
+            font-family: 'Fredoka', sans-serif;
+            font-size: clamp(1.2rem, 3vw, 1.5rem);
+            line-height: 1.8;
+            color: var(--text-primary);
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+            animation: text-appear 0.5s ease-out;
+        }
+
+        @keyframes text-appear {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .choices-container {
+            padding: 20px 30px 35px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .choice-btn {
+            font-family: 'Fredoka', sans-serif;
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
+            font-weight: 600;
+            padding: 18px 25px;
+            background: var(--button-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            text-align: left;
+        }
+
+        .choice-btn::before {
+            content: '▶';
+            margin-right: 12px;
+            color: var(--glow-green);
+            opacity: 0;
+            transform: translateX(-10px);
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .choice-btn:hover {
+            background: var(--button-hover);
+            border-color: var(--glow-green);
+            transform: translateX(8px);
+            box-shadow: 
+                0 0 20px rgba(57, 255, 20, 0.2),
+                inset 0 0 20px rgba(57, 255, 20, 0.05);
+        }
+
+        .choice-btn:hover::before {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .choice-btn:active {
+            transform: translateX(8px) scale(0.98);
+        }
+
+        /* Different button colors for variety */
+        .choice-btn:nth-child(1) { --btn-accent: var(--glow-green); }
+        .choice-btn:nth-child(2) { --btn-accent: var(--glow-cyan); }
+        .choice-btn:nth-child(3) { --btn-accent: var(--glow-pink); }
+
+        .choice-btn:nth-child(1):hover { border-color: var(--glow-green); box-shadow: 0 0 20px rgba(57, 255, 20, 0.2); }
+        .choice-btn:nth-child(2):hover { border-color: var(--glow-cyan); box-shadow: 0 0 20px rgba(0, 255, 247, 0.2); }
+        .choice-btn:nth-child(3):hover { border-color: var(--glow-pink); box-shadow: 0 0 20px rgba(255, 110, 199, 0.2); }
+
+        .choice-btn:nth-child(1)::before { color: var(--glow-green); }
+        .choice-btn:nth-child(2)::before { color: var(--glow-cyan); }
+        .choice-btn:nth-child(3)::before { color: var(--glow-pink); }
+
+        /* Ending styles */
+        .ending-bad #story-text {
+            border-color: rgba(255, 100, 100, 0.3);
+            background: rgba(255, 50, 50, 0.1);
+        }
+
+        .ending-good #story-text {
+            border-color: rgba(255, 215, 0, 0.3);
+            background: rgba(255, 215, 0, 0.1);
+            animation: victory-glow 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes victory-glow {
+            from { box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); }
+            to { box-shadow: 0 0 40px rgba(255, 215, 0, 0.4); }
+        }
+
+        /* Sound indicator */
+        .sound-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--terminal-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .sound-indicator:hover {
+            border-color: var(--glow-cyan);
+            box-shadow: 0 0 15px rgba(0, 255, 247, 0.3);
+        }
+
+        .sound-indicator span {
+            font-size: 1.5rem;
+        }
+
+        /* Decorative elements */
+        .decoration {
+            position: absolute;
+            font-size: 2rem;
+            opacity: 0.1;
+            pointer-events: none;
+        }
+
+        .deco-1 { top: 10%; left: 5%; animation: float 6s ease-in-out infinite; }
+        .deco-2 { top: 30%; right: 5%; animation: float 8s ease-in-out infinite reverse; }
+        .deco-3 { bottom: 20%; left: 8%; animation: float 7s ease-in-out infinite; }
+        .deco-4 { bottom: 10%; right: 10%; animation: float 5s ease-in-out infinite reverse; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 500px) {
+            .game-container {
+                border-radius: 15px;
+            }
+            .header {
+                padding: 20px;
+            }
+            .story-container {
+                padding: 25px 20px;
+            }
+            .choices-container {
+                padding: 15px 20px 25px;
+            }
+            .choice-btn {
+                padding: 15px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating decorations -->
+    <div class="decoration deco-1">📖</div>
+    <div class="decoration deco-2">✏️</div>
+    <div class="decoration deco-3">🎒</div>
+    <div class="decoration deco-4">🌟</div>
+
+    <div class="game-container" id="game-container">
+        <header class="header">
+            <h1 class="title">La Búsqueda de la Tarea Perdida</h1>
+            <p class="subtitle">[ Una aventura en español ]</p>
+        </header>
+        
+        <div class="story-container">
+            <p id="story-text">Cargando...</p>
+        </div>
+        
+        <div class="choices-container" id="choices-container">
+            <!-- Buttons will be dynamically generated -->
+        </div>
+    </div>
+
+    <!-- Sound toggle button -->
+    <div class="sound-indicator" id="sound-toggle" title="Sonido On/Off">
+        <span>🔊</span>
+    </div>
+
+    <script>
+        // ============================================
+        // AUDIO MAP - Placeholder sound effects
+        // ============================================
+        const audioMap = {
+            'sfx_alarm_clock_panic': 'sounds/sfx_alarm_clock_panic.mp3',
+            'sfx_dust_cough': 'sounds/sfx_dust_cough.mp3',
+            'sfx_gross_smell': 'sounds/sfx_gross_smell.mp3',
+            'sfx_mom_hmm': 'sounds/sfx_mom_hmm.mp3',
+            'sfx_magic_portal': 'sounds/sfx_magic_portal.mp3',
+            'sfx_cheese_squish': 'sounds/sfx_cheese_squish.mp3',
+            'sfx_dog_bark': 'sounds/sfx_dog_bark.mp3',
+            'sfx_dog_speaks': 'sounds/sfx_dog_speaks.mp3',
+            'sfx_spooky_alien': 'sounds/sfx_spooky_alien.mp3',
+            'sfx_slip': 'sounds/sfx_slip.mp3',
+            'sfx_animal_surprise': 'sounds/sfx_animal_surprise.mp3',
+            'sfx_robot_beep': 'sounds/sfx_robot_beep.mp3',
+            'sfx_explosion_small': 'sounds/sfx_explosion_small.mp3',
+            'sfx_victory': 'sounds/sfx_victory.mp3',
+            'sfx_sad_trombone': 'sounds/sfx_sad_trombone.mp3',
+            'sfx_dramatic_gasp': 'sounds/sfx_dramatic_gasp.mp3',
+            'sfx_kitchen_chaos': 'sounds/sfx_kitchen_chaos.mp3',
+            'sfx_happy_dog': 'sounds/sfx_happy_dog.mp3',
+            'sfx_mysterious': 'sounds/sfx_mysterious.mp3',
+            'sfx_paper_rustle': 'sounds/sfx_paper_rustle.mp3'
+        };
+
+        // ============================================
+        // STORY DATA - The Complete Adventure!
+        // ============================================
+        const storyData = {
+            // === STARTING POINT ===
+            start: {
+                id: 'start',
+                text: "☀️ Te despiertas tarde. ¡Son las 7:45! Buscas tu tarea de español en tu mochila pero... ¡NO ESTÁ! 😱 La clase empieza en quince minutos. ¿Qué haces?",
+                soundOnEnter: 'sfx_alarm_clock_panic',
+                choices: [
+                    { text: "🛏️ Mirar debajo de la cama", nextNode: 'under_bed' },
+                    { text: "👩 Preguntar a mamá", nextNode: 'ask_mom' },
+                    { text: "🐕 Preguntar al perro Max", nextNode: 'ask_dog' }
+                ]
+            },
+
+            // === UNDER THE BED PATH ===
+            under_bed: {
+                id: 'under_bed',
+                text: "🛏️ Miras debajo de la cama. Hay mucho polvo, un calcetín viejo que huele MUY mal, y... ¿es eso un agujero brillante en el piso? ¡Parece un portal mágico! 🌀",
+                soundOnEnter: 'sfx_dust_cough',
+                choices: [
+                    { text: "🧦 Oler el calcetín (¿por qué?)", nextNode: 'smell_sock' },
+                    { text: "🌀 Entrar en el portal mágico", nextNode: 'cheese_dimension' },
+                    { text: "🔙 Volver al inicio", nextNode: 'start' }
+                ]
+            },
+
+            smell_sock: {
+                id: 'smell_sock',
+                text: "🧦 Hueles el calcetín viejo. ERROR. ERROR TERRIBLE. 🤢 El olor es tan fuerte que te desmayas. Cuando despiertas, llegas muy tarde a la escuela. Tu profesor está muy enojado.",
+                soundOnEnter: 'sfx_gross_smell',
+                ending: 'bad',
+                choices: [
+                    { text: "😢 ¡Oh no! Jugar otra vez", nextNode: 'start' }
+                ]
+            },
+
+            cheese_dimension: {
+                id: 'cheese_dimension',
+                text: "🧀 ¡WOOOOSH! Entras en el portal y... ¡estás en una dimensión hecha completamente de QUESO! Las montañas son de queso. Los árboles son de queso. Un ratón gigante te mira.",
+                soundOnEnter: 'sfx_magic_portal',
+                choices: [
+                    { text: "🐭 Hablar con el ratón gigante", nextNode: 'talk_mouse' },
+                    { text: "🧀 Comer el suelo de queso", nextNode: 'eat_cheese' }
+                ]
+            },
+
+            talk_mouse: {
+                id: 'talk_mouse',
+                text: "🐭 El ratón gigante dice: '¡Hola, humano pequeño! Busco mi tarea también. ¡Fue comida por el Rey Queso!' El ratón señala un castillo de queso cheddar en la distancia.",
+                soundOnEnter: 'sfx_animal_surprise',
+                choices: [
+                    { text: "🏰 Ir al castillo del Rey Queso", nextNode: 'cheese_castle' },
+                    { text: "🔙 Volver por el portal", nextNode: 'start' }
+                ]
+            },
+
+            cheese_castle: {
+                id: 'cheese_castle',
+                text: "🏰 En el castillo, el Rey Queso (un queso suizo muy grande con corona) te da TU TAREA. '¡La encontré en el portal!' dice. '¡Puedes tenerla si bailas!' 💃",
+                soundOnEnter: 'sfx_cheese_squish',
+                choices: [
+                    { text: "💃 ¡Bailar para el Rey Queso!", nextNode: 'victory_dance' },
+                    { text: "🙅 No, no bailo", nextNode: 'no_dance' }
+                ]
+            },
+
+            victory_dance: {
+                id: 'victory_dance',
+                text: "🎉 ¡Bailas! El Rey Queso está muy feliz. Te da tu tarea Y un trozo de queso mágico. Vuelves a casa justo a tiempo para la escuela. ¡TU PROFESOR ESTÁ IMPRESIONADO! 🏆✨",
+                soundOnEnter: 'sfx_victory',
+                ending: 'good',
+                choices: [
+                    { text: "🎊 ¡VICTORIA! Jugar otra vez", nextNode: 'start' }
+                ]
+            },
+
+            no_dance: {
+                id: 'no_dance',
+                text: "😤 El Rey Queso está muy ofendido. '¡GUARDIAS!' grita. Ratones de queso te persiguen fuera de la dimensión. Pierdes tu tarea para siempre en el queso.",
+                soundOnEnter: 'sfx_sad_trombone',
+                ending: 'bad',
+                choices: [
+                    { text: "🧀 Jugar otra vez", nextNode: 'start' }
+                ]
+            },
+
+            eat_cheese: {
+                id: 'eat_cheese',
+                text: "🧀 Comes el suelo de queso. ¡Es delicioso! Pero comes demasiado y no puedes moverte. Vives en la dimensión de queso para siempre. Feliz... pero gordo. 😅",
+                soundOnEnter: 'sfx_cheese_squish',
+                ending: 'bad',
+                choices: [
+                    { text: "🧀 Mmm queso... Jugar otra vez", nextNode: 'start' }
+                ]
+            },
+
+            // === ASK MOM PATH ===
+            ask_mom: {
+                id: 'ask_mom',
+                text: "👩 Vas a la cocina. Mamá está haciendo el desayuno. '¿Tu tarea? Hmm...' ella piensa. 'Creo que la vi en la cocina... o en el baño... o la tiene el robot aspirador.' 🤖",
+                soundOnEnter: 'sfx_mom_hmm',
+                choices: [
+                    { text: "🍳 Buscar en la cocina", nextNode: 'kitchen_search' },
+                    { text: "🚿 Buscar en el baño", nextNode: 'bathroom_search' },
+                    { text: "🤖 Encontrar al robot aspirador", nextNode: 'robot_chase' }
+                ]
+            },
+
+            kitchen_search: {
+                id: 'kitchen_search',
+                text: "🍳 Buscas en la cocina. Abres el refrigerador y... ¡TU TAREA ESTÁ CONGELADA EN EL HIELO! 🧊 Al lado hay una nota: 'Refrigerador equivocado. -Tu hermano pequeño'",
+                soundOnEnter: 'sfx_kitchen_chaos',
+                choices: [
+                    { text: "🧊 Descongelar la tarea rápido", nextNode: 'defrost_homework' },
+                    { text: "😡 Buscar a tu hermano", nextNode: 'find_brother' }
+                ]
+            },
+
+            defrost_homework: {
+                id: 'defrost_homework',
+                text: "🌡️ Usas el microondas para descongelar la tarea. ¡BOOM! 💥 El microondas explota. Tu tarea ahora es papel quemado. Tu mamá no está feliz.",
+                soundOnEnter: 'sfx_explosion_small',
+                ending: 'bad',
+                choices: [
+                    { text: "💥 Ups... Jugar otra vez", nextNode: 'start' }
+                ]
+            },
+
+            find_brother: {
+                id: 'find_brother',
+                text: "👦 Encuentras a tu hermano. Él dice: '¡Lo siento! Pensé que era un mapa del tesoro.' Te ayuda a descongelar la tarea con cuidado. ¡Funciona! Llegas a la escuela justo a tiempo. 🏆",
+                soundOnEnter: 'sfx_victory',
+                ending: 'good',
+                choices: [
+                    { text: "🎉 ¡Hermanos útiles! Jugar otra vez", nextNode: 'start' }
+                ]
+            },
+
+            bathroom_search: {
+                id: 'bathroom_search',
+                text: "🚿 Vas al baño. El piso está mojado. ¡Resbalas! 🛁 Caes en la bañera. Hay un pato de goma. El pato te mira. '¿Buscas tu tarea?' dice el pato. ¡¿EL PATO HABLA?!",
+                soundOnEnter: 'sfx_slip',
+                choices: [
+                    { text: "🦆 Hablar con el pato", nextNode: 'talk_duck' },
+                    { text: "🏃 ¡CORRER! ¡El pato habla!", nextNode: 'run_from_duck' }
+                ]
+            },
+
+            talk_duck: {
+                id: 'talk_duck',
+                text: "🦆 El pato dice: 'Tu tarea está en el jardín. La vi desde la ventana. Ve rápido.' El pato te guiña un ojo. Muy misterioso. 🔮",
+                soundOnEnter: 'sfx_mysterious',
+                choices: [
+                    { text: "🌳 Ir al jardín", nextNode: 'garden_victory' },
+                    { text: "🤔 Preguntar más al pato", nextNode: 'duck_wisdom' }
+                ]
+            },
+
+            duck_wisdom: {
+                id: 'duck_wisdom',
+                text: "🦆 '¿Más preguntas?' dice el pato. 'El tiempo es precioso, joven estudiante. También, yo soy solo un pato de goma. Tú imaginaste todo esto. ¡Ve al jardín!' 🌈",
+                soundOnEnter: 'sfx_spooky_alien',
+                choices: [
+                    { text: "🌳 ¡OK! Ir al jardín", nextNode: 'garden_victory' }
+                ]
+            },
+
+            garden_victory: {
+                id: 'garden_victory',
+                text: "🌳 ¡Corres al jardín y tu tarea está allí! El viento la llevó anoche. Está un poco sucia pero legible. ¡Llegas a la escuela y tu profesor está feliz! 🌟🎉",
+                soundOnEnter: 'sfx_victory',
+                ending: 'good',
+                choices: [
+                    { text: "🦆 ¡Gracias, pato mágico! Jugar otra vez", nextNode: 'start' }
+                ]
+            },
+
+            run_from_duck: {
+                id: 'run_from_duck',
+                text: "🏃 Corres del baño gritando '¡EL PATO HABLA!' Tu familia piensa que estás loco. Te llevan al doctor. Pierdes la escuela. El pato ríe. 🦆😈",
+                soundOnEnter: 'sfx_sad_trombone',
+                ending: 'bad',
+                choices: [
+                    { text: "🦆 Los patos son malvados... Jugar otra vez", nextNode: 'start' }
+                ]
+            },
+
+            robot_chase: {
+                id: 'robot_chase',
+                text: "🤖 ¡El robot aspirador tiene tu tarea! Corre por toda la casa. BEEP BOOP BEEP. '¡DAME MI TAREA!' gritas. El robot va más rápido. ¡Es una persecución épica!",
+                soundOnEnter: 'sfx_robot_beep',
+                choices: [
+                    { text: "🔌 Desconectar el robot", nextNode: 'unplug_robot' },
+                    { text: "🍪 Darle una galleta al robot", nextNode: 'cookie_robot' }
+                ]
+            },
+
+            unplug_robot: {
+                id: 'unplug_robot',
+                text: "🔌 Desconectas el robot. ¡Pero tu tarea está DENTRO del robot! La abres y... está destruida en mil pedazos. El robot aspirador come papel. 📄💀",
+                soundOnEnter: 'sfx_sad_trombone',
+                ending: 'bad',
+                choices: [
+                    { text: "🤖 Los robots son mis enemigos... Jugar otra vez", nextNode: 'start' }
+                ]
+            },
+
+            cookie_robot: {
+                id: 'cookie_robot',
+                text: "🍪 '¿Una galleta?' dice el robot (¡¿los robots hablan ahora?!). 'Acepto tu ofrenda.' El robot te da tu tarea, perfecta. '¡Gracias, humano!' ¡Llegas a tiempo a la escuela! 🎊",
+                soundOnEnter: 'sfx_victory',
+                ending: 'good',
+                choices: [
+                    { text: "🤖🍪 ¡Los robots aman galletas! Jugar otra vez", nextNode: 'start' }
+                ]
+            },
+
+            // === ASK DOG PATH ===
+            ask_dog: {
+                id: 'ask_dog',
+                text: "🐕 Vas a donde está Max, tu perro. 'Max, ¿viste mi tarea?' Max te mira. Mueve la cola. Y entonces... MAX HABLA: 'Sí, la vi. Pero primero, tengo preguntas.' 😱🐕",
+                soundOnEnter: 'sfx_dog_bark',
+                choices: [
+                    { text: "😮 Escuchar las preguntas de Max", nextNode: 'dog_questions' },
+                    { text: "🏃 ¡HUIR! ¡El perro habla!", nextNode: 'run_from_dog' }
+                ]
+            },
+
+            dog_questions: {
+                id: 'dog_questions',
+                text: "🐕 Max pregunta: '¿Por qué los humanos van a la escuela pero los perros no? ¿Es justo? También, ¿por qué mi comida no tiene sabor a bistec todos los días?' Max espera respuestas.",
+                soundOnEnter: 'sfx_dog_speaks',
+                choices: [
+                    { text: "🎓 'Los perros pueden ir a la escuela también'", nextNode: 'dog_school' },
+                    { text: "🥩 'Te compraré comida de bistec'", nextNode: 'steak_promise' }
+                ]
+            },
+
+            dog_school: {
+                id: 'dog_school',
+                text: "🐕🎓 Max está EMOCIONADO. '¡¿EN SERIO?!' Max corre, trae tu tarea del jardín (él la escondió), y te sigue a la escuela. Tu profesor deja que Max se quede. ¡Día perfecto! 🏆",
+                soundOnEnter: 'sfx_victory',
+                ending: 'good',
+                choices: [
+                    { text: "🐕 ¡Max es el mejor! Jugar otra vez", nextNode: 'start' }
+                ]
+            },
+
+            steak_promise: {
+                id: 'steak_promise',
+                text: "🥩 Max salta de alegría. '¡TRATO!' Te muestra dónde está tu tarea: bajo su cama de perro. Llegas a tiempo a la escuela. Pero ahora debes comprar bistec. Mucho bistec. 🥩🏆",
+                soundOnEnter: 'sfx_happy_dog',
+                ending: 'good',
+                choices: [
+                    { text: "🥩 ¡Victoria costosa! Jugar otra vez", nextNode: 'start' }
+                ]
+            },
+
+            run_from_dog: {
+                id: 'run_from_dog',
+                text: "🏃 ¡Corres de Max! Max está confundido y triste. '¡Solo quería ayudar!' llora el perro. Ahora Max no te habla. Y nunca encuentras tu tarea. Max la escondió bien. 😢🐕",
+                soundOnEnter: 'sfx_sad_trombone',
+                ending: 'bad',
+                choices: [
+                    { text: "🐕 Pobre Max... Jugar otra vez", nextNode: 'start' }
+                ]
+            }
+        };
+
+        // ============================================
+        // GAME ENGINE
+        // ============================================
+        
+        let soundEnabled = true;
+        const storyTextEl = document.getElementById('story-text');
+        const choicesContainerEl = document.getElementById('choices-container');
+        const gameContainerEl = document.getElementById('game-container');
+        const soundToggleEl = document.getElementById('sound-toggle');
+
+        // Play sound effect (placeholder - logs to console)
+        function playSound(soundId) {
+            if (!soundEnabled) return;
+            
+            const soundPath = audioMap[soundId];
+            if (soundPath) {
+                // In a real implementation, you would play the audio:
+                // const audio = new Audio(soundPath);
+                // audio.play();
+                
+                // For demo purposes, log the sound:
+                console.log(`🔊 Playing sound: ${soundId} (${soundPath})`);
+            }
+        }
+
+        // Toggle sound
+        soundToggleEl.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            soundToggleEl.querySelector('span').textContent = soundEnabled ? '🔊' : '🔇';
+        });
+
+        // Main render function
+        function showNode(nodeId) {
+            const node = storyData[nodeId];
+            
+            if (!node) {
+                console.error(`Node not found: ${nodeId}`);
+                return;
+            }
+
+            // Remove ending classes
+            gameContainerEl.classList.remove('ending-bad', 'ending-good');
+
+            // Add ending class if applicable
+            if (node.ending === 'bad') {
+                gameContainerEl.classList.add('ending-bad');
+            } else if (node.ending === 'good') {
+                gameContainerEl.classList.add('ending-good');
+            }
+
+            // Update story text with animation
+            storyTextEl.style.animation = 'none';
+            storyTextEl.offsetHeight; // Trigger reflow
+            storyTextEl.style.animation = 'text-appear 0.5s ease-out';
+            storyTextEl.textContent = node.text;
+
+            // Clear and generate new choice buttons
+            choicesContainerEl.innerHTML = '';
+            
+            node.choices.forEach((choice, index) => {
+                const button = document.createElement('button');
+                button.className = 'choice-btn';
+                button.textContent = choice.text;
+                button.style.animationDelay = `${index * 0.1}s`;
+                
+                button.addEventListener('click', () => {
+                    showNode(choice.nextNode);
+                });
+                
+                // Add entrance animation
+                button.style.opacity = '0';
+                button.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    button.style.transition = 'all 0.3s ease';
+                    button.style.opacity = '1';
+                    button.style.transform = 'translateY(0)';
+                }, 100 + (index * 100));
+                
+                choicesContainerEl.appendChild(button);
+            });
+
+            // Play sound effect
+            if (node.soundOnEnter) {
+                playSound(node.soundOnEnter);
+            }
+        }
+
+        // Initialize the game
+        document.addEventListener('DOMContentLoaded', () => {
+            showNode('start');
+        });
+
+        // Also start immediately in case DOM is already loaded
+        if (document.readyState !== 'loading') {
+            showNode('start');
+        }
+    </script>
+</body>
+</html>

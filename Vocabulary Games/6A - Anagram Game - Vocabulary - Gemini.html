@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¡Desordena y Adivina!</title>
+    <style>
+        :root {
+            --primary: #FF9F1C;
+            --secondary: #2EC4B6;
+            --accent: #E71D36;
+            --dark: #011627;
+            --light: #FDFFFC;
+            --success: #66cc33;
+            --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none; /* Prevent text selection for better game feel */
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--secondary);
+            background-image: radial-gradient(#3ddbd0 10%, transparent 10%);
+            background-size: 20px 20px;
+            color: var(--dark);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* --- Layout Containers --- */
+        .game-container {
+            background: var(--light);
+            width: 100%;
+            max-width: 600px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            margin: 10px;
+        }
+
+        /* --- Header / Top Bar --- */
+        header {
+            background: var(--dark);
+            color: var(--light);
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--primary);
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 15px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .heart { color: var(--accent); }
+        .sound-btn {
+            background: none;
+            border: none;
+            color: var(--light);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        /* --- Main Game Area --- */
+        main {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            flex-grow: 1;
+        }
+
+        .info-panel {
+            text-align: center;
+            width: 100%;
+        }
+
+        .category-badge {
+            background: var(--dark);
+            color: var(--light);
+            padding: 5px 15px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .hint-text {
+            min-height: 24px;
+            color: #666;
+            font-style: italic;
+            font-size: 0.95rem;
+            margin-top: 5px;
+        }
+
+        /* --- Tile Areas --- */
+        .tiles-area {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            min-height: 70px;
+            width: 100%;
+            padding: 10px;
+            background: rgba(0,0,0,0.03);
+            border-radius: 10px;
+        }
+
+        .guess-area {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            min-height: 70px;
+            width: 100%;
+            padding: 10px;
+            border-bottom: 3px solid var(--primary);
+            margin-bottom: 10px;
+        }
+
+        /* --- Individual Tile Style --- */
+        .tile {
+            width: 50px;
+            height: 50px;
+            background: var(--light);
+            border: 2px solid var(--dark);
+            border-bottom-width: 5px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--dark);
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s, background-color 0.2s;
+            text-transform: uppercase;
+        }
+
+        .tile:active {
+            transform: translateY(3px);
+            border-bottom-width: 2px;
+        }
+
+        .tile.used {
+            opacity: 0.3;
+            cursor: default;
+            pointer-events: none;
+            border-color: #ccc;
+        }
+
+        .tile.guessed {
+            background: var(--primary);
+            color: var(--light);
+            border-color: #d68310;
+        }
+
+        /* --- Controls --- */
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .btn {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--dark);
+            grid-column: span 2;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 0 #d68310;
+        }
+        .btn-primary:active { box-shadow: 0 2px 0 #d68310; transform: translateY(2px); }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+            box-shadow: 0 4px 0 #bbb;
+        }
+        .btn-secondary:active { box-shadow: 0 2px 0 #bbb; transform: translateY(2px); }
+
+        .btn-danger {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 4px 0 #a31425;
+        }
+        .btn-danger:active { box-shadow: 0 2px 0 #a31425; transform: translateY(2px); }
+
+        .btn-info {
+            background: #4A90E2;
+            color: white;
+            box-shadow: 0 4px 0 #357ABD;
+        }
+        .btn-info:active { box-shadow: 0 2px 0 #357ABD; transform: translateY(2px); }
+
+        /* --- Feedback Area --- */
+        .feedback {
+            height: 30px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+        .feedback.success { color: var(--success); }
+        .feedback.error { color: var(--accent); }
+
+        /* --- Animations --- */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-10px) rotate(-5deg); }
+            40% { transform: translateX(10px) rotate(5deg); }
+            60% { transform: translateX(-5px); }
+            80% { transform: translateX(5px); }
+        }
+        .shake { animation: shake 0.4s; }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        .pop { animation: pop 0.2s; }
+
+        @keyframes glow {
+            0% { box-shadow: 0 0 5px var(--success); }
+            50% { box-shadow: 0 0 20px var(--success); }
+            100% { box-shadow: 0 0 5px var(--success); }
+        }
+        .glow { animation: glow 0.5s infinite; }
+
+        /* --- Game Over Overlay --- */
+        .overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(1, 22, 39, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--light);
+            z-index: 100;
+            display: none; /* Hidden by default */
+        }
+        .overlay.active { display: flex; }
+        .overlay h2 { font-size: 3rem; color: var(--primary); margin-bottom: 10px; }
+        .overlay p { font-size: 1.2rem; margin: 5px; }
+        .big-btn {
+            margin-top: 30px;
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #4c9926;
+        }
+        .big-btn:hover { transform: scale(1.05); }
+
+        /* Mobile Adjustments */
+        @media (max-width: 400px) {
+            .tile { width: 40px; height: 40px; font-size: 1.2rem; }
+            .controls { grid-template-columns: 1fr 1fr; }
+            .btn { font-size: 0.8rem; padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <header>
+        <div style="display:flex; flex-direction:column;">
+            <h1>¡Desordena!</h1>
+        </div>
+        <div class="stats-bar">
+            <span>⭐ <span id="score">0</span></span>
+            <span>🔥 <span id="streak">0</span></span>
+            <span id="lives">❤️❤️❤️</span>
+        </div>
+        <button id="sound-toggle" class="sound-btn">🔊</button>
+    </header>
+
+    <main>
+        <div class="info-panel">
+            <span id="category" class="category-badge">Categoría: ---</span>
+            <div id="hint-display" class="hint-text"></div>
+        </div>
+
+        <!-- Where we drop tiles -->
+        <div id="guess-area" class="guess-area">
+            <!-- Dynamic Guess Tiles -->
+        </div>
+
+        <!-- Where scrambled tiles live -->
+        <div id="tiles-area" class="tiles-area">
+            <!-- Dynamic Source Tiles -->
+        </div>
+
+        <div id="feedback" class="feedback"></div>
+
+        <div class="controls">
+            <button id="btn-submit" class="btn btn-primary">✅ Comprobar (Enter)</button>
+            <button id="btn-clear" class="btn btn-secondary">↩️ Borrar</button>
+            <button id="btn-shuffle" class="btn btn-secondary">🔀 Mezclar</button>
+            <button id="btn-hint" class="btn btn-info">💡 Pista</button>
+            <button id="btn-skip" class="btn btn-danger">⏭️ Saltar</button>
+        </div>
+    </main>
+
+    <!-- Game Over Screen -->
+    <div id="game-over-modal" class="overlay">
+        <h2>¡Fin del Juego!</h2>
+        <p>Puntuación Final: <span id="final-score" style="color:var(--primary); font-weight:bold;">0</span></p>
+        <p>Mejor Racha: <span id="final-streak">0</span></p>
+        <button id="btn-restart" class="big-btn">Jugar Otra Vez</button>
+    </div>
+</div>
+
+<script>
+/**
+ * ------------------------------------------------------------------
+ * 1. GAME DATA (Vocabulary List)
+ * ------------------------------------------------------------------
+ */
+const WORDS = [
+    // ANIMALES
+    { spanish: "gato", english: "cat", category: "animales", hint: "Dice miau" },
+    { spanish: "perro", english: "dog", category: "animales", hint: "El mejor amigo del hombre" },
+    { spanish: "pez", english: "fish", category: "animales", hint: "Nada en el agua" },
+    { spanish: "pájaro", english: "bird", category: "animales", hint: "Vuela en el cielo" },
+    { spanish: "conejo", english: "rabbit", category: "animales", hint: "Tiene orejas largas" },
+    { spanish: "leon", english: "lion", category: "animales", hint: "El rey de la selva" },
+    { spanish: "elefante", english: "elephant", category: "animales", hint: "Animal gris muy grande" },
+    { spanish: "tortuga", english: "turtle", category: "animales", hint: "Es muy lenta" },
+    
+    // COLORES
+    { spanish: "rojo", english: "red", category: "colores", hint: "Color de una manzana" },
+    { spanish: "azul", english: "blue", category: "colores", hint: "Color del cielo" },
+    { spanish: "verde", english: "green", category: "colores", hint: "Color del césped" },
+    { spanish: "amarillo", english: "yellow", category: "colores", hint: "Color del sol" },
+    { spanish: "blanco", english: "white", category: "colores", hint: "Color de la nieve" },
+    { spanish: "negro", english: "black", category: "colores", hint: "Color de la noche" },
+    { spanish: "naranja", english: "orange", category: "colores", hint: "Una fruta y un color" },
+    
+    // COMIDA
+    { spanish: "agua", english: "water", category: "comida", hint: "Bebida vital" },
+    { spanish: "pan", english: "bread", category: "comida", hint: "Para hacer sándwiches" },
+    { spanish: "leche", english: "milk", category: "comida", hint: "Viene de la vaca" },
+    { spanish: "queso", english: "cheese", category: "comida", hint: "A los ratones les gusta" },
+    { spanish: "manzana", english: "apple", category: "comida", hint: "Fruta roja o verde" },
+    { spanish: "huevo", english: "egg", category: "comida", hint: "Viene de la gallina" },
+    { spanish: "carne", english: "meat", category: "comida", hint: "Pollo o res" },
+    
+    // ESCUELA
+    { spanish: "libro", english: "book", category: "escuela", hint: "Para leer" },
+    { spanish: "lápiz", english: "pencil", category: "escuela", hint: "Para escribir" },
+    { spanish: "mesa", english: "table", category: "escuela", hint: "Donde pones tus cosas" },
+    { spanish: "papel", english: "paper", category: "escuela", hint: "Escribes en esto" },
+    { spanish: "silla", english: "chair", category: "escuela", hint: "Para sentarse" },
+    { spanish: "escuela", english: "school", category: "escuela", hint: "Lugar para aprender" },
+    { spanish: "maestro", english: "teacher", category: "escuela", hint: "La persona que enseña" },
+    
+    // FAMILIA
+    { spanish: "madre", english: "mother", category: "familia", hint: "Mamá" },
+    { spanish: "padre", english: "father", category: "familia", hint: "Papá" },
+    { spanish: "hermano", english: "brother", category: "familia", hint: "Hijo de tus padres" },
+    { spanish: "abuelo", english: "grandfather", category: "familia", hint: "Padre de tu padre" },
+    { spanish: "bebé", english: "baby", category: "familia", hint: "Persona muy pequeña" },
+    { spanish: "tía", english: "aunt", category: "familia", hint: "Hermana de tu madre" },
+    
+    // ROPA
+    { spanish: "camisa", english: "shirt", category: "ropa", hint: "Ropa para el cuerpo" },
+    { spanish: "zapatos", english: "shoes", category: "ropa", hint: "Ropa para los pies" },
+    { spanish: "sombrero", english: "hat", category: "ropa", hint: "Ropa para la cabeza" },
+    { spanish: "pantalones", english: "pants", category: "ropa", hint: "Ropa para las piernas" },
+    { spanish: "vestido", english: "dress", category: "ropa", hint: "Ropa elegante" },
+    
+    // NUMEROS
+    { spanish: "uno", english: "one", category: "números", hint: "1" },
+    { spanish: "dos", english: "two", category: "números", hint: "1 + 1" },
+    { spanish: "cinco", english: "five", category: "números", hint: "Dedos en una mano" },
+    { spanish: "diez", english: "ten", category: "números", hint: "Dedos en dos manos" }
+];
+
+/**
+ * ------------------------------------------------------------------
+ * 2. AUDIO SYSTEM (Synthesizer)
+ * No external files needed. Uses Web Audio API.
+ * ------------------------------------------------------------------
+ */
+const AudioSys = {
+    ctx: null,
+    enabled: true,
+
+    init() {
+        if (!this.ctx) {
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+    },
+
+    playTone(freq, type, duration, vol = 0.1) {
+        if (!this.enabled || !this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + duration);
+    },
+
+    playClick() { this.playTone(600, 'sine', 0.05, 0.1); },
+    
+    playSelect() { this.playTone(800, 'triangle', 0.1, 0.1); },
+    
+    playClear() { 
+        if(!this.enabled) return;
+        this.playTone(400, 'sine', 0.1); 
+        setTimeout(()=>this.playTone(300, 'sine', 0.1), 50);
+    },
+    
+    playShuffle() {
+        if(!this.enabled) return;
+        for(let i=0; i<5; i++) {
+            setTimeout(() => this.playTone(200 + Math.random()*200, 'square', 0.05, 0.05), i*40);
+        }
+    },
+    
+    playSuccess() {
+        if(!this.enabled) return;
+        // Major chord arpeggio
+        this.playTone(523.25, 'triangle', 0.2, 0.1); // C5
+        setTimeout(() => this.playTone(659.25, 'triangle', 0.2, 0.1), 100); // E5
+        setTimeout(() => this.playTone(783.99, 'triangle', 0.4, 0.1), 200); // G5
+        setTimeout(() => this.playTone(1046.50, 'sine', 0.6, 0.1), 300); // C6
+    },
+    
+    playFail() {
+        if(!this.enabled) return;
+        // Sad slide down
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(200, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(50, this.ctx.currentTime + 0.5);
+        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.5);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.5);
+    },
+
+    playHint() {
+        if(!this.enabled) return;
+        this.playTone(1200, 'sine', 0.3, 0.05);
+    },
+
+    playGameOver() {
+        if(!this.enabled) return;
+        this.playFail();
+        setTimeout(() => this.playFail(), 400);
+    }
+};
+
+/**
+ * ------------------------------------------------------------------
+ * 3. GAME STATE & LOGIC
+ * ------------------------------------------------------------------
+ */
+const state = {
+    score: 0,
+    streak: 0,
+    lives: 3,
+    currentWordObj: null,
+    scrambledLetters: [], // Array of objects { char: 'a', id: 1 }
+    userGuess: [], // Array of indices from scrambledLetters
+    maxStreak: 0,
+    hintLevel: 0, // 0=none, 1=shown
+};
+
+// DOM Elements
+const ui = {
+    score: document.getElementById('score'),
+    streak: document.getElementById('streak'),
+    lives: document.getElementById('lives'),
+    category: document.getElementById('category'),
+    hint: document.getElementById('hint-display'),
+    guessArea: document.getElementById('guess-area'),
+    tilesArea: document.getElementById('tiles-area'),
+    feedback: document.getElementById('feedback'),
+    soundBtn: document.getElementById('sound-toggle'),
+    modal: document.getElementById('game-over-modal'),
+    finalScore: document.getElementById('final-score'),
+    finalStreak: document.getElementById('final-streak')
+};
+
+function initGame() {
+    // Reset state
+    state.score = 0;
+    state.streak = 0;
+    state.lives = 3;
+    state.maxStreak = 0;
+    
+    ui.modal.classList.remove('active');
+    updateStats();
+    nextWord();
+    
+    // Init Audio Context on first interaction to allow browser permission
+    document.addEventListener('click', () => AudioSys.init(), { once: true });
+}
+
+function updateStats() {
+    ui.score.innerText = state.score;
+    ui.streak.innerText = state.streak;
+    ui.lives.innerText = "❤️".repeat(state.lives);
+}
+
+function nextWord() {
+    state.userGuess = [];
+    state.hintLevel = 0;
+    ui.hint.innerText = "";
+    ui.hint.style.color = "#666";
+    ui.feedback.innerText = "";
+    ui.feedback.className = "feedback";
+    
+    // Pick random word
+    const randIndex = Math.floor(Math.random() * WORDS.length);
+    state.currentWordObj = WORDS[randIndex];
+    
+    ui.category.innerText = `Categoría: ${state.currentWordObj.category}`;
+    
+    scrambleCurrentWord();
+    renderBoard();
+}
+
+function scrambleCurrentWord() {
+    // Convert string to array of objects to track unique letter instances
+    const word = state.currentWordObj.spanish;
+    let letters = word.split('').map((char, index) => ({ char: char, id: index }));
+    
+    // Fisher-Yates Shuffle
+    // Ensure it's not the same as original
+    let isSame = true;
+    let attempts = 0;
+    
+    while(isSame && attempts < 10) {
+        for (let i = letters.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [letters[i], letters[j]] = [letters[j], letters[i]];
+        }
+        
+        // Check if identical to original
+        const scrambledStr = letters.map(l => l.char).join('');
+        if(scrambledStr !== word) isSame = false;
+        attempts++;
+    }
+    
+    state.scrambledLetters = letters;
+    AudioSys.playShuffle();
+}
+
+/**
+ * ------------------------------------------------------------------
+ * 4. RENDERING & INTERACTION
+ * ------------------------------------------------------------------
+ */
+function renderBoard() {
+    // Render Guess Area
+    ui.guessArea.innerHTML = '';
+    state.userGuess.forEach((letterIndex) => {
+        // Find the letter object in scrambledLetters that matches the index stored in userGuess
+        // Actually, userGuess stores the INDEX of the tile in the scrambledLetters array
+        const letterObj = state.scrambledLetters[letterIndex];
+        const tile = createTile(letterObj.char, 'guessed');
+        tile.onclick = () => handleUnclick(letterIndex);
+        ui.guessArea.appendChild(tile);
+    });
+
+    // Render Source Tiles Area
+    ui.tilesArea.innerHTML = '';
+    state.scrambledLetters.forEach((letterObj, index) => {
+        const isUsed = state.userGuess.includes(index);
+        const tile = createTile(letterObj.char, isUsed ? 'used' : 'normal');
+        if (!isUsed) {
+            tile.onclick = () => handleTileClick(index);
+        }
+        ui.tilesArea.appendChild(tile);
+    });
+}
+
+function createTile(char, type) {
+    const div = document.createElement('div');
+    div.classList.add('tile');
+    if (type === 'used') div.classList.add('used');
+    if (type === 'guessed') div.classList.add('guessed', 'pop');
+    div.innerText = char;
+    return div;
+}
+
+function handleTileClick(index) {
+    state.userGuess.push(index);
+    AudioSys.playClick();
+    renderBoard();
+}
+
+function handleUnclick(originalIndexInScrambleArray) {
+    // Remove the specific instance of the letter from userGuess
+    const removeAt = state.userGuess.indexOf(originalIndexInScrambleArray);
+    if (removeAt > -1) {
+        state.userGuess.splice(removeAt, 1);
+        AudioSys.playSelect();
+        renderBoard();
+    }
+}
+
+function handleClear() {
+    if(state.userGuess.length === 0) return;
+    state.userGuess = [];
+    AudioSys.playClear();
+    renderBoard();
+}
+
+function handleShuffle() {
+    // Only shuffle tiles that aren't currently guessed?
+    // For simplicity, let's clear guess and reshuffle everything
+    state.userGuess = [];
+    scrambleCurrentWord();
+    renderBoard();
+}
+
+function handleSkip() {
+    state.streak = 0;
+    state.lives--; // Penalty
+    state.score = Math.max(0, state.score - 5);
+    AudioSys.playFail();
+    
+    updateStats();
+    
+    // Show correct answer briefly
+    ui.feedback.innerText = `Era: ${state.currentWordObj.spanish.toUpperCase()}`;
+    ui.feedback.className = "feedback error";
+    
+    if (state.lives <= 0) {
+        gameOver();
+    } else {
+        setTimeout(nextWord, 2000);
+    }
+}
+
+function handleHint() {
+    if (state.hintLevel === 0) {
+        state.hintLevel = 1;
+        ui.hint.innerText = `${state.currentWordObj.english} (${state.currentWordObj.hint})`;
+        ui.hint.style.color = "var(--primary)";
+        state.score = Math.max(0, state.score - 2); // Small penalty
+        updateStats();
+        AudioSys.playHint();
+    }
+}
+
+function handleSubmit() {
+    // Construct word from indices
+    const currentWord = state.userGuess.map(idx => state.scrambledLetters[idx].char).join('');
+    const target = state.currentWordObj.spanish;
+
+    if (currentWord === target) {
+        // SUCCESS
+        handleSuccess();
+    } else {
+        // FAIL
+        handleFail();
+    }
+}
+
+function handleSuccess() {
+    AudioSys.playSuccess();
+    
+    // Scoring logic
+    let points = 10;
+    if (state.streak > 2) points += 5;
+    if (state.streak > 5) points += 10;
+    
+    state.score += points;
+    state.streak++;
+    if (state.streak > state.maxStreak) state.maxStreak = state.streak;
+    
+    updateStats();
+    
+    ui.feedback.innerText = "¡Excelente! " + state.currentWordObj.english.toUpperCase();
+    ui.feedback.className = "feedback success";
+    
+    // Visual flair
+    const guessTiles = document.querySelectorAll('.guessed');
+    guessTiles.forEach(t => t.classList.add('glow'));
+    
+    setTimeout(nextWord, 1500);
+}
+
+function handleFail() {
+    AudioSys.playFail();
+    state.lives--;
+    state.streak = 0;
+    updateStats();
+    
+    ui.feedback.innerText = "Inténtalo de nuevo...";
+    ui.feedback.className = "feedback error";
+    
+    // Shake animation
+    ui.guessArea.classList.add('shake');
+    setTimeout(() => ui.guessArea.classList.remove('shake'), 500);
+    
+    if (state.lives <= 0) {
+        setTimeout(gameOver, 1000);
+    }
+}
+
+function gameOver() {
+    AudioSys.playGameOver();
+    ui.finalScore.innerText = state.score;
+    ui.finalStreak.innerText = state.maxStreak;
+    ui.modal.classList.add('active');
+}
+
+/**
+ * ------------------------------------------------------------------
+ * 5. KEYBOARD SUPPORT
+ * ------------------------------------------------------------------
+ */
+document.addEventListener('keydown', (e) => {
+    if (state.lives <= 0) return;
+
+    const key = e.key.toLowerCase();
+    
+    if (key === 'enter') {
+        handleSubmit();
+        return;
+    }
+    
+    if (key === 'backspace') {
+        // Remove last letter added
+        if (state.userGuess.length > 0) {
+            handleUnclick(state.userGuess[state.userGuess.length - 1]);
+        }
+        return;
+    }
+
+    // Check if key exists in unused tiles
+    // We look for a tile that matches the char AND is not in userGuess
+    const availableIndex = state.scrambledLetters.findIndex((obj, idx) => {
+        return obj.char === key && !state.userGuess.includes(idx);
+    });
+
+    if (availableIndex !== -1) {
+        handleTileClick(availableIndex);
+    }
+});
+
+/**
+ * ------------------------------------------------------------------
+ * 6. EVENT LISTENERS
+ * ------------------------------------------------------------------
+ */
+document.getElementById('btn-submit').addEventListener('click', handleSubmit);
+document.getElementById('btn-clear').addEventListener('click', handleClear);
+document.getElementById('btn-shuffle').addEventListener('click', handleShuffle);
+document.getElementById('btn-skip').addEventListener('click', handleSkip);
+document.getElementById('btn-hint').addEventListener('click', handleHint);
+document.getElementById('btn-restart').addEventListener('click', initGame);
+
+ui.soundBtn.addEventListener('click', () => {
+    AudioSys.enabled = !AudioSys.enabled;
+    ui.soundBtn.innerText = AudioSys.enabled ? '🔊' : '🔇';
+    // Init context if not yet done
+    AudioSys.init();
+});
+
+// START THE GAME
+initGame();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Letras Locas - Word Game</title>
+    <style>
+        :root {
+            --bg-color: #ffd93d;
+            --board-bg: #fffbe7;
+            --tile-color: #f6f6f6;
+            --tile-border: #e0e0e0;
+            --tile-shadow: #c4c4c4;
+            --accent: #ff6b6b;
+            --success: #6bcb77;
+            --text-color: #2d3436;
+            --bonus-dl: #a2d2ff;
+            --bonus-tl: #4d96ff;
+            --bonus-dw: #ffb8b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            touch-action: manipulation; /* Improves touch response */
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* --- Header --- */
+        header {
+            width: 100%;
+            padding: 10px 20px;
+            background: white;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 0px #ffeaa7;
+        }
+
+        .stats {
+            display: flex;
+            gap: 15px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .sound-toggle {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* --- Game Container --- */
+        #game-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+        }
+
+        /* --- Message/Feedback Area --- */
+        #message-area {
+            min-height: 40px;
+            margin-bottom: 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            padding: 8px 20px;
+            border-radius: 20px;
+            background-color: rgba(255,255,255,0.8);
+            transition: all 0.3s ease;
+        }
+
+        .msg-error { color: #d63031; animation: shake 0.4s; }
+        .msg-success { color: #00b894; transform: scale(1.1); }
+        .msg-info { color: #636e72; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        /* --- The Board --- */
+        #board {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(10, 1fr);
+            gap: 4px;
+            background-color: #b2bec3;
+            padding: 8px;
+            border-radius: 8px;
+            width: 100%;
+            aspect-ratio: 1 / 1; /* Keep it square */
+            box-shadow: 0 8px 0 rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .cell {
+            background-color: var(--board-bg);
+            border-radius: 4px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.7rem;
+            color: #aaa;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        /* Bonus Cells */
+        .cell.dl { background-color: var(--bonus-dl); color: #fff; font-weight: bold; }
+        .cell.tl { background-color: var(--bonus-tl); color: #fff; font-weight: bold; }
+        .cell.dw { background-color: var(--bonus-dw); color: #fff; font-weight: bold; }
+
+        .cell-content {
+            pointer-events: none; /* Let clicks pass to cell */
+            z-index: 1;
+        }
+
+        /* --- Tiles --- */
+        .tile {
+            width: 90%;
+            height: 90%;
+            background-color: var(--tile-color);
+            border: 2px solid var(--tile-border);
+            border-radius: 6px;
+            box-shadow: 0 4px 0 var(--tile-shadow);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.4rem; /* Scaled down slightly */
+            color: var(--text-color);
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.1s;
+            z-index: 5;
+        }
+
+        /* Smaller text for the point value */
+        .tile span.points {
+            position: absolute;
+            bottom: 2px;
+            right: 4px;
+            font-size: 0.6rem;
+            color: #888;
+        }
+
+        .tile.selected {
+            border-color: var(--accent);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 0 var(--tile-shadow);
+            background-color: #fff;
+        }
+
+        /* Animation for valid submission */
+        .tile.glow {
+            animation: pulse 1s infinite;
+            border-color: #6bcb77;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(107, 203, 119, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(107, 203, 119, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(107, 203, 119, 0); }
+        }
+
+        /* --- Rack --- */
+        #rack {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            background-color: rgba(0,0,0,0.1);
+            padding: 10px;
+            border-radius: 10px;
+            width: 100%;
+            min-height: 60px;
+            margin-bottom: 20px;
+        }
+
+        .rack-slot {
+            width: 13%; /* roughly 100% / 7 */
+            aspect-ratio: 1 / 1;
+            background: rgba(0,0,0,0.05);
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* --- Controls --- */
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            width: 100%;
+        }
+
+        button.btn {
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+            text-transform: uppercase;
+        }
+
+        button.btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 rgba(0,0,0,0.2);
+        }
+
+        .btn-primary { background-color: var(--success); color: white; }
+        .btn-secondary { background-color: #74b9ff; color: white; }
+        .btn-warning { background-color: #fab1a0; color: white; }
+        .btn-danger { background-color: #ff7675; color: white; }
+
+        /* --- Modal/Overlay --- */
+        #modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 400px;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-title { font-size: 2rem; margin-bottom: 10px; color: var(--accent); }
+        .modal-text { font-size: 1.2rem; margin-bottom: 20px; }
+
+        /* Mobile tweaks */
+        @media (max-width: 480px) {
+            h1 { font-size: 1.2rem; }
+            .tile { font-size: 1.1rem; }
+            .tile span.points { font-size: 0.5rem; }
+            #board { gap: 2px; padding: 4px; }
+            .btn { padding: 10px 16px; font-size: 0.9rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Letras Locas</h1>
+    <div class="stats">
+        <span>Ronda: <span id="round-display">1</span></span>
+        <span>Puntos: <span id="score-display">0</span></span>
+    </div>
+    <button class="sound-toggle" id="btn-sound" title="Toggle Sound">🔊</button>
+</header>
+
+<div id="game-container">
+    <div id="message-area" class="msg-info">¡Forma una palabra en español!</div>
+
+    <div id="board">
+        <!-- Cells generated by JS -->
+    </div>
+
+    <div id="rack">
+        <!-- Rack slots generated by JS -->
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-warning" id="btn-recall">Recuperar</button>
+        <button class="btn btn-secondary" id="btn-shuffle">Mezclar</button>
+        <button class="btn btn-primary" id="btn-submit">Enviar Palabra</button>
+    </div>
+</div>
+
+<!-- Modal for Level Up / Game Over -->
+<div id="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-title" id="modal-title">¡Excelente!</div>
+        <div class="modal-text" id="modal-msg">Has ganado 15 puntos.</div>
+        <button class="btn btn-primary" id="btn-next-round">Siguiente Ronda</button>
+    </div>
+</div>
+
+<script>
+/**
+ * ------------------------------------------------------------------
+ * 1. CONFIGURATION & DATA
+ * ------------------------------------------------------------------
+ */
+
+const CONFIG = {
+    gridSize: 10,
+    rackSize: 7,
+    maxRounds: 10
+};
+
+// Bonus Cells Configuration (Coordinates in "row,col" format)
+const BONUS_CELLS = {
+    "0,0": "TL", "0,9": "TL", "9,0": "TL", "9,9": "TL",
+    "1,1": "DW", "1,8": "DW", "8,1": "DW", "8,8": "DW",
+    "2,5": "DL", "3,2": "DL", "3,7": "DL", "5,2": "DL",
+    "5,7": "DL", "6,5": "DL"
+};
+
+const LETTERS = [
+  { letter: "A", count: 12, value: 1 },
+  { letter: "E", count: 12, value: 1 },
+  { letter: "O", count: 9, value: 1 },
+  { letter: "S", count: 6, value: 1 },
+  { letter: "N", count: 5, value: 1 },
+  { letter: "R", count: 5, value: 1 },
+  { letter: "I", count: 6, value: 1 },
+  { letter: "L", count: 4, value: 1 },
+  { letter: "D", count: 5, value: 2 },
+  { letter: "T", count: 4, value: 2 },
+  { letter: "U", count: 5, value: 2 },
+  { letter: "C", count: 4, value: 3 },
+  { letter: "M", count: 3, value: 3 },
+  { letter: "P", count: 3, value: 3 },
+  { letter: "B", count: 2, value: 3 },
+  { letter: "G", count: 2, value: 3 },
+  { letter: "H", count: 2, value: 4 },
+  { letter: "F", count: 2, value: 4 },
+  { letter: "V", count: 1, value: 4 },
+  { letter: "Y", count: 1, value: 4 },
+  { letter: "Q", count: 1, value: 5 },
+  { letter: "J", count: 1, value: 8 },
+  { letter: "Ñ", count: 1, value: 8 },
+  { letter: "X", count: 1, value: 8 },
+  { letter: "Z", count: 1, value: 10 },
+];
+
+const WORD_LIST = [
+    // --- BASIC & ANIMALS ---
+    "gato", "perro", "pato", "vaca", "oso", "mono", "pez", "leon", "lobo", "toro",
+    "tigre", "burro", "cerdo", "raton", "ave", "gallina", "gallo", "caballo", "oveja",
+    "conejo", "elefante", "jirafa", "zorro", "serpiente", "tortuga", "aguila", "buho",
+    
+    // --- HOUSE & OBJECTS ---
+    "casa", "mesa", "silla", "libro", "lapiz", "papel", "clase", "baño", "sala",
+    "cama", "puerta", "ventana", "techo", "piso", "pared", "cocina", "plato", "vaso",
+    "tenedor", "cuchara", "cuchillo", "ropa", "camisa", "pantalon", "zapato", "bolsa",
+    "reloj", "espejo", "llave", "telefono", "caja", "botella", "boligrafo", "cuaderno",
+    
+    // --- COLORS & ADJECTIVES ---
+    "rojo", "azul", "verde", "blanco", "negro", "gris", "rosa", "lila", "amarillo",
+    "naranja", "morado", "cafe", "marron", "claro", "oscuro", "fuerte", "debil",
+    "grande", "pequeño", "bueno", "malo", "feliz", "triste", "alto", "bajo",
+    "largo", "corto", "rapido", "lento", "nuevo", "viejo", "joven", "bonito", "feo",
+    "rico", "pobre", "facil", "dificil", "suave", "duro", "caliente", "frio",
+    "dulce", "amargo", "limpio", "sucio", "lleno", "vacio", "caro", "barato",
+    "inteligente", "tonto", "divertido", "aburrido", "interesante", "posible", "imposible",
+    "valiente", "timido", "amable", "grosero", "justo", "injusto", "unico", "igual",
+    
+    // --- FOOD ---
+    "pan", "queso", "arroz", "leche", "taco", "salsa", "agua", "fruta", "jugo",
+    "carne", "pollo", "pescado", "huevo", "manzana", "platano", "naranja", "uvas",
+    "fresa", "limon", "tomate", "papa", "cebolla", "ajo", "sal", "pimienta",
+    "azucar", "miel", "pastel", "galleta", "chocolate", "cafe", "te", "vino",
+    "cerveza", "sopa", "ensalada", "maiz", "frijol", "pizza", "hamburguesa",
+    
+    // --- NATURE ---
+    "sol", "luna", "mar", "flor", "arbol", "cielo", "nube", "rio", "montaña",
+    "bosque", "playa", "arena", "piedra", "tierra", "fuego", "aire", "viento",
+    "lluvia", "nieve", "hielo", "estrella", "planeta", "universo", "mundo", "pais",
+    "campo", "jardin", "lago", "isla", "volcan", "desierto", "selva", "hoja", "raiz",
+    
+    // --- PEOPLE & BODY ---
+    "mama", "papa", "bebe", "niño", "niña", "tio", "tia", "amigo", "amiga",
+    "hombre", "mujer", "abuelo", "abuela", "primo", "prima", "hermano", "hermana",
+    "esposo", "esposa", "hijo", "hija", "familia", "gente", "persona", "cuerpo",
+    "cabeza", "cara", "ojo", "nariz", "boca", "diente", "lengua", "oreja", "pelo",
+    "brazo", "mano", "dedo", "pierna", "pie", "rodilla", "corazon", "estomago",
+    "sangre", "hueso", "piel", "mente", "alma",
+    
+    // --- NUMBERS & TIME ---
+    "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez",
+    "once", "doce", "veinte", "treinta", "cien", "mil", "cero", "mitad", "doble",
+    "hora", "minuto", "segundo", "dia", "noche", "semana", "mes", "año", "siglo",
+    "hoy", "ayer", "mañana", "tarde", "temprano", "lunes", "martes", "miercoles",
+    "jueves", "viernes", "sabado", "domingo", "enero", "febrero", "marzo", "abril",
+    "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+    
+    // --- VERBS (Infinitives & Common Conjugations) ---
+    "ser", "estar", "tener", "hacer", "ir", "ver", "decir", "poder", "querer",
+    "saber", "llegar", "creer", "encontrar", "venir", "pensar", "conocer", "sentir",
+    "tomar", "vivir", "tratar", "mirar", "contar", "empezar", "esperar", "buscar",
+    "entrar", "trabajar", "escribir", "perder", "entender", "pedir", "recibir", "recordar",
+    "terminar", "permitir", "aparecer", "conseguir", "comenzar", "servir", "sacar",
+    "necesitar", "mantener", "leer", "caer", "cambiar", "presentar", "crear", "abrir",
+    "oir", "acabar", "ganar", "dar", "jugar", "caminar", "correr", "saltar", "comer",
+    "beber", "dormir", "despertar", "lavar", "limpiar", "cocinar", "comprar", "vender",
+    "pagar", "viajar", "aprender", "estudiar", "enseñar", "hablar", "escuchar", "bailar",
+    "cantar", "pintar", "dibujar", "nadar", "volar", "manejar", "conducir", "cerrar",
+    "apagar", "prender", "romper", "arreglar", "ayudar", "cuidar", "amar", "odiar",
+    "reir", "llorar", "gritar", "callar", "besar", "abrazar", "nacer", "morir",
+    
+    // --- COMMON WORDS & GRAMMAR ---
+    "hola", "adios", "si", "no", "por", "para", "con", "sin", "y", "o", "pero",
+    "porque", "cuando", "donde", "quien", "que", "como", "cuanto", "cual", "aqui",
+    "alli", "alla", "este", "ese", "aquel", "mi", "tu", "su", "nuestro", "todo",
+    "nada", "algo", "alguien", "nadie", "nunca", "siempre", "tambien", "tampoco",
+    "quizas", "talvez", "gracias", "favor", "perdon", "verdad", "mentira",
+    
+    // --- INTERMEDIATE / ADVANCED / ABSTRACT ---
+    "idea", "problema", "solucion", "razon", "causa", "efecto", "duda", "pregunta",
+    "respuesta", "ejemplo", "prueba", "hecho", "cambio", "sistema", "metodo", "arte",
+    "ciencia", "historia", "cultura", "politica", "gobierno", "ley", "justicia", "paz",
+    "guerra", "libertad", "derecho", "economia", "dinero", "negocio", "empresa",
+    "trabajo", "exito", "fracaso", "suerte", "destino", "memoria", "recuerdo",
+    "olvido", "sueño", "deseo", "esperanza", "miedo", "temor", "valor", "honor",
+    "respeto", "amor", "odio", "amistad", "fama", "gloria", "poder", "fuerza",
+    "energia", "materia", "espacio", "tiempo", "velocidad", "distancia", "forma",
+    "color", "sonido", "olor", "sabor", "tacto", "sentido", "emocion", "pasion",
+    "peligro", "riesgo", "seguridad", "salud", "medicina", "doctor", "hospital",
+    "enfermedad", "dolor", "cura", "vida", "muerte", "nacimiento", "boda", "fiesta",
+    "musica", "cancion", "baile", "teatro", "cine", "pelicula", "foto", "imagen",
+    "internet", "computadora", "telefono", "mensaje", "carta", "noticia", "informacion",
+    "conocimiento", "sabiduria", "experiencia", "habilidad", "talento", "genio",
+    "educacion", "escuela", "universidad", "maestro", "alumno", "examen", "grado",
+    "leccion", "tarea", "proyecto", "oficina", "jefe", "lider", "grupo", "equipo",
+    "comunidad", "sociedad", "nacion", "ciudad", "pueblo", "calle", "camino", "viaje",
+    "transporte", "coche", "autobus", "tren", "avion", "barco", "bicicleta", "trafico",
+    "clima", "temperatura", "calor", "frio", "humedad", "tormenta", "rayo", "trueno",
+    "arcoiris", "naturaleza", "ambiente", "animal", "planta", "vegetal", "mineral",
+    "metal", "oro", "plata", "bronce", "hierro", "acero", "madera", "plastico",
+    "vidrio", "papel", "carton", "tela", "lana", "algodon", "seda", "cuero",
+    
+    // --- WORDS WITH Ñ ---
+    "año", "baño", "niño", "niña", "uña", "leña", "piña", "araña", "montaña",
+    "mañana", "sueño", "otoño", "señor", "señora", "daño", "puño", "pañuelo",
+    "bañera", "cabana", "caña", "muñeca", "muñeco", "ñandu", "pañal", "riña",
+    "seña", "viña", "enseñar", "soñar", "tañer", "teñir", "ñame", "ñato",
+    "cabaña", "campaña", "compañia", "pequeño", "cariño", "diseño", "español"
+];
+
+/**
+ * ------------------------------------------------------------------
+ * 2. AUDIO ENGINE (Web Audio API)
+ * No external files needed! Synthesizes sound on the fly.
+ * ------------------------------------------------------------------
+ */
+class SoundFX {
+    constructor() {
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.enabled = true;
+    }
+
+    toggle() {
+        this.enabled = !this.enabled;
+        return this.enabled;
+    }
+
+    playTone(freq, type, duration, vol = 0.1) {
+        if (!this.enabled) return;
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        
+        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + duration);
+    }
+
+    // Sound Presets
+    click() { this.playTone(600, 'sine', 0.1, 0.05); }
+    place() { this.playTone(400, 'triangle', 0.1, 0.1); }
+    recall() { this.playTone(300, 'sine', 0.2, 0.1); }
+    shuffle() { 
+        if(!this.enabled) return;
+        // Rapid succession of clicks
+        for(let i=0; i<5; i++) {
+            setTimeout(() => this.playTone(200 + Math.random()*200, 'square', 0.05, 0.05), i*50);
+        }
+    }
+    error() {
+        if(!this.enabled) return;
+        this.playTone(150, 'sawtooth', 0.4, 0.2);
+        setTimeout(() => this.playTone(100, 'sawtooth', 0.4, 0.2), 150);
+    }
+    success() {
+        if(!this.enabled) return;
+        this.playTone(400, 'sine', 0.1, 0.1);
+        setTimeout(() => this.playTone(500, 'sine', 0.1, 0.1), 100);
+        setTimeout(() => this.playTone(800, 'triangle', 0.4, 0.1), 200);
+    }
+    bonus() {
+        if(!this.enabled) return;
+        this.playTone(800, 'sine', 0.5, 0.1);
+        setTimeout(() => this.playTone(1200, 'sine', 0.5, 0.1), 100);
+    }
+}
+
+const sfx = new SoundFX();
+
+/**
+ * ------------------------------------------------------------------
+ * 3. GAME STATE
+ * ------------------------------------------------------------------
+ */
+
+let state = {
+    score: 0,
+    round: 1,
+    bag: [], // Array of letter strings
+    rack: [], // Array of tile objects: { id, letter, value, onBoard: false }
+    board: Array(10).fill(null).map(() => Array(10).fill(null)), // 10x10 null or tileId
+    selectedTileId: null // ID of tile currently clicked in rack
+};
+
+// DOM Elements
+const elBoard = document.getElementById('board');
+const elRack = document.getElementById('rack');
+const elScore = document.getElementById('score-display');
+const elRound = document.getElementById('round-display');
+const elMsg = document.getElementById('message-area');
+const elModal = document.getElementById('modal-overlay');
+
+/**
+ * ------------------------------------------------------------------
+ * 4. LOGIC FUNCTIONS
+ * ------------------------------------------------------------------
+ */
+
+function initGame() {
+    state.score = 0;
+    state.round = 1;
+    fillBag();
+    startRound();
+}
+
+function fillBag() {
+    state.bag = [];
+    LETTERS.forEach(def => {
+        for (let i = 0; i < def.count; i++) {
+            state.bag.push(def.letter);
+        }
+    });
+    // Shuffle bag
+    state.bag.sort(() => Math.random() - 0.5);
+}
+
+function startRound() {
+    // Clear board logically
+    state.board = Array(10).fill(null).map(() => Array(10).fill(null));
+    state.selectedTileId = null;
+
+    // Refill rack to 7
+    while (state.rack.length < CONFIG.rackSize && state.bag.length > 0) {
+        const letterChar = state.bag.pop();
+        const def = LETTERS.find(l => l.letter === letterChar);
+        const newTile = {
+            id: 'tile_' + Date.now() + Math.random(),
+            letter: letterChar,
+            value: def.value,
+            onBoard: false,
+            row: -1,
+            col: -1
+        };
+        state.rack.push(newTile);
+    }
+
+    // Keep existing rack tiles but mark them off-board
+    state.rack.forEach(t => {
+        t.onBoard = false;
+        t.row = -1;
+        t.col = -1;
+    });
+
+    updateUI();
+    setMessage("¡Arrastra o haz clic en las fichas para jugar!", "info");
+}
+
+function updateUI() {
+    elScore.textContent = state.score;
+    elRound.textContent = state.round;
+    renderBoard();
+    renderRack();
+}
+
+/**
+ * Renders the 10x10 grid.
+ * Handles: Bonus Labels, Placed Tiles.
+ */
+function renderBoard() {
+    elBoard.innerHTML = '';
+    
+    for (let r = 0; r < CONFIG.gridSize; r++) {
+        for (let c = 0; c < CONFIG.gridSize; c++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.dataset.r = r;
+            cell.dataset.c = c;
+
+            const coord = `${r},${c}`;
+            
+            // Add bonus label if empty
+            if (BONUS_CELLS[coord]) {
+                cell.classList.add(BONUS_CELLS[coord].toLowerCase());
+                cell.innerHTML = `<span class="cell-content">${BONUS_CELLS[coord]}</span>`;
+            }
+
+            // Check if a tile is here
+            const tileId = state.board[r][c];
+            if (tileId) {
+                const tileObj = state.rack.find(t => t.id === tileId);
+                if (tileObj) {
+                    const elTile = createTileElement(tileObj);
+                    // Add click handler to remove from board
+                    elTile.onclick = (e) => {
+                        e.stopPropagation();
+                        returnTileToRack(tileObj);
+                    };
+                    cell.innerHTML = ''; // Clear bonus label
+                    cell.appendChild(elTile);
+                }
+            }
+
+            // Click on Empty Cell -> Place selected tile
+            cell.onclick = () => {
+                if (state.selectedTileId) {
+                    placeTileOnBoard(r, c);
+                }
+            };
+
+            elBoard.appendChild(cell);
+        }
+    }
+}
+
+/**
+ * Renders the user's rack.
+ */
+function renderRack() {
+    elRack.innerHTML = '';
+    const visibleTiles = state.rack.filter(t => !t.onBoard);
+
+    // Create 7 slots
+    for(let i=0; i<CONFIG.rackSize; i++) {
+        const slot = document.createElement('div');
+        slot.className = 'rack-slot';
+        
+        if (visibleTiles[i]) {
+            const tileObj = visibleTiles[i];
+            const elTile = createTileElement(tileObj);
+            
+            // Selection Logic
+            if (state.selectedTileId === tileObj.id) {
+                elTile.classList.add('selected');
+            }
+
+            elTile.onclick = (e) => {
+                e.stopPropagation();
+                selectTile(tileObj.id);
+            };
+
+            slot.appendChild(elTile);
+        }
+        elRack.appendChild(slot);
+    }
+}
+
+function createTileElement(tileObj) {
+    const div = document.createElement('div');
+    div.className = 'tile';
+    div.innerHTML = `
+        ${tileObj.letter}
+        <span class="points">${tileObj.value}</span>
+    `;
+    return div;
+}
+
+/**
+ * ------------------------------------------------------------------
+ * 5. INTERACTION LOGIC
+ * ------------------------------------------------------------------
+ */
+
+function selectTile(id) {
+    sfx.click();
+    if (state.selectedTileId === id) {
+        state.selectedTileId = null; // Deselect
+    } else {
+        state.selectedTileId = id;
+    }
+    renderRack();
+}
+
+function placeTileOnBoard(r, c) {
+    if (!state.selectedTileId) return;
+
+    // Check if cell occupied
+    if (state.board[r][c] !== null) {
+        // Simple behavior: cannot place on top of another
+        sfx.error();
+        return;
+    }
+
+    const tile = state.rack.find(t => t.id === state.selectedTileId);
+    if (tile) {
+        sfx.place();
+        tile.onBoard = true;
+        tile.row = r;
+        tile.col = c;
+        state.board[r][c] = tile.id;
+        state.selectedTileId = null; // Deselect after placing
+        updateUI();
+        setMessage("", "info"); // Clear instructions
+    }
+}
+
+function returnTileToRack(tile) {
+    sfx.recall();
+    tile.onBoard = false;
+    state.board[tile.row][tile.col] = null;
+    tile.row = -1;
+    tile.col = -1;
+    updateUI();
+}
+
+function recallAllTiles() {
+    sfx.recall();
+    state.rack.forEach(t => {
+        if (t.onBoard) {
+            t.onBoard = false;
+            state.board[t.row][t.col] = null;
+            t.row = -1;
+            t.col = -1;
+        }
+    });
+    state.selectedTileId = null;
+    updateUI();
+    setMessage("Fichas recuperadas", "info");
+}
+
+function shuffleRack() {
+    sfx.shuffle();
+    // Only shuffle tiles currently in the rack (not on board)
+    const onBoard = state.rack.filter(t => t.onBoard);
+    const inRack = state.rack.filter(t => !t.onBoard);
+    
+    inRack.sort(() => Math.random() - 0.5);
+    
+    state.rack = [...onBoard, ...inRack];
+    updateUI();
+}
+
+/**
+ * ------------------------------------------------------------------
+ * 6. VALIDATION & SCORING
+ * ------------------------------------------------------------------
+ */
+
+function submitWord() {
+    // 1. Gather placed tiles
+    const placedTiles = state.rack.filter(t => t.onBoard);
+    
+    if (placedTiles.length < 2) {
+        setMessage("¡La palabra es muy corta!", "error");
+        sfx.error();
+        return;
+    }
+
+    // 2. Determine orientation (Row or Column)
+    // Sort tiles by position
+    placedTiles.sort((a, b) => {
+        if (a.row === b.row) return a.col - b.col;
+        return a.row - b.row;
+    });
+
+    const isHorizontal = placedTiles.every(t => t.row === placedTiles[0].row);
+    const isVertical = placedTiles.every(t => t.col === placedTiles[0].col);
+
+    if (!isHorizontal && !isVertical) {
+        setMessage("Las fichas deben estar en línea recta.", "error");
+        sfx.error();
+        return;
+    }
+
+    // 3. Check for gaps
+    // Since we clear board every round, we only check the placed tiles.
+    // If it's horizontal, cols must be sequential.
+    if (isHorizontal) {
+        const row = placedTiles[0].row;
+        const minCol = placedTiles[0].col;
+        const maxCol = placedTiles[placedTiles.length - 1].col;
+        if ((maxCol - minCol + 1) !== placedTiles.length) {
+            setMessage("¡No puede haber espacios vacíos!", "error");
+            sfx.error();
+            return;
+        }
+    } else {
+        // Vertical
+        const col = placedTiles[0].col;
+        const minRow = placedTiles[0].row;
+        const maxRow = placedTiles[placedTiles.length - 1].row;
+        if ((maxRow - minRow + 1) !== placedTiles.length) {
+            setMessage("¡No puede haber espacios vacíos!", "error");
+            sfx.error();
+            return;
+        }
+    }
+
+    // 4. Build Word String
+    const wordString = placedTiles.map(t => t.letter).join('');
+    
+    // 5. Dictionary Check
+    if (!WORD_LIST.includes(wordString.toLowerCase())) {
+        setMessage(`"${wordString}" no está en mi lista.`, "error");
+        sfx.error();
+        return;
+    }
+
+    // 6. Calculate Score
+    let roundPoints = 0;
+    let wordMultiplier = 1;
+    let breakdown = [];
+
+    placedTiles.forEach(t => {
+        let letterPoints = t.value;
+        const bonusCode = BONUS_CELLS[`${t.row},${t.col}`];
+        
+        // Letter Bonuses
+        if (bonusCode === 'DL') {
+            letterPoints *= 2;
+        } else if (bonusCode === 'TL') {
+            letterPoints *= 3;
+        }
+
+        // Word Bonuses
+        if (bonusCode === 'DW') {
+            wordMultiplier *= 2; // Can stack if word hits two DWs
+        }
+
+        roundPoints += letterPoints;
+        breakdown.push(t.letter);
+    });
+
+    roundPoints *= wordMultiplier;
+
+    // Success!
+    state.score += roundPoints;
+    
+    // Identify used tiles to remove them permanently from play (standard scrabble)
+    // OR for this simple version, we just discard them and draw new ones next round.
+    // We remove them from `state.rack` so `startRound` fills gaps.
+    state.rack = state.rack.filter(t => !t.onBoard);
+
+    sfx.success();
+    if (wordMultiplier > 1) sfx.bonus();
+
+    showRoundSummary(wordString, roundPoints, wordMultiplier > 1);
+}
+
+function showRoundSummary(word, points, isBonus) {
+    const title = isBonus ? "¡Súper Bono!" : "¡Bien Hecho!";
+    document.getElementById('modal-title').textContent = title;
+    document.getElementById('modal-msg').textContent = `Palabra: ${word}\nPuntos: +${points}`;
+    
+    elModal.style.display = 'flex';
+}
+
+function nextRound() {
+    elModal.style.display = 'none';
+    state.round++;
+    
+    if (state.round > CONFIG.maxRounds) {
+        gameOver();
+    } else {
+        startRound();
+    }
+}
+
+function gameOver() {
+    document.getElementById('modal-title').textContent = "Fin del Juego";
+    document.getElementById('modal-msg').textContent = `Puntuación Final: ${state.score}`;
+    const btn = document.getElementById('btn-next-round');
+    btn.textContent = "Jugar de Nuevo";
+    btn.onclick = () => location.reload();
+    elModal.style.display = 'flex';
+    sfx.bonus(); // Celebration sound
+}
+
+function setMessage(text, type) {
+    elMsg.textContent = text;
+    elMsg.className = ''; // reset
+    if (type) elMsg.classList.add('msg-' + type);
+}
+
+/**
+ * ------------------------------------------------------------------
+ * 7. EVENT LISTENERS
+ * ------------------------------------------------------------------
+ */
+
+document.getElementById('btn-recall').onclick = recallAllTiles;
+document.getElementById('btn-shuffle').onclick = shuffleRack;
+document.getElementById('btn-submit').onclick = submitWord;
+
+document.getElementById('btn-next-round').onclick = nextRound;
+
+document.getElementById('btn-sound').onclick = (e) => {
+    const isOn = sfx.toggle();
+    e.target.textContent = isOn ? "🔊" : "🔇";
+};
+
+// Initialize
+initGame();
+
+</script>
+</body>
+</html>

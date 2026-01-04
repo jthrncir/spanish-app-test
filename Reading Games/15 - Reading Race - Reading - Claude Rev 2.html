@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏎️ Carrera de Lectura</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Russo+One&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-pink: #ff00ff;
+            --neon-cyan: #00ffff;
+            --neon-yellow: #ffff00;
+            --neon-green: #00ff00;
+            --asphalt: #1a1a2e;
+            --road-dark: #16213e;
+            --road-stripe: #f0f0f0;
+            --dashboard-bg: #0f0f23;
+            --card-bg: #1a1a3e;
+            --success: #00ff88;
+            --danger: #ff4466;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Russo One', sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #0f0f23 100%);
+            min-height: 100vh;
+            overflow: hidden;
+            color: white;
+        }
+
+        /* ===== GAME CONTAINER ===== */
+        .game-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* ===== HEADER / PROGRESS ===== */
+        .header {
+            padding: 15px 30px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%);
+            position: relative;
+            z-index: 100;
+        }
+
+        .game-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 15px;
+            background: linear-gradient(90deg, var(--neon-pink), var(--neon-cyan), var(--neon-yellow));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(255, 0, 255, 0.5);
+            animation: titlePulse 2s ease-in-out infinite;
+        }
+
+        @keyframes titlePulse {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.3); }
+        }
+
+        .progress-container {
+            position: relative;
+            height: 35px;
+            background: var(--asphalt);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 3px solid var(--neon-cyan);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), inset 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        .progress-track {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                90deg,
+                transparent 0px,
+                transparent 30px,
+                rgba(255,255,255,0.1) 30px,
+                rgba(255,255,255,0.1) 32px
+            );
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--neon-green), var(--neon-cyan), var(--neon-pink));
+            border-radius: 17px;
+            transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            box-shadow: 0 0 20px var(--neon-cyan);
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, transparent 50%);
+            border-radius: 17px;
+        }
+
+        .finish-flag {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5rem;
+            filter: drop-shadow(0 0 5px white);
+            animation: flagWave 0.5s ease-in-out infinite;
+        }
+
+        @keyframes flagWave {
+            0%, 100% { transform: translateY(-50%) rotate(-5deg); }
+            50% { transform: translateY(-50%) rotate(5deg); }
+        }
+
+        .lap-counter {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.7rem;
+            color: var(--neon-yellow);
+            text-shadow: 0 0 10px var(--neon-yellow);
+        }
+
+        /* ===== RACE TRACK (TOP HALF) ===== */
+        .race-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(180deg, #1a0a2e 0%, #2d1b4e 30%, #1a0a2e 100%);
+            min-height: 280px;
+        }
+
+        /* Sky and horizon effects */
+        .sky {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 40%;
+            background: linear-gradient(180deg, 
+                #0a0015 0%, 
+                #1a0a3e 40%, 
+                #3d1a5e 70%,
+                #ff6b35 90%,
+                #ffaa00 100%
+            );
+        }
+
+        .stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 30%;
+            background-image: 
+                radial-gradient(2px 2px at 20px 30px, white, transparent),
+                radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.8), transparent),
+                radial-gradient(1px 1px at 90px 40px, white, transparent),
+                radial-gradient(2px 2px at 130px 80px, rgba(255,255,255,0.6), transparent),
+                radial-gradient(1px 1px at 160px 20px, white, transparent),
+                radial-gradient(2px 2px at 200px 60px, rgba(255,255,255,0.7), transparent),
+                radial-gradient(1px 1px at 250px 35px, white, transparent),
+                radial-gradient(2px 2px at 300px 75px, rgba(255,255,255,0.8), transparent);
+            background-size: 350px 100px;
+            animation: twinkle 3s ease-in-out infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Road */
+        .road {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 65%;
+            background: 
+                repeating-linear-gradient(
+                    90deg,
+                    transparent 0px,
+                    transparent 80px,
+                    var(--road-stripe) 80px,
+                    var(--road-stripe) 120px
+                ),
+                linear-gradient(180deg, #2a2a4a 0%, var(--asphalt) 100%);
+            background-size: 200px 100%, 100% 100%;
+            background-position: 0 0, 0 0;
+        }
+
+        .road.moving {
+            animation: roadScroll 2s linear infinite;
+        }
+
+        .road.turbo {
+            animation: roadScroll 0.4s linear infinite;
+        }
+
+        .road.stalled {
+            animation: none;
+        }
+
+        @keyframes roadScroll {
+            0% { background-position: 0 0, 0 0; }
+            100% { background-position: -200px 0, 0 0; }
+        }
+
+        /* Center line */
+        .center-line {
+            position: absolute;
+            bottom: 32%;
+            left: 0;
+            right: 0;
+            height: 8px;
+            background: repeating-linear-gradient(
+                90deg,
+                var(--neon-yellow) 0px,
+                var(--neon-yellow) 40px,
+                transparent 40px,
+                transparent 80px
+            );
+            background-size: 80px 100%;
+            box-shadow: 0 0 15px var(--neon-yellow);
+        }
+
+        .center-line.moving {
+            animation: lineScroll 2s linear infinite;
+        }
+
+        .center-line.turbo {
+            animation: lineScroll 0.4s linear infinite;
+        }
+
+        .center-line.stalled {
+            animation: none;
+        }
+
+        @keyframes lineScroll {
+            0% { background-position: 0 0; }
+            100% { background-position: -80px 0; }
+        }
+
+        /* Car */
+        .car-container {
+            position: absolute;
+            bottom: 15%;
+            left: 15%;
+            z-index: 50;
+            transition: transform 0.3s ease;
+        }
+
+        .car {
+            font-size: 5rem;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
+            transition: transform 0.1s ease;
+            transform: scaleX(-1);
+        }
+
+        .car.idle {
+            animation: carIdle 1s ease-in-out infinite;
+        }
+
+        .car.turbo {
+            animation: carTurbo 0.1s ease-in-out infinite;
+        }
+
+        .car.stalled {
+            animation: carStall 0.1s ease-in-out 5;
+        }
+
+        @keyframes carIdle {
+            0%, 100% { transform: scaleX(-1) translateY(0); }
+            50% { transform: scaleX(-1) translateY(-3px); }
+        }
+
+        @keyframes carTurbo {
+            0%, 100% { transform: scaleX(-1) translateX(0) rotate(0deg); }
+            25% { transform: scaleX(-1) translateX(5px) rotate(-1deg); }
+            75% { transform: scaleX(-1) translateX(-2px) rotate(0.5deg); }
+        }
+
+        @keyframes carStall {
+            0%, 100% { transform: scaleX(-1) translateX(0); }
+            25% { transform: scaleX(-1) translateX(-8px); }
+            75% { transform: scaleX(-1) translateX(8px); }
+        }
+
+        /* Exhaust effects */
+        .exhaust {
+            position: absolute;
+            right: -60px;
+            top: 50%;
+            transform: translateY(-50%) scaleX(-1);
+            pointer-events: none;
+        }
+
+        .flame {
+            position: absolute;
+            width: 50px;
+            height: 25px;
+            background: linear-gradient(90deg, var(--neon-yellow), #ff6600, #ff0000);
+            border-radius: 50% 0 0 50%;
+            opacity: 0;
+            filter: blur(3px);
+            box-shadow: 0 0 30px var(--neon-yellow), 0 0 60px #ff6600;
+        }
+
+        .flame.active {
+            animation: flameBlast 0.15s ease-out infinite;
+        }
+
+        @keyframes flameBlast {
+            0% { opacity: 1; transform: scaleX(1) translateX(0); }
+            50% { opacity: 0.8; transform: scaleX(1.5) translateX(-10px); }
+            100% { opacity: 0; transform: scaleX(0.5) translateX(-30px); }
+        }
+
+        .smoke {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: radial-gradient(circle, rgba(100,100,100,0.8), transparent);
+            border-radius: 50%;
+            opacity: 0;
+        }
+
+        .smoke.active {
+            animation: smokeCloud 0.5s ease-out infinite;
+        }
+
+        @keyframes smokeCloud {
+            0% { opacity: 0.8; transform: scale(1) translateX(0); }
+            100% { opacity: 0; transform: scale(3) translateX(-50px) translateY(-20px); }
+        }
+
+        /* Finish Line */
+        .finish-line {
+            position: absolute;
+            right: -150px;
+            top: 0;
+            bottom: 0;
+            width: 80px;
+            background: repeating-linear-gradient(
+                0deg,
+                white 0px,
+                white 20px,
+                black 20px,
+                black 40px
+            );
+            background-size: 40px 40px;
+            background-position: 0 0;
+            z-index: 40;
+            opacity: 0;
+            transition: right 2s ease-out, opacity 0.5s ease;
+        }
+
+        .finish-line::before {
+            content: '🏁';
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 4rem;
+            animation: flagWave 0.3s ease-in-out infinite;
+        }
+
+        .finish-line.visible {
+            right: 40%;
+            opacity: 1;
+        }
+
+        /* ===== DASHBOARD (BOTTOM HALF) ===== */
+        .dashboard-container {
+            flex: 1;
+            background: var(--dashboard-bg);
+            padding: 25px;
+            position: relative;
+            overflow: hidden;
+            border-top: 4px solid var(--neon-pink);
+            box-shadow: 0 -10px 40px rgba(255, 0, 255, 0.2);
+        }
+
+        .dashboard-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 20% 0%, rgba(255,0,255,0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 0%, rgba(0,255,255,0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .story-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 25px 30px;
+            margin-bottom: 20px;
+            border: 2px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .story-card::before {
+            content: '📖';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 6rem;
+            opacity: 0.05;
+        }
+
+        .phase-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            color: var(--neon-cyan);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .phase-label::before {
+            content: '';
+            width: 30px;
+            height: 2px;
+            background: var(--neon-cyan);
+            box-shadow: 0 0 10px var(--neon-cyan);
+        }
+
+        .story-text {
+            font-size: 1.3rem;
+            line-height: 1.8;
+            color: #f0f0f0;
+            font-family: 'Russo One', sans-serif;
+        }
+
+        .story-text .spanish {
+            color: var(--neon-yellow);
+            text-shadow: 0 0 20px rgba(255, 255, 0, 0.3);
+        }
+
+        .question-card {
+            background: linear-gradient(135deg, var(--card-bg) 0%, #2a1a4e 100%);
+            border-radius: 20px;
+            padding: 25px 30px;
+            border: 2px solid var(--neon-pink);
+            box-shadow: 0 0 30px rgba(255, 0, 255, 0.2);
+            display: none;
+        }
+
+        .question-card.active {
+            display: block;
+            animation: slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes slideUp {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .question-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            color: white;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(255, 0, 255, 0.3);
+        }
+
+        .answers-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .answer-btn {
+            background: linear-gradient(135deg, #2a2a5a 0%, #1a1a3a 100%);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            padding: 15px 25px;
+            color: white;
+            font-family: 'Russo One', sans-serif;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            text-align: left;
+        }
+
+        .answer-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .answer-btn:hover {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            transform: translateX(10px);
+        }
+
+        .answer-btn:hover::before {
+            left: 100%;
+        }
+
+        .answer-btn.correct {
+            border-color: var(--success);
+            background: linear-gradient(135deg, rgba(0,255,136,0.3) 0%, rgba(0,255,136,0.1) 100%);
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+            animation: correctPulse 0.5s ease;
+        }
+
+        .answer-btn.wrong {
+            border-color: var(--danger);
+            background: linear-gradient(135deg, rgba(255,68,102,0.3) 0%, rgba(255,68,102,0.1) 100%);
+            box-shadow: 0 0 30px rgba(255, 68, 102, 0.5);
+            animation: wrongShake 0.5s ease;
+        }
+
+        @keyframes correctPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        @keyframes wrongShake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-10px); }
+            40% { transform: translateX(10px); }
+            60% { transform: translateX(-10px); }
+            80% { transform: translateX(10px); }
+        }
+
+        /* Ready Button */
+        .ready-btn {
+            background: linear-gradient(135deg, var(--neon-pink) 0%, #aa00aa 100%);
+            border: none;
+            border-radius: 15px;
+            padding: 18px 50px;
+            color: white;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 30px rgba(255, 0, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .ready-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 40px rgba(255, 0, 255, 0.7);
+        }
+
+        .ready-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Feedback Message */
+        .feedback {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 900;
+            padding: 20px 50px;
+            border-radius: 20px;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            text-shadow: 0 0 30px currentColor;
+        }
+
+        .feedback.show {
+            animation: feedbackPop 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        .feedback.success {
+            background: linear-gradient(135deg, rgba(0,255,136,0.9) 0%, rgba(0,200,100,0.9) 100%);
+            color: white;
+            box-shadow: 0 0 60px rgba(0, 255, 136, 0.8);
+        }
+
+        .feedback.error {
+            background: linear-gradient(135deg, rgba(255,68,102,0.9) 0%, rgba(200,50,80,0.9) 100%);
+            color: white;
+            box-shadow: 0 0 60px rgba(255, 68, 102, 0.8);
+        }
+
+        @keyframes feedbackPop {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+            40% { transform: translate(-50%, -50%) scale(1); }
+            80% { opacity: 1; }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+        }
+
+        /* Victory Screen */
+        .victory-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        .victory-screen.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .victory-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 4rem;
+            font-weight: 900;
+            background: linear-gradient(90deg, var(--neon-yellow), var(--neon-pink), var(--neon-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            animation: victoryGlow 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes victoryGlow {
+            0% { filter: brightness(1) drop-shadow(0 0 20px var(--neon-pink)); }
+            100% { filter: brightness(1.3) drop-shadow(0 0 40px var(--neon-cyan)); }
+        }
+
+        .victory-emoji {
+            font-size: 6rem;
+            margin-bottom: 30px;
+            animation: trophyBounce 0.5s ease-in-out infinite;
+        }
+
+        @keyframes trophyBounce {
+            0%, 100% { transform: translateY(0) rotate(-5deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+        }
+
+        .victory-message {
+            font-family: 'Russo One', sans-serif;
+            font-size: 1.5rem;
+            color: #f0f0f0;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .restart-btn {
+            background: linear-gradient(135deg, var(--neon-green) 0%, #00aa66 100%);
+            border: none;
+            border-radius: 15px;
+            padding: 20px 60px;
+            color: #0f0f23;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 5px 40px rgba(0, 255, 136, 0.5);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .restart-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 50px rgba(0, 255, 136, 0.7);
+        }
+
+        /* Confetti */
+        .confetti {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 1999;
+            overflow: hidden;
+        }
+
+        .confetti-piece {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            top: -20px;
+            animation: confettiFall 3s linear forwards;
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* Start Screen */
+        .start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a0a3e 50%, #0f0f23 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+            transition: opacity 0.5s ease;
+        }
+
+        .start-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .start-title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, var(--neon-pink), var(--neon-cyan), var(--neon-yellow), var(--neon-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: titleRainbow 3s linear infinite;
+            background-size: 200% 100%;
+        }
+
+        @keyframes titleRainbow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+
+        .start-subtitle {
+            font-family: 'Russo One', sans-serif;
+            font-size: 1.3rem;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 40px;
+        }
+
+        .start-car {
+            font-size: 8rem;
+            margin-bottom: 30px;
+            animation: carBounce 1s ease-in-out infinite;
+        }
+
+        @keyframes carBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, var(--neon-green) 0%, #00aa66 100%);
+            border: none;
+            border-radius: 20px;
+            padding: 25px 80px;
+            color: #0f0f23;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 5px 50px rgba(0, 255, 136, 0.6);
+            transition: all 0.3s ease;
+            animation: startPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes startPulse {
+            0%, 100% { box-shadow: 0 5px 50px rgba(0, 255, 136, 0.6); }
+            50% { box-shadow: 0 5px 70px rgba(0, 255, 136, 0.9); }
+        }
+
+        .start-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .instructions {
+            margin-top: 40px;
+            text-align: center;
+            max-width: 500px;
+        }
+
+        .instructions h3 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--neon-cyan);
+            margin-bottom: 15px;
+        }
+
+        .instructions p {
+            color: rgba(255,255,255,0.6);
+            line-height: 1.6;
+        }
+
+        /* Audio toggle */
+        .audio-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.5);
+            border: 2px solid var(--neon-cyan);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .audio-toggle:hover {
+            background: rgba(0, 255, 255, 0.2);
+            box-shadow: 0 0 20px var(--neon-cyan);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .game-title { font-size: 1.3rem; }
+            .start-title { font-size: 1.5rem; }
+            .story-text { font-size: 1.1rem; }
+            .car { font-size: 3.5rem; }
+            .victory-title { font-size: 2.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Start Screen -->
+    <div class="start-screen" id="startScreen">
+        <div class="start-title">CARRERA DE LECTURA</div>
+        <div class="start-subtitle">Spanish Reading Race!</div>
+        <div class="start-car">🏎️</div>
+        <button class="start-btn" id="startBtn">¡VAMOS!</button>
+        <div class="instructions">
+            <h3>How to Play</h3>
+            <p>Read the Spanish story, then answer the question correctly to zoom forward! Wrong answers stall your car. Race to the finish line! 🏁</p>
+        </div>
+    </div>
+
+    <!-- Audio Toggle -->
+    <button class="audio-toggle" id="audioToggle">🔊</button>
+
+    <!-- Main Game -->
+    <div class="game-wrapper">
+        <!-- Header with Progress -->
+        <header class="header">
+            <h1 class="game-title">🏎️ CARRERA DE LECTURA 🏁</h1>
+            <div class="progress-container">
+                <div class="progress-track"></div>
+                <div class="progress-bar" id="progressBar"></div>
+                <span class="lap-counter" id="lapCounter">NIVEL 1/5</span>
+                <span class="finish-flag">🏁</span>
+            </div>
+        </header>
+
+        <!-- Race Track -->
+        <section class="race-container">
+            <div class="sky"></div>
+            <div class="stars"></div>
+            <div class="road" id="road"></div>
+            <div class="center-line" id="centerLine"></div>
+            <div class="finish-line" id="finishLine"></div>
+            <div class="car-container">
+                <div class="exhaust">
+                    <div class="flame" id="flame"></div>
+                    <div class="smoke" id="smoke"></div>
+                </div>
+                <div class="car idle" id="car">🏎️</div>
+            </div>
+        </section>
+
+        <!-- Dashboard -->
+        <section class="dashboard-container">
+            <div class="story-card" id="storyCard">
+                <div class="phase-label">📖 Pit Stop - Read the Story</div>
+                <p class="story-text" id="storyText"></p>
+                <button class="ready-btn" id="readyBtn">¡READY!</button>
+            </div>
+            <div class="question-card" id="questionCard">
+                <div class="phase-label">🏁 The Shift - Answer Time!</div>
+                <p class="question-text" id="questionText"></p>
+                <div class="answers-grid" id="answersGrid"></div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Feedback Popup -->
+    <div class="feedback" id="feedback"></div>
+
+    <!-- Victory Screen -->
+    <div class="victory-screen" id="victoryScreen">
+        <div class="victory-emoji">🏆</div>
+        <h1 class="victory-title">¡VICTORIA!</h1>
+        <p class="victory-message">You finished the race!<br>Great Spanish reading skills! 🎉</p>
+        <button class="restart-btn" id="restartBtn">RACE AGAIN</button>
+    </div>
+
+    <!-- Confetti Container -->
+    <div class="confetti" id="confetti"></div>
+
+    <script>
+        // ===== GAME DATA - THE STORIES =====
+        const levels = [
+            {
+                story: "María tiene un perro grande. El perro se llama Capitán. A Capitán le gusta comer pizza. María y Capitán juegan en el parque todos los días.",
+                question: "¿Qué le gusta comer al perro?",
+                answers: ["Tacos 🌮", "Pizza 🍕", "Ensalada 🥗"],
+                correctIndex: 1
+            },
+            {
+                story: "Carlos va a la escuela en bicicleta. Su mochila es azul y muy grande. En la mochila hay libros, lápices y una manzana roja para el almuerzo.",
+                question: "¿De qué color es la mochila de Carlos?",
+                answers: ["Roja 🔴", "Verde 🟢", "Azul 🔵"],
+                correctIndex: 2
+            },
+            {
+                story: "La abuela Rosa cocina galletas deliciosas. Ella usa chocolate, huevos y mucho amor. Los niños corren a la cocina cuando huelen las galletas.",
+                question: "¿Quién cocina las galletas?",
+                answers: ["La mamá 👩", "La abuela Rosa 👵", "El abuelo Pedro 👴"],
+                correctIndex: 1
+            },
+            {
+                story: "En el zoológico hay un elefante muy grande. El elefante tiene orejas enormes y una trompa larga. Le gusta bañarse en el agua fría.",
+                question: "¿Qué tiene el elefante?",
+                answers: ["Alas grandes 🦋", "Orejas enormes y trompa larga 🐘", "Pelo largo 🦁"],
+                correctIndex: 1
+            },
+            {
+                story: "Sofía y su hermano Lucas van a la playa. El sol brilla mucho y el agua es azul. Ellos hacen un castillo de arena muy bonito cerca del mar.",
+                question: "¿Qué hacen Sofía y Lucas en la playa?",
+                answers: ["Un castillo de arena 🏰", "Una pizza 🍕", "Un dibujo 🎨"],
+                correctIndex: 0
+            }
+        ];
+
+        // ===== AUDIO MANAGER =====
+        class AudioManager {
+            constructor() {
+                this.enabled = true;
+                this.audioContext = null;
+                this.sounds = {};
+            }
+
+            init() {
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    console.log('Web Audio API not supported');
+                }
+            }
+
+            // Synthesize sounds since we don't have actual audio files
+            playEngineIdle() {
+                if (!this.enabled || !this.audioContext) return;
+                this.stopAll();
+                
+                const oscillator = this.audioContext.createOscillator();
+                const gainNode = this.audioContext.createGain();
+                
+                oscillator.type = 'sawtooth';
+                oscillator.frequency.setValueAtTime(60, this.audioContext.currentTime);
+                gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+                
+                // Add some variation for engine rumble
+                oscillator.frequency.setValueAtTime(55, this.audioContext.currentTime + 0.1);
+                oscillator.frequency.setValueAtTime(65, this.audioContext.currentTime + 0.2);
+                oscillator.frequency.setValueAtTime(60, this.audioContext.currentTime + 0.3);
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(this.audioContext.destination);
+                
+                oscillator.start();
+                this.sounds.idle = { oscillator, gainNode };
+            }
+
+            playTurbo() {
+                if (!this.enabled || !this.audioContext) return;
+                this.stopAll();
+
+                // Create a "zoom" sound
+                const oscillator = this.audioContext.createOscillator();
+                const gainNode = this.audioContext.createGain();
+                
+                oscillator.type = 'sawtooth';
+                oscillator.frequency.setValueAtTime(100, this.audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(800, this.audioContext.currentTime + 0.5);
+                oscillator.frequency.exponentialRampToValueAtTime(200, this.audioContext.currentTime + 2);
+                
+                gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 2);
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(this.audioContext.destination);
+                
+                oscillator.start();
+                oscillator.stop(this.audioContext.currentTime + 2);
+
+                // Add a "yee-haw" beep pattern
+                setTimeout(() => this.playBeepPattern([400, 600, 800], 0.1), 300);
+            }
+
+            playFail() {
+                if (!this.enabled || !this.audioContext) return;
+                this.stopAll();
+
+                // Descending "fail" sound
+                const oscillator = this.audioContext.createOscillator();
+                const gainNode = this.audioContext.createGain();
+                
+                oscillator.type = 'square';
+                oscillator.frequency.setValueAtTime(300, this.audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(50, this.audioContext.currentTime + 0.5);
+                
+                gainNode.gain.setValueAtTime(0.2, this.audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.5);
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(this.audioContext.destination);
+                
+                oscillator.start();
+                oscillator.stop(this.audioContext.currentTime + 0.5);
+
+                // "Donkey" honk
+                setTimeout(() => {
+                    const honk = this.audioContext.createOscillator();
+                    const honkGain = this.audioContext.createGain();
+                    honk.type = 'sawtooth';
+                    honk.frequency.setValueAtTime(150, this.audioContext.currentTime);
+                    honk.frequency.setValueAtTime(200, this.audioContext.currentTime + 0.1);
+                    honk.frequency.setValueAtTime(100, this.audioContext.currentTime + 0.2);
+                    honkGain.gain.setValueAtTime(0.15, this.audioContext.currentTime);
+                    honkGain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.4);
+                    honk.connect(honkGain);
+                    honkGain.connect(this.audioContext.destination);
+                    honk.start();
+                    honk.stop(this.audioContext.currentTime + 0.4);
+                }, 300);
+            }
+
+            playWin() {
+                if (!this.enabled || !this.audioContext) return;
+                this.stopAll();
+
+                // Triumphant fanfare
+                const notes = [523, 659, 784, 1047]; // C5, E5, G5, C6
+                notes.forEach((freq, i) => {
+                    setTimeout(() => {
+                        const osc = this.audioContext.createOscillator();
+                        const gain = this.audioContext.createGain();
+                        osc.type = 'square';
+                        osc.frequency.setValueAtTime(freq, this.audioContext.currentTime);
+                        gain.gain.setValueAtTime(0.15, this.audioContext.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.5);
+                        osc.connect(gain);
+                        gain.connect(this.audioContext.destination);
+                        osc.start();
+                        osc.stop(this.audioContext.currentTime + 0.5);
+                    }, i * 150);
+                });
+
+                // Ole! Ole! pattern
+                setTimeout(() => this.playBeepPattern([600, 400, 600], 0.15), 800);
+                setTimeout(() => this.playBeepPattern([600, 400, 600], 0.15), 1400);
+            }
+
+            playClick() {
+                if (!this.enabled || !this.audioContext) return;
+
+                const oscillator = this.audioContext.createOscillator();
+                const gainNode = this.audioContext.createGain();
+                
+                oscillator.type = 'square';
+                oscillator.frequency.setValueAtTime(1000, this.audioContext.currentTime);
+                
+                gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.05);
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(this.audioContext.destination);
+                
+                oscillator.start();
+                oscillator.stop(this.audioContext.currentTime + 0.05);
+            }
+
+            playBeepPattern(frequencies, duration) {
+                if (!this.audioContext) return;
+                frequencies.forEach((freq, i) => {
+                    setTimeout(() => {
+                        const osc = this.audioContext.createOscillator();
+                        const gain = this.audioContext.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, this.audioContext.currentTime);
+                        gain.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
+                        osc.connect(gain);
+                        gain.connect(this.audioContext.destination);
+                        osc.start();
+                        osc.stop(this.audioContext.currentTime + duration);
+                    }, i * (duration * 1000 + 50));
+                });
+            }
+
+            stopAll() {
+                if (this.sounds.idle) {
+                    try {
+                        this.sounds.idle.oscillator.stop();
+                    } catch (e) {}
+                    this.sounds.idle = null;
+                }
+            }
+
+            toggle() {
+                this.enabled = !this.enabled;
+                if (!this.enabled) this.stopAll();
+                return this.enabled;
+            }
+        }
+
+        // ===== GAME STATE =====
+        const game = {
+            currentLevel: 0,
+            progress: 0,
+            totalLevels: levels.length,
+            isAnswering: false,
+            audio: new AudioManager()
+        };
+
+        // ===== DOM ELEMENTS =====
+        const elements = {
+            startScreen: document.getElementById('startScreen'),
+            startBtn: document.getElementById('startBtn'),
+            road: document.getElementById('road'),
+            centerLine: document.getElementById('centerLine'),
+            car: document.getElementById('car'),
+            flame: document.getElementById('flame'),
+            smoke: document.getElementById('smoke'),
+            finishLine: document.getElementById('finishLine'),
+            progressBar: document.getElementById('progressBar'),
+            lapCounter: document.getElementById('lapCounter'),
+            storyCard: document.getElementById('storyCard'),
+            storyText: document.getElementById('storyText'),
+            readyBtn: document.getElementById('readyBtn'),
+            questionCard: document.getElementById('questionCard'),
+            questionText: document.getElementById('questionText'),
+            answersGrid: document.getElementById('answersGrid'),
+            feedback: document.getElementById('feedback'),
+            victoryScreen: document.getElementById('victoryScreen'),
+            restartBtn: document.getElementById('restartBtn'),
+            audioToggle: document.getElementById('audioToggle'),
+            confetti: document.getElementById('confetti')
+        };
+
+        // ===== GAME FUNCTIONS =====
+
+        function startGame() {
+            game.audio.init();
+            elements.startScreen.classList.add('hidden');
+            loadLevel(0);
+            startIdleAnimation();
+        }
+
+        function loadLevel(index) {
+            game.currentLevel = index;
+            game.isAnswering = false;
+            
+            const level = levels[index];
+            
+            // Update lap counter
+            elements.lapCounter.textContent = `NIVEL ${index + 1}/${game.totalLevels}`;
+            
+            // Show story card, hide question card
+            elements.storyCard.style.display = 'block';
+            elements.questionCard.classList.remove('active');
+            
+            // Set story text
+            elements.storyText.innerHTML = `<span class="spanish">${level.story}</span>`;
+            
+            // Reset buttons
+            elements.readyBtn.disabled = false;
+            elements.readyBtn.textContent = '¡READY!';
+        }
+
+        function showQuestion() {
+            game.audio.playClick();
+            
+            const level = levels[game.currentLevel];
+            
+            // Hide story, show question
+            elements.storyCard.style.display = 'none';
+            elements.questionCard.classList.add('active');
+            
+            // Set question
+            elements.questionText.textContent = level.question;
+            
+            // Create answer buttons
+            elements.answersGrid.innerHTML = '';
+            level.answers.forEach((answer, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'answer-btn';
+                btn.textContent = answer;
+                btn.addEventListener('click', () => checkAnswer(index));
+                elements.answersGrid.appendChild(btn);
+            });
+            
+            game.isAnswering = true;
+        }
+
+        function checkAnswer(selectedIndex) {
+            if (!game.isAnswering) return;
+            game.isAnswering = false;
+            
+            game.audio.playClick();
+            
+            const level = levels[game.currentLevel];
+            const buttons = elements.answersGrid.querySelectorAll('.answer-btn');
+            
+            // Disable all buttons
+            buttons.forEach(btn => btn.disabled = true);
+            
+            if (selectedIndex === level.correctIndex) {
+                // Correct answer!
+                buttons[selectedIndex].classList.add('correct');
+                showFeedback('¡CORRECTO! 🔥', 'success');
+                driveCar();
+                
+                // Update progress
+                game.progress += 20;
+                updateProgress();
+                
+                // Check for win or load next level
+                setTimeout(() => {
+                    if (game.progress >= 100) {
+                        endGame();
+                    } else {
+                        loadLevel(game.currentLevel + 1);
+                        startIdleAnimation();
+                    }
+                }, 3000);
+            } else {
+                // Wrong answer
+                buttons[selectedIndex].classList.add('wrong');
+                buttons[level.correctIndex].classList.add('correct');
+                showFeedback('¡INTENTA DE NUEVO! 💨', 'error');
+                stallCar();
+                
+                // Allow retry after animation
+                setTimeout(() => {
+                    buttons.forEach(btn => {
+                        btn.disabled = false;
+                        btn.classList.remove('wrong', 'correct');
+                    });
+                    game.isAnswering = true;
+                }, 2000);
+            }
+        }
+
+        function startIdleAnimation() {
+            elements.road.className = 'road moving';
+            elements.centerLine.className = 'center-line moving';
+            elements.car.className = 'car idle';
+            elements.flame.classList.remove('active');
+            elements.smoke.classList.remove('active');
+            game.audio.playEngineIdle();
+        }
+
+        function driveCar() {
+            game.audio.playTurbo();
+            
+            // Turbo mode!
+            elements.road.className = 'road turbo';
+            elements.centerLine.className = 'center-line turbo';
+            elements.car.className = 'car turbo';
+            elements.flame.classList.add('active');
+            elements.smoke.classList.remove('active');
+        }
+
+        function stallCar() {
+            game.audio.playFail();
+            
+            // Stall!
+            elements.road.className = 'road stalled';
+            elements.centerLine.className = 'center-line stalled';
+            elements.car.className = 'car stalled';
+            elements.flame.classList.remove('active');
+            elements.smoke.classList.add('active');
+            
+            // Resume idle after stall
+            setTimeout(() => {
+                startIdleAnimation();
+            }, 1500);
+        }
+
+        function updateProgress() {
+            elements.progressBar.style.width = `${game.progress}%`;
+        }
+
+        function showFeedback(message, type) {
+            elements.feedback.textContent = message;
+            elements.feedback.className = `feedback show ${type}`;
+            
+            setTimeout(() => {
+                elements.feedback.className = 'feedback';
+            }, 1500);
+        }
+
+        function endGame() {
+            game.audio.stopAll();
+            game.audio.playWin();
+            
+            // Show finish line animation
+            elements.finishLine.classList.add('visible');
+            
+            // Show victory screen after finish line
+            setTimeout(() => {
+                elements.victoryScreen.classList.add('show');
+                createConfetti();
+            }, 2000);
+        }
+
+        function createConfetti() {
+            const colors = ['#ff00ff', '#00ffff', '#ffff00', '#00ff00', '#ff6600'];
+            
+            for (let i = 0; i < 100; i++) {
+                setTimeout(() => {
+                    const piece = document.createElement('div');
+                    piece.className = 'confetti-piece';
+                    piece.style.left = Math.random() * 100 + '%';
+                    piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    piece.style.animationDelay = Math.random() * 0.5 + 's';
+                    piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                    elements.confetti.appendChild(piece);
+                    
+                    setTimeout(() => piece.remove(), 3000);
+                }, i * 30);
+            }
+        }
+
+        function restartGame() {
+            game.currentLevel = 0;
+            game.progress = 0;
+            
+            elements.progressBar.style.width = '0%';
+            elements.victoryScreen.classList.remove('show');
+            elements.finishLine.classList.remove('visible');
+            elements.confetti.innerHTML = '';
+            
+            loadLevel(0);
+            startIdleAnimation();
+        }
+
+        function toggleAudio() {
+            const enabled = game.audio.toggle();
+            elements.audioToggle.textContent = enabled ? '🔊' : '🔇';
+        }
+
+        // ===== EVENT LISTENERS =====
+        elements.startBtn.addEventListener('click', startGame);
+        elements.readyBtn.addEventListener('click', showQuestion);
+        elements.restartBtn.addEventListener('click', restartGame);
+        elements.audioToggle.addEventListener('click', toggleAudio);
+
+        // Initialize audio context on first user interaction
+        document.addEventListener('click', () => {
+            if (!game.audio.audioContext) {
+                game.audio.init();
+            }
+        }, { once: true });
+    </script>
+</body>
+</html>

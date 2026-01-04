@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>¡Desordena y Adivina!</title>
+  <style>
+    :root {
+      --bg-color: #1f2933;
+      --card-color: #ffffff;
+      --accent: #f97316;
+      --accent-soft: #fed7aa;
+      --accent-strong: #f97316;
+      --danger: #ef4444;
+      --success: #22c55e;
+      --text-main: #111827;
+      --text-light: #e5e7eb;
+      --button-bg: #3b82f6;
+      --button-bg-alt: #6366f1;
+      --button-text: #ffffff;
+      --shadow-soft: 0 6px 16px rgba(0, 0, 0, 0.25);
+      --border-radius: 0.75rem;
+      --transition-fast: 0.15s ease-out;
+      --tile-size: 3rem;
+      --total-lives: 3;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #111827 0, #020617 55%, #020617 100%);
+      color: var(--text-light);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .game-container {
+      background: linear-gradient(145deg, #111827, #020617);
+      border-radius: 1.25rem;
+      box-shadow: var(--shadow-soft);
+      border: 2px solid rgba(148, 163, 184, 0.6);
+      padding: 1.25rem 1.25rem 1.5rem;
+      max-width: 900px;
+      width: 100%;
+      color: var(--text-light);
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    @media (min-width: 768px) {
+      .game-container {
+        padding: 1.75rem 2rem 2rem;
+      }
+    }
+
+    .top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.5);
+      padding-bottom: 0.5rem;
+    }
+
+    .title-area {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+
+    .title-area h1 {
+      margin: 0;
+      font-size: 1.4rem;
+      letter-spacing: 0.04em;
+      color: #fbbf24;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .title-area h1 span {
+      font-size: 1.6rem;
+    }
+
+    .title-area small {
+      font-size: 0.75rem;
+      opacity: 0.8;
+    }
+
+    .stats-area {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      align-items: center;
+      justify-content: flex-end;
+      font-size: 0.85rem;
+    }
+
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(148, 163, 184, 0.7);
+    }
+
+    .stat-label {
+      font-weight: 500;
+      opacity: 0.8;
+    }
+
+    .stat-value {
+      font-weight: 700;
+      color: #e5e7eb;
+    }
+
+    .lives {
+      letter-spacing: 0.1em;
+      font-size: 1.1rem;
+    }
+
+    .sound-toggle {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      background: rgba(15, 23, 42, 0.9);
+      color: #e5e7eb;
+      padding: 0.25rem 0.7rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .sound-toggle:hover {
+      background: rgba(30, 64, 175, 0.85);
+      box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.5);
+      transform: translateY(-1px);
+    }
+
+    .sound-toggle.muted {
+      opacity: 0.7;
+      background: rgba(31, 41, 55, 0.9);
+    }
+
+    .main-area {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .info-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.9rem;
+    }
+
+    .category-label {
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(248, 250, 252, 0.1);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .category-label strong {
+      color: #a5b4fc;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+    }
+
+    .category-label span {
+      font-weight: 600;
+    }
+
+    .hint-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .hint-button {
+      border-radius: 999px;
+      padding: 0.3rem 0.8rem;
+      border: none;
+      background-color: var(--accent);
+      color: #111827;
+      font-weight: 600;
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(251, 191, 36, 0.35);
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast), filter var(--transition-fast);
+    }
+
+    .hint-button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.1);
+      box-shadow: 0 6px 14px rgba(251, 191, 36, 0.5);
+    }
+
+    .hint-info {
+      font-size: 0.8rem;
+      line-height: 1.35;
+      background: rgba(15, 23, 42, 0.9);
+      border-radius: 0.75rem;
+      padding: 0.4rem 0.65rem;
+      border: 1px dashed rgba(248, 250, 252, 0.2);
+      max-width: 100%;
+    }
+
+    .hint-info span {
+      display: block;
+    }
+
+    .board {
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+      margin-top: 0.4rem;
+      background: radial-gradient(circle at top, rgba(148, 163, 184, 0.15), transparent 60%);
+      border-radius: 1rem;
+      padding: 0.75rem 0.75rem 0.9rem;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+    }
+
+    .letters-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.2rem;
+    }
+
+    .letter-tile {
+      width: var(--tile-size);
+      height: var(--tile-size);
+      border-radius: 0.75rem;
+      border: none;
+      background: radial-gradient(circle at top, #fef9c3 0, #fed7aa 45%, #fb923c 100%);
+      box-shadow: 0 4px 0 rgba(180, 83, 9, 1), 0 8px 12px rgba(15, 23, 42, 0.6);
+      color: #111827;
+      font-size: 1.4rem;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast), filter var(--transition-fast), opacity var(--transition-fast);
+      text-transform: uppercase;
+    }
+
+    .letter-tile:hover {
+      transform: translateY(-2px) scale(1.03);
+      box-shadow: 0 6px 0 rgba(180, 83, 9, 1), 0 10px 18px rgba(15, 23, 42, 0.7);
+      filter: brightness(1.05);
+    }
+
+    .letter-tile.used {
+      opacity: 0.35;
+      transform: translateY(3px) scale(0.95);
+      box-shadow: 0 1px 0 rgba(15, 23, 42, 0.9);
+      cursor: default;
+    }
+
+    .guess-area {
+      min-height: 3rem;
+      border-radius: 0.75rem;
+      border: 1px dashed rgba(148, 163, 184, 0.8);
+      background: rgba(15, 23, 42, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.3rem 0.5rem;
+      gap: 0.3rem;
+      font-size: 1.2rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .guess-letter {
+      min-width: 2.1rem;
+      height: 2.1rem;
+      border-radius: 0.5rem;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .guess-placeholder {
+      opacity: 0.55;
+      font-size: 0.85rem;
+    }
+
+    .controls-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.5rem;
+      margin-top: 0.35rem;
+    }
+
+    @media (min-width: 640px) {
+      .controls-row {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+    }
+
+    .btn {
+      border-radius: 0.75rem;
+      border: none;
+      padding: 0.5rem 0.6rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.3rem;
+      color: var(--button-text);
+      background: var(--button-bg);
+      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.5);
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast), filter var(--transition-fast);
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+      box-shadow: 0 6px 14px rgba(37, 99, 235, 0.7);
+    }
+
+    .btn:active {
+      transform: translateY(1px) scale(0.99);
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.8);
+    }
+
+    .btn-secondary {
+      background: #6b7280;
+      box-shadow: 0 4px 10px rgba(55, 65, 81, 0.7);
+    }
+
+    .btn-warning {
+      background: #f97316;
+      box-shadow: 0 4px 10px rgba(234, 88, 12, 0.65);
+      color: #111827;
+    }
+
+    .btn-danger {
+      background: #ef4444;
+      box-shadow: 0 4px 10px rgba(185, 28, 28, 0.7);
+    }
+
+    .btn-icon {
+      font-size: 1rem;
+    }
+
+    .bottom-area {
+      margin-top: 0.6rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      font-size: 0.9rem;
+    }
+
+    .status-message {
+      min-height: 1.3rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .status-message span.label {
+      padding: 0.1rem 0.45rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .status-message.success span.label {
+      background: rgba(22, 163, 74, 0.2);
+      color: #4ade80;
+      border: 1px solid rgba(22, 163, 74, 0.7);
+    }
+
+    .status-message.error span.label {
+      background: rgba(248, 113, 113, 0.16);
+      color: #fecaca;
+      border: 1px solid rgba(248, 113, 113, 0.8);
+    }
+
+    .status-message.info span.label {
+      background: rgba(59, 130, 246, 0.16);
+      color: #bfdbfe;
+      border: 1px solid rgba(59, 130, 246, 0.8);
+    }
+
+    .status-message.streak span.label {
+      background: rgba(250, 204, 21, 0.16);
+      color: #facc15;
+      border: 1px solid rgba(250, 204, 21, 0.8);
+    }
+
+    .instructions {
+      opacity: 0.8;
+      font-size: 0.82rem;
+    }
+
+    /* Game Over Overlay */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.92);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+
+    .overlay.hidden {
+      display: none;
+    }
+
+    .overlay-card {
+      background: #020617;
+      border-radius: 1.25rem;
+      padding: 1.5rem 1.4rem 1.6rem;
+      max-width: 420px;
+      width: 90%;
+      color: #e5e7eb;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7);
+      border: 1px solid rgba(248, 250, 252, 0.1);
+      text-align: center;
+    }
+
+    .overlay-card h2 {
+      margin-top: 0;
+      margin-bottom: 0.4rem;
+      font-size: 1.4rem;
+    }
+
+    .overlay-emoji {
+      font-size: 2.2rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .overlay-stats {
+      margin-top: 0.6rem;
+      margin-bottom: 0.9rem;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.45rem 0.8rem;
+      font-size: 0.9rem;
+    }
+
+    .overlay-stats div {
+      text-align: left;
+    }
+
+    .overlay-stats span.label {
+      opacity: 0.75;
+      font-size: 0.78rem;
+    }
+
+    .overlay-stats span.value {
+      display: block;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .overlay-footer {
+      font-size: 0.8rem;
+      opacity: 0.85;
+      margin-bottom: 0.7rem;
+    }
+
+    .overlay-buttons {
+      display: flex;
+      justify-content: center;
+    }
+
+    /* Animations */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-4px); }
+      40% { transform: translateX(4px); }
+      60% { transform: translateX(-3px); }
+      80% { transform: translateX(3px); }
+    }
+
+    .shake-animation {
+      animation: shake 0.4s ease-in-out;
+    }
+
+    @keyframes correctPulse {
+      0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+      70% { box-shadow: 0 0 0 12px rgba(34, 197, 94, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+
+    .correct-pulse {
+      animation: correctPulse 0.7s ease-out;
+      border-color: rgba(34, 197, 94, 0.8);
+    }
+
+    @keyframes streakFlash {
+      0%, 100% { background-color: rgba(250, 204, 21, 0); }
+      50% { background-color: rgba(250, 204, 21, 0.25); }
+    }
+
+    .streak-highlight {
+      animation: streakFlash 0.8s ease-out;
+    }
+
+    @keyframes floatUp {
+      0% { opacity: 0; transform: translate(-50%, 10px) scale(0.9); }
+      20% { opacity: 1; transform: translate(-50%, -2px) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -40px) scale(1.1); }
+    }
+
+    .floating-emoji {
+      position: fixed;
+      left: 50%;
+      top: 55%;
+      transform: translateX(-50%);
+      font-size: 1.8rem;
+      pointer-events: none;
+      animation: floatUp 1s ease-out forwards;
+      z-index: 40;
+    }
+
+    /* Focus outlines for accessibility */
+    button:focus-visible {
+      outline: 2px solid #facc15;
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container" aria-live="polite">
+    <header class="top-bar">
+      <div class="title-area">
+        <h1><span>🔤</span> ¡Desordena y Adivina!</h1>
+        <small>Unscramble the Spanish word by clicking or typing the letters.</small>
+      </div>
+      <div class="stats-area">
+        <div class="stat" aria-label="Score">
+          <span class="stat-label">Score</span>
+          <span id="score" class="stat-value">0</span>
+        </div>
+        <div class="stat" aria-label="Streak">
+          <span class="stat-label">Streak</span>
+          <span id="streak" class="stat-value">0</span>
+        </div>
+        <div class="stat" aria-label="Lives">
+          <span class="stat-label">Lives</span>
+          <span id="lives" class="stat-value lives">❤️❤️❤️</span>
+        </div>
+        <button id="sound-toggle" class="sound-toggle" type="button" aria-pressed="true">
+          <span id="sound-icon">🔊</span>
+          <span>Sound</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="main-area">
+      <div class="info-row">
+        <div class="category-label" id="category-label">
+          <strong>Categoría</strong>
+          <span id="category-name">---</span>
+        </div>
+        <div class="hint-controls">
+          <button id="hint-button" class="hint-button" type="button">
+            💡 Show Hint
+          </button>
+          <div id="hint-info" class="hint-info" style="display:none;">
+            <span id="hint-english"><strong>English:</strong> —</span>
+            <span id="hint-spanish"><strong>Pista:</strong> —</span>
+          </div>
+        </div>
+      </div>
+
+      <section class="board" aria-label="Anagram board">
+        <div id="letters-container" class="letters-container" aria-label="Scrambled letters"></div>
+        <div id="guess-area" class="guess-area" aria-label="Current guess">
+          <span id="guess-placeholder" class="guess-placeholder">Click or type letters to build your word…</span>
+        </div>
+        <div class="controls-row">
+          <button id="submit-btn" class="btn btn-success" type="button">
+            <span class="btn-icon">✅</span> Submit
+          </button>
+          <button id="clear-btn" class="btn btn-secondary" type="button">
+            <span class="btn-icon">🧼</span> Clear
+          </button>
+          <button id="shuffle-btn" class="btn btn-warning" type="button">
+            <span class="btn-icon">🔀</span> Shuffle Letters
+          </button>
+          <button id="skip-btn" class="btn btn-danger" type="button">
+            <span class="btn-icon">⏭️</span> Skip Word
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <section class="bottom-area">
+      <div id="status-message" class="status-message info">
+        <span class="label">Tip</span>
+        <span>Use your keyboard or click the tiles. Press Enter to submit, Esc to clear.</span>
+      </div>
+      <p class="instructions">
+        Unscramble the Spanish word using the letters above. Use the hint if you need help, but it may reduce your points.
+      </p>
+    </section>
+  </div>
+
+  <!-- Game Over Overlay -->
+  <div id="game-over-overlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="game-over-title">
+    <div class="overlay-card">
+      <div class="overlay-emoji">💥🤪</div>
+      <h2 id="game-over-title">Game Over!</h2>
+      <p>All your hearts exploded in a confetti of Spanish letters…</p>
+      <div class="overlay-stats">
+        <div>
+          <span class="label">Final Score</span>
+          <span id="final-score" class="value">0</span>
+        </div>
+        <div>
+          <span class="label">Best Streak</span>
+          <span id="final-best-streak" class="value">0</span>
+        </div>
+        <div>
+          <span class="label">Words Correct</span>
+          <span id="final-correct" class="value">0</span>
+        </div>
+        <div>
+          <span class="label">Words Seen</span>
+          <span id="final-attempted" class="value">0</span>
+        </div>
+      </div>
+      <p class="overlay-footer">Press <strong>Enter</strong> or click below to play again.</p>
+      <div class="overlay-buttons">
+        <button id="play-again-btn" class="btn btn-warning" type="button">
+          <span class="btn-icon">🔁</span> Play Again
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Placeholder audio elements. Replace src with real classroom-friendly sounds. -->
+  <!-- You can store your audio files in a "sounds" folder and update the paths below. -->
+  <audio id="sound-start" src="sounds/startGame.mp3" preload="auto"></audio>
+  <audio id="sound-letter" src="sounds/letterClick.mp3" preload="auto"></audio>
+  <audio id="sound-success" src="sounds/submitSuccess.mp3" preload="auto"></audio>
+  <audio id="sound-fail" src="sounds/submitFail.mp3" preload="auto"></audio>
+  <audio id="sound-shuffle" src="sounds/shuffle.mp3" preload="auto"></audio>
+  <audio id="sound-clear" src="sounds/clear.mp3" preload="auto"></audio>
+  <audio id="sound-hint" src="sounds/hint.mp3" preload="auto"></audio>
+  <audio id="sound-skip" src="sounds/skip.mp3" preload="auto"></audio>
+  <audio id="sound-streak" src="sounds/streak.mp3" preload="auto"></audio>
+  <audio id="sound-gameover" src="sounds/gameOver.mp3" preload="auto"></audio>
+  <audio id="sound-hover" src="sounds/hover.mp3" preload="auto"></audio>
+
+  <script>
+    // ----------------------------------------
+    // Vocabulary Data
+    // ----------------------------------------
+    const WORDS = [
+      {
+        spanish: "gato",
+        english: "cat",
+        category: "animales",
+        hint: "Un animal pequeño que dice miau."
+      },
+      {
+        spanish: "perro",
+        english: "dog",
+        category: "animales",
+        hint: "El mejor amigo del humano."
+      },
+      {
+        spanish: "pato",
+        english: "duck",
+        category: "animales",
+        hint: "Un animal que nada y dice cuac."
+      },
+      {
+        spanish: "vaca",
+        english: "cow",
+        category: "animales",
+        hint: "Da leche y hace muuu."
+      },
+      {
+        spanish: "oso",
+        english: "bear",
+        category: "animales",
+        hint: "Es grande y normalmente le gusta la miel."
+      },
+      {
+        spanish: "pez",
+        english: "fish",
+        category: "animales",
+        hint: "Vive en el agua y no tiene piernas."
+      },
+      {
+        spanish: "lobo",
+        english: "wolf",
+        category: "animales",
+        hint: "Parece un perro salvaje y aúlla."
+      },
+      {
+        spanish: "caballo",
+        english: "horse",
+        category: "animales",
+        hint: "Lo puedes montar y corre muy rápido."
+      },
+      {
+        spanish: "conejo",
+        english: "rabbit",
+        category: "animales",
+        hint: "Animal pequeño con orejas largas que salta mucho."
+      },
+      {
+        spanish: "rojo",
+        english: "red",
+        category: "colores",
+        hint: "Color de muchos corazones y fresas."
+      },
+      {
+        spanish: "azul",
+        english: "blue",
+        category: "colores",
+        hint: "Color del cielo en un día claro."
+      },
+      {
+        spanish: "verde",
+        english: "green",
+        category: "colores",
+        hint: "Color de la hierba y muchas plantas."
+      },
+      {
+        spanish: "amarillo",
+        english: "yellow",
+        category: "colores",
+        hint: "Color de muchos plátanos y del sol dibujado."
+      },
+      {
+        spanish: "negro",
+        english: "black",
+        category: "colores",
+        hint: "Color muy oscuro, como la noche sin estrellas."
+      },
+      {
+        spanish: "blanco",
+        english: "white",
+        category: "colores",
+        hint: "Color de la leche y de muchas nubes."
+      },
+      {
+        spanish: "morado",
+        english: "purple",
+        category: "colores",
+        hint: "Mezcla de rojo y azul, como algunas uvas."
+      },
+      {
+        spanish: "rosado",
+        english: "pink",
+        category: "colores",
+        hint: "Color de muchos flamencos y chicle."
+      },
+      {
+        spanish: "libro",
+        english: "book",
+        category: "clase",
+        hint: "Lo lees y tiene muchas páginas."
+      },
+      {
+        spanish: "lápiz",
+        english: "pencil",
+        category: "clase",
+        hint: "Lo usas para escribir y puedes borrar."
+      },
+      {
+        spanish: "silla",
+        english: "chair",
+        category: "clase",
+        hint: "Te sientas en esto."
+      },
+      {
+        spanish: "mesa",
+        english: "table",
+        category: "clase",
+        hint: "Mueble donde pones tus libros o tu comida."
+      },
+      {
+        spanish: "cuaderno",
+        english: "notebook",
+        category: "clase",
+        hint: "Tiene muchas hojas para escribir notas."
+      },
+      {
+        spanish: "mochila",
+        english: "backpack",
+        category: "clase",
+        hint: "La usas para llevar tus cosas a la escuela."
+      },
+      {
+        spanish: "reloj",
+        english: "clock",
+        category: "clase",
+        hint: "Objeto que te dice la hora."
+      },
+      {
+        spanish: "mamá",
+        english: "mom",
+        category: "familia",
+        hint: "La mujer que te cuida desde pequeño."
+      },
+      {
+        spanish: "papá",
+        english: "dad",
+        category: "familia",
+        hint: "El hombre que te cuida desde pequeño."
+      },
+      {
+        spanish: "hermano",
+        english: "brother",
+        category: "familia",
+        hint: "Un chico que tiene los mismos padres que tú."
+      },
+      {
+        spanish: "hermana",
+        english: "sister",
+        category: "familia",
+        hint: "Una chica que tiene los mismos padres que tú."
+      },
+      {
+        spanish: "tío",
+        english: "uncle",
+        category: "familia",
+        hint: "Hermano de tu mamá o de tu papá."
+      },
+      {
+        spanish: "tía",
+        english: "aunt",
+        category: "familia",
+        hint: "Hermana de tu mamá o de tu papá."
+      },
+      {
+        spanish: "primo",
+        english: "male cousin",
+        category: "familia",
+        hint: "Hijo de tu tío o tu tía (chico)."
+      },
+      {
+        spanish: "prima",
+        english: "female cousin",
+        category: "familia",
+        hint: "Hija de tu tío o tu tía (chica)."
+      },
+      {
+        spanish: "pan",
+        english: "bread",
+        category: "comida",
+        hint: "Lo comes en sándwiches y tostadas."
+      },
+      {
+        spanish: "arroz",
+        english: "rice",
+        category: "comida",
+        hint: "Granos pequeños que comes con muchas comidas."
+      },
+      {
+        spanish: "leche",
+        english: "milk",
+        category: "comida",
+        hint: "Bebida blanca que muchas personas toman en el desayuno."
+      },
+      {
+        spanish: "agua",
+        english: "water",
+        category: "comida",
+        hint: "Líquido transparente que necesitas para vivir."
+      },
+      {
+        spanish: "manzana",
+        english: "apple",
+        category: "comida",
+        hint: "Fruta redonda que puede ser roja, verde o amarilla."
+      },
+      {
+        spanish: "pizza",
+        english: "pizza",
+        category: "comida",
+        hint: "Comida redonda con queso y salsa."
+      },
+      {
+        spanish: "queso",
+        english: "cheese",
+        category: "comida",
+        hint: "Producto lácteo que pones en pizza o sándwich."
+      },
+      {
+        spanish: "huevo",
+        english: "egg",
+        category: "comida",
+        hint: "Comida que viene de una gallina, la comes en el desayuno."
+      },
+      {
+        spanish: "escuela",
+        english: "school",
+        category: "lugares",
+        hint: "Lugar donde estudias con tus amigos."
+      },
+      {
+        spanish: "amigo",
+        english: "friend (male)",
+        category: "personas",
+        hint: "Chico con quien te gusta pasar tiempo."
+      },
+      {
+        spanish: "amiga",
+        english: "friend (female)",
+        category: "personas",
+        hint: "Chica con quien te gusta pasar tiempo."
+      },
+      {
+        spanish: "fiesta",
+        english: "party",
+        category: "eventos",
+        hint: "Evento divertido con música y comida."
+      },
+      {
+        spanish: "casa",
+        english: "house",
+        category: "lugares",
+        hint: "Lugar donde vives."
+      },
+      {
+        spanish: "árbol",
+        english: "tree",
+        category: "naturaleza",
+        hint: "Planta grande con tronco y muchas hojas."
+      }
+    ];
+
+    // ----------------------------------------
+    // Game State
+    // ----------------------------------------
+    const gameState = {
+      tiles: [], // { id, char, used }
+      guessSequence: [], // array of tile ids, in guess order
+      currentWord: null, // WORDS object
+      score: 0,
+      streak: 0,
+      bestStreak: 0,
+      lives: 3,
+      wordsAttempted: 0,
+      wordsCorrect: 0,
+      soundEnabled: true,
+      hintUsedForCurrent: false,
+      usedWordIndices: [],
+      isGameOver: false,
+      hasStartedOnce: false,
+      isTransitioning: false,
+    };
+
+    let tileIdCounter = 0;
+
+    // ----------------------------------------
+    // DOM references
+    // ----------------------------------------
+    const scoreEl = document.getElementById('score');
+    const streakEl = document.getElementById('streak');
+    const livesEl = document.getElementById('lives');
+    const categoryNameEl = document.getElementById('category-name');
+    const lettersContainerEl = document.getElementById('letters-container');
+    const guessAreaEl = document.getElementById('guess-area');
+    const guessPlaceholderEl = document.getElementById('guess-placeholder');
+    const statusMessageEl = document.getElementById('status-message');
+    const hintButtonEl = document.getElementById('hint-button');
+    const hintInfoEl = document.getElementById('hint-info');
+    const hintEnglishEl = document.getElementById('hint-english');
+    const hintSpanishEl = document.getElementById('hint-spanish');
+    const submitBtn = document.getElementById('submit-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    const shuffleBtn = document.getElementById('shuffle-btn');
+    const skipBtn = document.getElementById('skip-btn');
+    const soundToggleBtn = document.getElementById('sound-toggle');
+    const soundIconEl = document.getElementById('sound-icon');
+
+    const gameOverOverlayEl = document.getElementById('game-over-overlay');
+    const finalScoreEl = document.getElementById('final-score');
+    const finalBestStreakEl = document.getElementById('final-best-streak');
+    const finalCorrectEl = document.getElementById('final-correct');
+    const finalAttemptedEl = document.getElementById('final-attempted');
+    const playAgainBtn = document.getElementById('play-again-btn');
+
+    // ----------------------------------------
+    // Audio handling
+    // ----------------------------------------
+    const sounds = {
+      startGame: document.getElementById('sound-start'),
+      letterClick: document.getElementById('sound-letter'),
+      submitSuccess: document.getElementById('sound-success'),
+      submitFail: document.getElementById('sound-fail'),
+      shuffle: document.getElementById('sound-shuffle'),
+      clear: document.getElementById('sound-clear'),
+      hint: document.getElementById('sound-hint'),
+      skip: document.getElementById('sound-skip'),
+      streak: document.getElementById('sound-streak'),
+      gameOver: document.getElementById('sound-gameover'),
+      hover: document.getElementById('sound-hover'),
+    };
+
+    function playSound(name) {
+      if (!gameState.soundEnabled) return;
+      const audio = sounds[name];
+      if (!audio) return;
+      try {
+        audio.currentTime = 0;
+        audio.play();
+      } catch (err) {
+        // Autoplay might be blocked; fail silently.
+      }
+    }
+
+    function toggleSound() {
+      gameState.soundEnabled = !gameState.soundEnabled;
+      soundToggleBtn.classList.toggle('muted', !gameState.soundEnabled);
+      soundIconEl.textContent = gameState.soundEnabled ? '🔊' : '🔇';
+      if (gameState.soundEnabled) {
+        playSound('hint'); // quiet-ish confirmation sound
+      }
+    }
+
+    // ----------------------------------------
+    // Utility: normalization (ignore case + accents)
+    // ----------------------------------------
+    function removeDiacritics(str) {
+      return str
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function normalizeWord(str) {
+      return removeDiacritics(str || '').toLowerCase();
+    }
+
+    // ----------------------------------------
+    // Word selection & scrambling
+    // ----------------------------------------
+    function pickRandomWord() {
+      if (gameState.usedWordIndices.length >= WORDS.length) {
+        gameState.usedWordIndices = [];
+      }
+
+      let idx;
+      do {
+        idx = Math.floor(Math.random() * WORDS.length);
+      } while (gameState.usedWordIndices.includes(idx));
+
+      gameState.usedWordIndices.push(idx);
+      return WORDS[idx];
+    }
+
+    function scrambleWord(wordStr) {
+      const letters = wordStr.split('');
+      if (letters.length <= 1) return letters;
+      let shuffled = letters.slice();
+
+      // Fisher-Yates shuffle
+      function shuffleArray(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+      }
+
+      let attempts = 0;
+      do {
+        shuffled = letters.slice();
+        shuffleArray(shuffled);
+        attempts++;
+      } while (shuffled.join('') === wordStr && attempts < 10);
+
+      return shuffled;
+    }
+
+    function buildTilesFromWord(wordObj) {
+      const scrambled = scrambleWord(wordObj.spanish);
+      gameState.tiles = scrambled.map(char => ({
+        id: ++tileIdCounter,
+        char,
+        used: false,
+      }));
+      gameState.guessSequence = [];
+    }
+
+    // ----------------------------------------
+    // Rendering
+    // ----------------------------------------
+    function renderBoard() {
+      // Category
+      if (gameState.currentWord) {
+        categoryNameEl.textContent = gameState.currentWord.category;
+      } else {
+        categoryNameEl.textContent = '---';
+      }
+
+      // Letters
+      lettersContainerEl.innerHTML = '';
+      gameState.tiles.forEach(tile => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'letter-tile';
+        btn.textContent = tile.char.toUpperCase();
+        btn.dataset.id = String(tile.id);
+        btn.disabled = tile.used || gameState.isGameOver || gameState.isTransitioning;
+        if (tile.used) {
+          btn.classList.add('used');
+        }
+        btn.addEventListener('click', () => handleLetterClick(tile.id));
+        btn.addEventListener('mouseenter', () => playSound('hover'));
+        lettersContainerEl.appendChild(btn);
+      });
+
+      // Guess area
+      guessAreaEl.innerHTML = '';
+      const guessLetters = getCurrentGuessLetters();
+      if (guessLetters.length === 0) {
+        guessAreaEl.appendChild(guessPlaceholderEl);
+        guessPlaceholderEl.style.display = 'inline';
+      } else {
+        guessPlaceholderEl.style.display = 'none';
+        guessLetters.forEach(ch => {
+          const span = document.createElement('span');
+          span.className = 'guess-letter';
+          span.textContent = ch.toUpperCase();
+          guessAreaEl.appendChild(span);
+        });
+      }
+    }
+
+    function updateStatsUI() {
+      scoreEl.textContent = gameState.score;
+      streakEl.textContent = gameState.streak;
+
+      const totalLives = 3; // can change later
+      let hearts = '';
+      for (let i = 0; i < totalLives; i++) {
+        hearts += i < gameState.lives ? '❤️' : '🖤';
+      }
+      livesEl.textContent = hearts;
+    }
+
+    function setStatusMessage(message, type = 'info') {
+      statusMessageEl.className = 'status-message ' + type;
+      statusMessageEl.innerHTML = '';
+
+      const labelSpan = document.createElement('span');
+      labelSpan.className = 'label';
+      labelSpan.textContent = type === 'success' ? 'Nice!' : type === 'error' ? 'Oops' : type === 'streak' ? 'Streak' : 'Tip';
+
+      const textSpan = document.createElement('span');
+      textSpan.textContent = message;
+
+      statusMessageEl.appendChild(labelSpan);
+      statusMessageEl.appendChild(textSpan);
+    }
+
+    function triggerShakeAnimation() {
+      guessAreaEl.classList.remove('shake-animation');
+      // force reflow
+      void guessAreaEl.offsetWidth;
+      guessAreaEl.classList.add('shake-animation');
+    }
+
+    function triggerCorrectPulse() {
+      guessAreaEl.classList.remove('correct-pulse');
+      void guessAreaEl.offsetWidth;
+      guessAreaEl.classList.add('correct-pulse');
+    }
+
+    function spawnFloatingEmoji(emoji = '⭐') {
+      const div = document.createElement('div');
+      div.className = 'floating-emoji';
+      div.textContent = emoji;
+      document.body.appendChild(div);
+      setTimeout(() => {
+        if (div.parentNode) {
+          div.parentNode.removeChild(div);
+        }
+      }, 1000);
+    }
+
+    // ----------------------------------------
+    // Guess helpers
+    // ----------------------------------------
+    function getCurrentGuessLetters() {
+      return gameState.guessSequence.map(id => {
+        const tile = gameState.tiles.find(t => t.id === id);
+        return tile ? tile.char : '';
+      }).filter(Boolean);
+    }
+
+    function getCurrentGuessWord() {
+      return getCurrentGuessLetters().join('');
+    }
+
+    // ----------------------------------------
+    // Handlers
+    // ----------------------------------------
+    function handleLetterClick(tileId) {
+      if (gameState.isGameOver || gameState.isTransitioning) return;
+      const tile = gameState.tiles.find(t => t.id === tileId);
+      if (!tile || tile.used) return;
+      tile.used = true;
+      gameState.guessSequence.push(tile.id);
+      playSound('letterClick');
+      renderBoard();
+    }
+
+    function handleBackspace() {
+      if (!gameState.guessSequence.length) return;
+      const lastId = gameState.guessSequence.pop();
+      const tile = gameState.tiles.find(t => t.id === lastId);
+      if (tile) tile.used = false;
+      renderBoard();
+    }
+
+    function handleSubmit() {
+      if (gameState.isGameOver || gameState.isTransitioning) return;
+      const guess = getCurrentGuessWord();
+      if (!guess) {
+        setStatusMessage('Pick some letters first!', 'info');
+        triggerShakeAnimation();
+        return;
+      }
+
+      const normalizedGuess = normalizeWord(guess);
+      const normalizedAnswer = normalizeWord(gameState.currentWord.spanish);
+
+      if (normalizedGuess === normalizedAnswer) {
+        // Correct
+        gameState.wordsCorrect++;
+        const basePoints = 10 + gameState.currentWord.spanish.length;
+        const streakBonus = gameState.streak * 2;
+        let totalPoints = basePoints + streakBonus;
+        if (gameState.hintUsedForCurrent) {
+          totalPoints = Math.max(5, Math.floor(totalPoints * 0.5));
+        }
+        gameState.score += totalPoints;
+        gameState.streak++;
+        if (gameState.streak > gameState.bestStreak) {
+          gameState.bestStreak = gameState.streak;
+        }
+        updateStatsUI();
+
+        playSound('submitSuccess');
+        triggerCorrectPulse();
+        spawnFloatingEmoji('🎉');
+
+        const msg = `¡Correcto! "${gameState.currentWord.spanish}" = ${gameState.currentWord.english}. +${totalPoints} puntos.`;
+        setStatusMessage(msg, 'success');
+
+        // Streak milestone
+        if ([3, 5, 10].includes(gameState.streak)) {
+          playSound('streak');
+          streakEl.classList.add('streak-highlight');
+          setTimeout(() => streakEl.classList.remove('streak-highlight'), 900);
+          setStatusMessage(`¡Racha de ${gameState.streak}!`, 'streak');
+        }
+
+        gameState.isTransitioning = true;
+        setTimeout(() => {
+          gameState.isTransitioning = false;
+          startNewRound();
+        }, 1100);
+      } else {
+        // Incorrect
+        gameState.lives = Math.max(0, gameState.lives - 1);
+        gameState.streak = 0;
+        updateStatsUI();
+        playSound('submitFail');
+        triggerShakeAnimation();
+        setStatusMessage('Not quite, try again!', 'error');
+        handleClear(false); // clear guess but no extra sound
+
+        if (gameState.lives <= 0) {
+          handleGameOver();
+        }
+      }
+    }
+
+    function handleClear(play = true) {
+      gameState.tiles.forEach(tile => { tile.used = false; });
+      gameState.guessSequence = [];
+      renderBoard();
+      if (play) {
+        playSound('clear');
+        setStatusMessage('Guess cleared. Try a new order!', 'info');
+      }
+    }
+
+    function handleShuffle() {
+      if (gameState.isGameOver || gameState.isTransitioning) return;
+      if (!gameState.tiles.length) return;
+
+      const originalOrder = gameState.tiles.map(t => t.id).join(',');
+      let attempts = 0;
+      do {
+        for (let i = gameState.tiles.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [gameState.tiles[i], gameState.tiles[j]] = [gameState.tiles[j], gameState.tiles[i]];
+        }
+        attempts++;
+      } while (gameState.tiles.map(t => t.id).join(',') === originalOrder && attempts < 8);
+
+      playSound('shuffle');
+      setStatusMessage('Shuffled! New chaos, same word.', 'info');
+      renderBoard();
+    }
+
+    function handleSkip() {
+      if (gameState.isGameOver || gameState.isTransitioning) return;
+      playSound('skip');
+      // Penalty: lose 5 points and reset streak
+      gameState.score = Math.max(0, gameState.score - 5);
+      gameState.streak = 0;
+      updateStatsUI();
+      const msg = `Skipped! The word was "${gameState.currentWord.spanish}" (${gameState.currentWord.english}).`; 
+      setStatusMessage(msg, 'info');
+      gameState.isTransitioning = true;
+      setTimeout(() => {
+        gameState.isTransitioning = false;
+        startNewRound();
+      }, 1100);
+    }
+
+    function handleShowHint() {
+      if (!gameState.currentWord) return;
+      hintInfoEl.style.display = 'block';
+      hintEnglishEl.innerHTML = `<strong>English:</strong> ${gameState.currentWord.english}`;
+      hintSpanishEl.innerHTML = `<strong>Pista:</strong> ${gameState.currentWord.hint}`;
+      gameState.hintUsedForCurrent = true;
+      playSound('hint');
+      setStatusMessage('Hint used! Correct answer will give fewer points.', 'info');
+    }
+
+    function handleKeyDown(event) {
+      const overlayVisible = !gameOverOverlayEl.classList.contains('hidden');
+      if (overlayVisible && event.key === 'Enter') {
+        event.preventDefault();
+        resetGame();
+        return;
+      }
+
+      if (gameState.isGameOver) return;
+
+      // Avoid interfering with form fields (none here but good habit)
+      const tag = document.activeElement.tagName.toLowerCase();
+      if (tag === 'input' || tag === 'textarea') return;
+
+      const key = event.key;
+
+      if (key === 'Enter') {
+        event.preventDefault();
+        handleSubmit();
+        return;
+      }
+
+      if (key === 'Escape') {
+        event.preventDefault();
+        handleClear();
+        return;
+      }
+
+      if (key === 'Backspace') {
+        event.preventDefault();
+        handleBackspace();
+        return;
+      }
+
+      const lower = key.toLowerCase();
+      const allowedLetters = 'abcdefghijklmnopqrstuvwxyzáéíóúüñ';
+      if (!allowedLetters.includes(lower)) return;
+
+      // Find first unused tile whose normalized char matches the pressed key
+      const normalizedKey = normalizeWord(lower);
+      const tile = gameState.tiles.find(t => !t.used && normalizeWord(t.char) === normalizedKey);
+      if (tile) {
+        tile.used = true;
+        gameState.guessSequence.push(tile.id);
+        playSound('letterClick');
+        renderBoard();
+      }
+    }
+
+    // ----------------------------------------
+    // Game Over & Restart
+    // ----------------------------------------
+    function handleGameOver() {
+      if (gameState.isGameOver) return;
+      gameState.isGameOver = true;
+      playSound('gameOver');
+
+      finalScoreEl.textContent = gameState.score;
+      finalBestStreakEl.textContent = gameState.bestStreak;
+      finalCorrectEl.textContent = gameState.wordsCorrect;
+      finalAttemptedEl.textContent = gameState.wordsAttempted;
+
+      gameOverOverlayEl.classList.remove('hidden');
+      setStatusMessage('Game over! Click Play Again to restart.', 'error');
+    }
+
+    function resetGame() {
+      gameState.score = 0;
+      gameState.streak = 0;
+      gameState.lives = 3;
+      gameState.wordsAttempted = 0;
+      gameState.wordsCorrect = 0;
+      gameState.isGameOver = false;
+      gameState.isTransitioning = false;
+      gameState.hintUsedForCurrent = false;
+      gameOverOverlayEl.classList.add('hidden');
+      updateStatsUI();
+      setStatusMessage('New game! Unscramble the word.', 'info');
+      startNewRound();
+    }
+
+    // ----------------------------------------
+    // Round handling
+    // ----------------------------------------
+    function startNewRound() {
+      gameState.currentWord = pickRandomWord();
+      gameState.wordsAttempted++;
+      gameState.hintUsedForCurrent = false;
+
+      // Reset hint display
+      hintInfoEl.style.display = 'none';
+      hintEnglishEl.textContent = 'English: —';
+      hintSpanishEl.textContent = 'Pista: —';
+
+      buildTilesFromWord(gameState.currentWord);
+      renderBoard();
+      updateStatsUI();
+
+      if (!gameState.hasStartedOnce) {
+        playSound('startGame');
+        gameState.hasStartedOnce = true;
+      } else {
+        playSound('shuffle');
+      }
+
+      setStatusMessage('Unscramble the word and press Submit!', 'info');
+    }
+
+    // ----------------------------------------
+    // Initialization
+    // ----------------------------------------
+    function initGame() {
+      // Button listeners
+      submitBtn.addEventListener('click', handleSubmit);
+      clearBtn.addEventListener('click', () => handleClear());
+      shuffleBtn.addEventListener('click', handleShuffle);
+      skipBtn.addEventListener('click', handleSkip);
+      hintButtonEl.addEventListener('click', handleShowHint);
+      soundToggleBtn.addEventListener('click', toggleSound);
+      playAgainBtn.addEventListener('click', resetGame);
+
+      // Hover sound for main buttons
+      [submitBtn, clearBtn, shuffleBtn, skipBtn, playAgainBtn, soundToggleBtn, hintButtonEl].forEach(btn => {
+        btn.addEventListener('mouseenter', () => playSound('hover'));
+      });
+
+      document.addEventListener('keydown', handleKeyDown);
+
+      // Initial stats
+      updateStatsUI();
+      startNewRound();
+    }
+
+    window.addEventListener('DOMContentLoaded', initGame);
+  </script>
+</body>
+</html>

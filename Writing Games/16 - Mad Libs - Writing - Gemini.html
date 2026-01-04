@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historias Locas - Juego de Palabras</title>
+    <!-- Tailwind CSS for layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for that "Silly/Kid" vibe -->
+    <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Fredoka+One&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom Styles for specific game aesthetics */
+        body {
+            font-family: 'Patrick Hand', cursive;
+            background-color: #f0f9ff;
+            background-image: radial-gradient(#bae6fd 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .title-font {
+            font-family: 'Fredoka One', cursive;
+        }
+
+        /* Clipboard/Input Phase Styles */
+        .clipboard-paper {
+            background-color: #fff;
+            background-image: linear-gradient(#e5e7eb 1px, transparent 1px);
+            background-size: 100% 2rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            position: relative;
+        }
+        
+        /* The red line on the left of notebook paper */
+        .clipboard-paper::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 2rem;
+            width: 2px;
+            background-color: #f87171;
+        }
+
+        .custom-input {
+            background: transparent;
+            border: none;
+            border-bottom: 2px dashed #9ca3af;
+            font-family: 'Patrick Hand', cursive;
+            font-size: 1.25rem;
+            color: #2563eb;
+            transition: all 0.3s ease;
+        }
+
+        .custom-input:focus {
+            outline: none;
+            border-bottom: 3px solid #f59e0b; /* Amber focus */
+            transform: scale(1.02);
+        }
+
+        /* Storybook/Reveal Phase Styles */
+        .storybook-page {
+            background-color: #fff1e6; /* Parchment color */
+            border: 8px solid #78350f; /* Wood border */
+            border-radius: 12px;
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.1);
+        }
+
+        .user-word {
+            color: #d946ef; /* Fuchsia */
+            font-weight: bold;
+            text-decoration: underline wavy #f59e0b;
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: inline-block;
+        }
+
+        .user-word:hover {
+            transform: scale(1.2) rotate(-5deg);
+            color: #db2777;
+        }
+        
+        .translation-block {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 2px dashed #b45309;
+            color: #57534e;
+            font-style: italic;
+        }
+
+        /* Animations */
+        @keyframes bounce-in {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+
+        .animate-bounce-in {
+            animation: bounce-in 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes poof {
+            0% { transform: scale(1); filter: blur(0); }
+            50% { transform: scale(1.1); filter: blur(4px); opacity: 0.5; }
+            100% { transform: scale(1); filter: blur(0); opacity: 1; }
+        }
+
+        .poof-effect {
+            animation: poof 0.5s ease-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- Header -->
+    <header class="text-center mb-6 animate-bounce-in">
+        <h1 class="title-font text-5xl md:text-6xl text-blue-600 drop-shadow-lg transform -rotate-2">
+            Historias Locas
+        </h1>
+        <p class="text-xl text-gray-600 mt-2">¡Rellena los espacios y ríete un rato!</p>
+    </header>
+
+    <!-- Main Game Container -->
+    <main id="game-container" class="w-full max-w-2xl perspective-1000">
+        
+        <!-- PHASE 1: INPUT (The Clipboard) -->
+        <div id="input-phase" class="clipboard-paper p-8 pt-10 rounded-lg transform transition-all duration-500">
+            <!-- Decorative Clip -->
+            <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 w-32 h-10 bg-gray-700 rounded-lg shadow-md z-10 flex items-center justify-center">
+                <div class="w-28 h-8 bg-gray-300 rounded border-2 border-gray-500"></div>
+            </div>
+
+            <h2 id="story-title-preview" class="text-2xl font-bold text-gray-700 mb-6 pl-8">Preparando la historia...</h2>
+
+            <form id="words-form" class="space-y-6 pl-8" onsubmit="event.preventDefault();">
+                <!-- Dynamic Inputs will be injected here -->
+            </form>
+
+            <div class="mt-8 text-center pl-8">
+                <button id="btn-ready" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full text-2xl shadow-[0_4px_0_rgb(21,128,61)] active:shadow-none active:translate-y-1 transition-all">
+                    ¡Listo!
+                </button>
+            </div>
+        </div>
+
+        <!-- PHASE 2: REVEAL (The Storybook) -->
+        <div id="reveal-phase" class="hidden storybook-page p-8 md:p-12 transform transition-all duration-500">
+            <h2 id="final-title" class="title-font text-3xl text-amber-800 text-center mb-6 border-b-2 border-amber-200 pb-2"></h2>
+            
+            <!-- Spanish Version -->
+            <div id="story-content" class="text-2xl leading-relaxed text-gray-800 text-justify"></div>
+            
+            <!-- English Translation -->
+            <div id="story-translation" class="translation-block text-xl leading-relaxed text-justify">
+                <h3 class="text-amber-700 font-bold mb-2 not-italic text-lg">Translation (Traducción):</h3>
+                <div id="translation-content"></div>
+            </div>
+
+            <div class="mt-10 text-center">
+                <button id="btn-restart" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-full text-xl shadow-[0_4px_0_rgb(29,78,216)] active:shadow-none active:translate-y-1 transition-all">
+                    Jugar Otra Vez
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- JS LOGIC -->
+    <script>
+        /**
+         * HISTORIAS LOCAS - GAME ENGINE
+         * Updated with 20 Stories and Translation Capability
+         */
+
+        // --- 1. DATA STRUCTURE ---
+        // 'segments' build the Spanish story and the input form.
+        // 'translation' builds the English story using IDs to reference the user's Spanish inputs.
+        const stories = [
+            {
+                title: "Un Día en el Parque",
+                titleEn: "A Day at the Park",
+                segments: [ "Ayer fui al parque con mi ", { type: 'input', label: 'Un pariente', id: 'p1' }, ". Vimos un ", { type: 'input', label: 'Un animal grande', id: 'p2' }, " que estaba comiendo ", { type: 'input', label: 'Una comida asquerosa', id: 'p3' }, ". Fue un día muy ", { type: 'input', label: 'Un adjetivo', id: 'p4' }, "." ],
+                translation: [ "Yesterday I went to the park with my ", { id: 'p1' }, ". We saw a ", { id: 'p2' }, " that was eating ", { id: 'p3' }, ". It was a very ", { id: 'p4' }, " day." ]
+            },
+            {
+                title: "La Pizza Mágica",
+                titleEn: "The Magic Pizza",
+                segments: [ "El chef ", { type: 'input', label: 'Nombre de persona', id: 'm1' }, " inventó una pizza de ", { type: 'input', label: 'Sustantivo plural', id: 'm2' }, " derretidos con salsa de ", { type: 'input', label: 'Un insecto', id: 'm3' }, ". ¡Sabe a ", { type: 'input', label: 'Sustantivo', id: 'm4' }, "!" ],
+                translation: [ "Chef ", { id: 'm1' }, " invented a pizza made of melted ", { id: 'm2' }, " with ", { id: 'm3' }, " sauce. It tastes like ", { id: 'm4' }, "!" ]
+            },
+            {
+                title: "El Monstruo del Armario",
+                titleEn: "The Closet Monster",
+                segments: [ "Mi armario suena como un ", { type: 'input', label: 'Animal ruidoso', id: 'a1' }, ". Vi un monstruo ", { type: 'input', label: 'Verbo (Gerundio -ando)', id: 'a2' }, " con mi ropa. Tenía tres ", { type: 'input', label: 'Parte del cuerpo (pl)', id: 'a3' }, " y olía a ", { type: 'input', label: 'Algo apestoso', id: 'a4' }, "." ],
+                translation: [ "My closet sounds like a ", { id: 'a1' }, ". I saw a monster ", { id: 'a2' }, " with my clothes. It had three ", { id: 'a3' }, " and smelled like ", { id: 'a4' }, "." ]
+            },
+            {
+                title: "El Viaje al Zoo",
+                titleEn: "The Zoo Trip",
+                segments: [ "En el zoológico, un mono me tiró un ", { type: 'input', label: 'Objeto pequeño', id: 'z1' }, ". El león estaba usando un ", { type: 'input', label: 'Prenda de ropa', id: 'z2' }, " y bailando. ¡Qué ", { type: 'input', label: 'Adjetivo loco', id: 'z3' }, "!" ],
+                translation: [ "At the zoo, a monkey threw a ", { id: 'z1' }, " at me. The lion was wearing a ", { id: 'z2' }, " and dancing. How ", { id: 'z3' }, "!" ]
+            },
+            {
+                title: "Mi Maestra Robot",
+                titleEn: "My Robot Teacher",
+                segments: [ "Mi maestra es un robot. Ella bebe aceite y come ", { type: 'input', label: 'Material duro (pl)', id: 'r1' }, ". Cuando se enoja, ella grita '¡", { type: 'input', label: 'Exclamación', id: 'r2' }, "!' y dispara ", { type: 'input', label: 'Sustantivo plural', id: 'r3' }, " por los ojos." ],
+                translation: [ "My teacher is a robot. She drinks oil and eats ", { id: 'r1' }, ". When she gets mad, she yells '", { id: 'r2' }, "!' and shoots ", { id: 'r3' }, " from her eyes." ]
+            },
+            {
+                title: "El Sándwich Asqueroso",
+                titleEn: "The Disgusting Sandwich",
+                segments: [ "Para el almuerzo, quiero un sándwich de ", { type: 'input', label: 'Comida líquida', id: 's1' }, " con ", { type: 'input', label: 'Objeto sucio', id: 's2' }, ". No olvides poner mucho ", { type: 'input', label: 'Condimento', id: 's3' }, " encima." ],
+                translation: [ "For lunch, I want a ", { id: 's1' }, " sandwich with ", { id: 's2' }, ". Don't forget to put lots of ", { id: 's3' }, " on top." ]
+            },
+            {
+                title: "El Astronauta Perdido",
+                titleEn: "The Lost Astronaut",
+                segments: [ "Volé mi cohete a el planeta ", { type: 'input', label: 'Nombre tonto', id: 'as1' }, ". Los alienígenas allí tienen cinco ", { type: 'input', label: 'Parte del cuerpo (pl)', id: 'as2' }, " y caminan sobre ", { type: 'input', label: 'Fruta (pl)', id: 'as3' }, ". Me dieron un ", { type: 'input', label: 'Sustantivo', id: 'as4' }, " de regalo." ],
+                translation: [ "I flew my rocket to planet ", { id: 'as1' }, ". The aliens there have five ", { id: 'as2' }, " and walk on ", { id: 'as3' }, ". They gave me a ", { id: 'as4' }, " as a gift." ]
+            },
+            {
+                title: "La Poción Mágica",
+                titleEn: "The Magic Potion",
+                segments: [ "La bruja mezcló ", { type: 'input', label: 'Líquido asqueroso', id: 'po1' }, " con dos ", { type: 'input', label: 'Animales pequeños (pl)', id: 'po2' }, ". '¡Bébelo y te volverás ", { type: 'input', label: 'Adjetivo', id: 'po3' }, "!' dijo ella." ],
+                translation: [ "The witch mixed ", { id: 'po1' }, " with two ", { id: 'po2' }, ". 'Drink it and you will become ", { id: 'po3' }, "!' she said." ]
+            },
+            {
+                title: "Superhéroe Por Un Día",
+                titleEn: "Superhero for a Day",
+                segments: [ "Mi poder secreto es disparar ", { type: 'input', label: 'Comida (pl)', id: 'sh1' }, " de mis manos. Mi nombre de héroe es Capitán ", { type: 'input', label: 'Sustantivo gracioso', id: 'sh2' }, ". Lucho contra el malvado Dr. ", { type: 'input', label: 'Nombre de vegetal', id: 'sh3' }, "." ],
+                translation: [ "My secret power is shooting ", { id: 'sh1' }, " from my hands. My hero name is Captain ", { id: 'sh2' }, ". I fight against the evil Dr. ", { id: 'sh3' }, "." ]
+            },
+            {
+                title: "El Perro que Habla",
+                titleEn: "The Talking Dog",
+                segments: [ "Mi perro me miró y dijo: 'Quiero ", { type: 'input', label: 'Verbo (infinitivo)', id: 'd1' }, "'. Le di un ", { type: 'input', label: 'Sustantivo', id: 'd2' }, " pero él quería un ", { type: 'input', label: 'Sustantivo caro', id: 'd3' }, ". ¡Qué perro tan ", { type: 'input', label: 'Adjetivo', id: 'd4' }, "!" ],
+                translation: [ "My dog looked at me and said: 'I want to ", { id: 'd1' }, "'. I gave him a ", { id: 'd2' }, " but he wanted a ", { id: 'd3' }, ". What a ", { id: 'd4' }, " dog!" ]
+            },
+            {
+                title: "La Fiesta Sorpresa",
+                titleEn: "The Surprise Party",
+                segments: [ "Para el cumpleaños de mamá, llenamos la sala con ", { type: 'input', label: 'Animales de granja (pl)', id: 'p1' }, ". El pastel estaba hecho de ", { type: 'input', label: 'Material de construcción', id: 'p2' }, ". Ella gritó '¡", { type: 'input', label: 'Exclamación', id: 'p3' }, "!'." ],
+                translation: [ "For mom's birthday, we filled the living room with ", { id: 'p1' }, ". The cake was made of ", { id: 'p2' }, ". She yelled '", { id: 'p3' }, "!'." ]
+            },
+            {
+                title: "El Pirata Tonto",
+                titleEn: "The Silly Pirate",
+                segments: [ "El Capitán ", { type: 'input', label: 'Nombre gracioso', id: 'pi1' }, " perdió su ", { type: 'input', label: 'Parte del cuerpo', id: 'pi2' }, " en una batalla con un ", { type: 'input', label: 'Animal marino', id: 'pi3' }, ". Ahora navega buscando ", { type: 'input', label: 'Comida chatarra', id: 'pi4' }, "." ],
+                translation: [ "Captain ", { id: 'pi1' }, " lost his ", { id: 'pi2' }, " in a battle with a ", { id: 'pi3' }, ". Now he sails looking for ", { id: 'pi4' }, "." ]
+            },
+            {
+                title: "Excusas para la Tarea",
+                titleEn: "Homework Excuses",
+                segments: [ "No tengo mi tarea porque mi ", { type: 'input', label: 'Pariente', id: 'hw1' }, " la cocinó en el ", { type: 'input', label: 'Electrodoméstico', id: 'hw2' }, ". Luego, un ", { type: 'input', label: 'Profesión', id: 'hw3' }, " la robó." ],
+                translation: [ "I don't have my homework because my ", { id: 'hw1' }, " cooked it in the ", { id: 'hw2' }, ". Then, a ", { id: 'hw3' }, " stole it." ]
+            },
+            {
+                title: "El Partido de Fútbol",
+                titleEn: "The Soccer Game",
+                segments: [ "Pateé la pelota y golpeó a un ", { type: 'input', label: 'Animal grande', id: 'f1' }, ". El árbitro me dio una tarjeta ", { type: 'input', label: 'Color', id: 'f2' }, ". El público comenzó a ", { type: 'input', label: 'Verbo', id: 'f3' }, " ruidosamente." ],
+                translation: [ "I kicked the ball and it hit a ", { id: 'f1' }, ". The referee gave me a ", { id: 'f2' }, " card. The crowd started to ", { id: 'f3' }, " loudly." ]
+            },
+            {
+                title: "El Detective Privado",
+                titleEn: "The Private Detective",
+                segments: [ "Estoy buscando el ", { type: 'input', label: 'Objeto perdido', id: 'de1' }, " perdido. Las pistas son una huella de ", { type: 'input', label: 'Animal', id: 'de2' }, " y un pedazo de ", { type: 'input', label: 'Comida', id: 'de3' }, ". ¡El culpable es ", { type: 'input', label: 'Nombre de persona', id: 'de4' }, "!" ],
+                translation: [ "I am looking for the lost ", { id: 'de1' }, ". The clues are a ", { id: 'de2' }, " footprint and a piece of ", { id: 'de3' }, ". The culprit is ", { id: 'de4' }, "!" ]
+            },
+            {
+                title: "La Banda de Rock",
+                titleEn: "The Rock Band",
+                segments: [ "Toco la guitarra eléctrica con mis ", { type: 'input', label: 'Parte del cuerpo (pl)', id: 'rb1' }, ". Nuestro baterista es un ", { type: 'input', label: 'Animal', id: 'rb2' }, ". Nuestra mejor canción se llama 'Amor de ", { type: 'input', label: 'Sustantivo', id: 'rb3' }, "'." ],
+                translation: [ "I play the electric guitar with my ", { id: 'rb1' }, ". Our drummer is a ", { id: 'rb2' }, ". Our best song is called '", { id: 'rb3' }, " Love'." ]
+            },
+            {
+                title: "Vacaciones de Terror",
+                titleEn: "Horror Vacation",
+                segments: [ "Fui a un hotel en ", { type: 'input', label: 'Lugar geográfico', id: 'ht1' }, ". La cama estaba llena de ", { type: 'input', label: 'Insectos (pl)', id: 'ht2' }, " y la piscina tenía ", { type: 'input', label: 'Líquido', id: 'ht3' }, " en vez de agua." ],
+                translation: [ "I went to a hotel in ", { id: 'ht1' }, ". The bed was full of ", { id: 'ht2' }, " and the pool had ", { id: 'ht3' }, " instead of water." ]
+            },
+            {
+                title: "El Vampiro Vegetariano",
+                titleEn: "The Vegetarian Vampire",
+                segments: [ "Soy un vampiro pero no bebo sangre, bebo jugo de ", { type: 'input', label: 'Vegetal', id: 'v1' }, ". Duermo en un ", { type: 'input', label: 'Contenedor', id: 'v2' }, " y le tengo miedo a los ", { type: 'input', label: 'Animales tiernos (pl)', id: 'v3' }, "." ],
+                translation: [ "I am a vampire but I don't drink blood, I drink ", { id: 'v1' }, " juice. I sleep in a ", { id: 'v2' }, " and I am afraid of ", { id: 'v3' }, "." ]
+            },
+            {
+                title: "La Máquina del Tiempo",
+                titleEn: "The Time Machine",
+                segments: [ "Viajé al año 3000. Los coches son impulsados por ", { type: 'input', label: 'Comida', id: 'tm1' }, ". La gente vive dentro de ", { type: 'input', label: 'Objetos gigantes (pl)', id: 'tm2' }, ". El presidente es un ", { type: 'input', label: 'Animal', id: 'tm3' }, "." ],
+                translation: [ "I traveled to the year 3000. Cars are powered by ", { id: 'tm1' }, ". People live inside giant ", { id: 'tm2' }, ". The president is a ", { id: 'tm3' }, "." ]
+            },
+            {
+                title: "Cita a Ciegas",
+                titleEn: "Blind Date",
+                segments: [ "Fui a una cita con ", { type: 'input', label: 'Nombre de famoso', id: 'bd1' }, ". Llevaba puesto un ", { type: 'input', label: 'Ropa ridícula', id: 'bd2' }, ". Comimos ", { type: 'input', label: 'Sustantivo (pl)', id: 'bd3' }, " fritos. Fue ", { type: 'input', label: 'Adjetivo', id: 'bd4' }, "." ],
+                translation: [ "I went on a date with ", { id: 'bd1' }, ". He/She was wearing a ", { id: 'bd2' }, ". We ate fried ", { id: 'bd3' }, ". It was ", { id: 'bd4' }, "." ]
+            }
+        ];
+
+        // --- 2. AUDIO MANAGER ---
+        class AudioManager {
+            constructor() {
+                this.sounds = {
+                    type: 'sfx_type_silly.mp3',
+                    click: 'sfx_boing_click.mp3',
+                    reveal: 'sfx_reveal_laugh.mp3',
+                    hover: 'sfx_squeak_hover.mp3'
+                };
+            }
+
+            play(soundKey) {
+                // Audio placeholder logic
+                // console.log(`🎵 Playing Sound: ${soundKey}`);
+                try {
+                    const audio = new Audio(this.sounds[soundKey]);
+                    audio.volume = 0.5;
+                    audio.play().catch(e => {});
+                } catch (e) {
+                    console.error("Audio Error:", e);
+                }
+            }
+        }
+
+        const audioManager = new AudioManager();
+
+        // --- 3. GAME STATE & DOM ELEMENTS ---
+        let currentStoryIndex = 0;
+        let currentStoryData = null;
+        // We store user inputs here to map them to the translation later
+        let currentUserInputs = {}; 
+
+        const dom = {
+            inputPhase: document.getElementById('input-phase'),
+            revealPhase: document.getElementById('reveal-phase'),
+            form: document.getElementById('words-form'),
+            titlePreview: document.getElementById('story-title-preview'),
+            btnReady: document.getElementById('btn-ready'),
+            btnRestart: document.getElementById('btn-restart'),
+            finalTitle: document.getElementById('final-title'),
+            storyContent: document.getElementById('story-content'),
+            translationContent: document.getElementById('translation-content')
+        };
+
+        // --- 4. CORE FUNCTIONS ---
+
+        function initGame() {
+            currentUserInputs = {}; // Reset stored inputs
+            
+            // Pick a random story
+            let newIndex;
+            do {
+                newIndex = Math.floor(Math.random() * stories.length);
+            } while (newIndex === currentStoryIndex && stories.length > 1); // Avoid repeat if possible
+            
+            currentStoryIndex = newIndex;
+            
+            // Clone the data so we don't overwrite the original template
+            currentStoryData = JSON.parse(JSON.stringify(stories[currentStoryIndex]));
+
+            renderInputForm();
+            
+            // Switch view to input
+            dom.inputPhase.classList.remove('hidden');
+            dom.revealPhase.classList.add('hidden');
+            
+            // Scroll to top
+            window.scrollTo(0, 0);
+        }
+
+        function renderInputForm() {
+            dom.form.innerHTML = ''; // Clear previous inputs
+            dom.titlePreview.textContent = `Historia #${currentStoryIndex + 1}: ???`; 
+
+            // Loop through segments to find placeholders
+            currentStoryData.segments.forEach((segment, index) => {
+                if (typeof segment === 'object' && segment.type === 'input') {
+                    
+                    const fieldContainer = document.createElement('div');
+                    fieldContainer.className = "flex flex-col md:flex-row md:items-center gap-2";
+
+                    const label = document.createElement('label');
+                    label.textContent = `▶ ${segment.label}:`;
+                    label.className = "text-gray-600 font-bold text-lg w-full md:w-1/3";
+                    label.setAttribute('for', segment.id);
+
+                    const input = document.createElement('input');
+                    input.type = "text";
+                    input.id = segment.id;
+                    input.className = "custom-input w-full md:w-2/3 p-2";
+                    input.placeholder = "...escribe aquí";
+                    input.autocomplete = "off";
+
+                    input.addEventListener('focus', () => {
+                        audioManager.play('type');
+                    });
+
+                    // Store segment index AND ID in dataset
+                    input.dataset.segmentIndex = index;
+                    input.dataset.id = segment.id;
+
+                    fieldContainer.appendChild(label);
+                    fieldContainer.appendChild(input);
+                    dom.form.appendChild(fieldContainer);
+                }
+            });
+        }
+
+        function handleReadyClick() {
+            audioManager.play('click');
+            
+            // Validation & Collection
+            const inputs = dom.form.querySelectorAll('input');
+            let allFilled = true;
+
+            inputs.forEach(input => {
+                const val = input.value.trim();
+                const id = input.dataset.id;
+                
+                if (!val) {
+                    allFilled = false;
+                    input.style.borderBottom = "3px solid red"; 
+                } else {
+                    input.style.borderBottom = "2px dashed #9ca3af"; 
+                    
+                    // Update the data structure for Spanish generation
+                    const segIndex = input.dataset.segmentIndex;
+                    currentStoryData.segments[segIndex].value = val;
+                    
+                    // Store in global object for Translation mapping
+                    currentUserInputs[id] = val;
+                }
+            });
+
+            if (!allFilled) {
+                alert("¡Faltan palabras! Por favor llena todos los espacios.");
+                return;
+            }
+
+            // If valid, transition
+            constructAndRevealStory();
+        }
+
+        function constructAndRevealStory() {
+            // 1. Build Spanish HTML
+            let storyHTML = "";
+            currentStoryData.segments.forEach(segment => {
+                if (typeof segment === 'string') {
+                    storyHTML += `<span>${segment}</span>`;
+                } else if (segment.type === 'input') {
+                    storyHTML += `<span class="user-word" onmouseenter="audioManager.play('hover')">&nbsp;${segment.value}&nbsp;</span>`;
+                }
+            });
+
+            // 2. Build English Translation HTML
+            let transHTML = "";
+            // Default to empty array if no translation provided
+            const transSegments = currentStoryData.translation || [];
+            
+            transSegments.forEach(segment => {
+                if (typeof segment === 'string') {
+                    transHTML += `<span>${segment}</span>`;
+                } else {
+                    // It's an object with an ID reference like { id: 'p1' }
+                    // Look up the value the user typed for this ID
+                    const userVal = currentUserInputs[segment.id] || "???";
+                    transHTML += `<span class="user-word" style="font-style:normal;">&nbsp;${userVal}&nbsp;</span>`;
+                }
+            });
+
+            // 3. Inject into DOM
+            dom.finalTitle.textContent = `${currentStoryData.title} / ${currentStoryData.titleEn}`;
+            dom.storyContent.innerHTML = storyHTML;
+            dom.translationContent.innerHTML = transHTML;
+
+            // 4. Visual Transition
+            dom.inputPhase.classList.add('hidden');
+            dom.revealPhase.classList.remove('hidden');
+            dom.revealPhase.classList.add('poof-effect');
+            
+            // 5. Audio Transition
+            audioManager.play('reveal');
+
+            setTimeout(() => {
+                dom.revealPhase.classList.remove('poof-effect');
+            }, 500);
+            
+            window.scrollTo(0, 0);
+        }
+
+        // --- 5. EVENT LISTENERS ---
+        dom.btnReady.addEventListener('click', handleReadyClick);
+        
+        dom.btnRestart.addEventListener('click', () => {
+            audioManager.play('click');
+            initGame(); 
+        });
+
+        // --- INITIALIZATION ---
+        window.addEventListener('DOMContentLoaded', initGame);
+
+    </script>
+</body>
+</html>

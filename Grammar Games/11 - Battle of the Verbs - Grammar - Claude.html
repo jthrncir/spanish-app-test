@@ -1,0 +1,1703 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚔️ Batalla de los Verbos: Ser vs. Estar ⚔️</title>
+    <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Uncial+Antiqua&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        :root {
+            --ser-primary: #1e3a5f;
+            --ser-secondary: #3498db;
+            --ser-accent: #87ceeb;
+            --estar-primary: #8b1a1a;
+            --estar-secondary: #e74c3c;
+            --estar-accent: #ff6b6b;
+            --parchment: #f4e4bc;
+            --ink: #2c1810;
+        }
+
+        body {
+            font-family: 'MedievalSharp', cursive;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            cursor: crosshair;
+        }
+
+        /* Background - Medieval Landscape */
+        .game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                #87ceeb 0%,
+                #b8d4e8 40%,
+                #f0e68c 40%,
+                #8fbc8f 45%,
+                #228b22 55%,
+                #2d5a27 100%
+            );
+        }
+
+        /* Clouds */
+        .clouds {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 35%;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.8;
+            animation: float-cloud 60s linear infinite;
+        }
+
+        .cloud::before,
+        .cloud::after {
+            content: '';
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+        }
+
+        .cloud:nth-child(1) {
+            width: 100px;
+            height: 40px;
+            top: 10%;
+            left: -100px;
+            animation-duration: 45s;
+        }
+        .cloud:nth-child(1)::before { width: 50px; height: 50px; top: -25px; left: 20px; }
+        .cloud:nth-child(1)::after { width: 40px; height: 40px; top: -15px; left: 50px; }
+
+        .cloud:nth-child(2) {
+            width: 80px;
+            height: 35px;
+            top: 5%;
+            left: -80px;
+            animation-duration: 55s;
+            animation-delay: 10s;
+        }
+        .cloud:nth-child(2)::before { width: 45px; height: 45px; top: -22px; left: 15px; }
+        .cloud:nth-child(2)::after { width: 35px; height: 35px; top: -12px; left: 40px; }
+
+        .cloud:nth-child(3) {
+            width: 120px;
+            height: 50px;
+            top: 15%;
+            left: -120px;
+            animation-duration: 70s;
+            animation-delay: 25s;
+        }
+        .cloud:nth-child(3)::before { width: 60px; height: 60px; top: -30px; left: 25px; }
+        .cloud:nth-child(3)::after { width: 50px; height: 50px; top: -20px; left: 60px; }
+
+        @keyframes float-cloud {
+            from { transform: translateX(0); }
+            to { transform: translateX(calc(100vw + 200px)); }
+        }
+
+        /* Scoreboard */
+        .scoreboard {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--parchment) 0%, #e8d4a0 100%);
+            border: 4px solid #8b4513;
+            border-radius: 10px;
+            padding: 10px 30px;
+            box-shadow: 
+                0 4px 15px rgba(0,0,0,0.3),
+                inset 0 2px 5px rgba(255,255,255,0.5);
+            z-index: 100;
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .scoreboard::before {
+            content: '📜';
+            font-size: 1.5rem;
+        }
+
+        .score-item {
+            text-align: center;
+        }
+
+        .score-label {
+            font-family: 'Uncial Antiqua', serif;
+            font-size: 0.8rem;
+            color: #5a3e2b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .score-value {
+            font-size: 1.8rem;
+            color: var(--ink);
+            font-weight: bold;
+        }
+
+        /* Castles */
+        .castle {
+            position: absolute;
+            bottom: 0;
+            width: 28%;
+            height: 70%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .castle.bounce {
+            animation: castle-bounce 0.5s ease-out;
+        }
+
+        @keyframes castle-bounce {
+            0%, 100% { transform: scale(1); }
+            30% { transform: scale(1.08) translateY(-10px); }
+            50% { transform: scale(0.95); }
+            70% { transform: scale(1.02); }
+        }
+
+        .castle-ser {
+            left: 0;
+        }
+
+        .castle-estar {
+            right: 0;
+        }
+
+        .castle-structure {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Castle Base */
+        .castle-base {
+            position: absolute;
+            bottom: 0;
+            width: 90%;
+            height: 60%;
+            border-radius: 5px 5px 0 0;
+        }
+
+        .castle-ser .castle-base {
+            background: linear-gradient(180deg, 
+                #4a6fa5 0%, 
+                #2c4a7c 30%, 
+                #1e3a5f 100%
+            );
+            box-shadow: 
+                inset 5px 0 20px rgba(0,0,0,0.3),
+                inset -5px 0 20px rgba(0,0,0,0.3),
+                0 0 30px rgba(30, 58, 95, 0.5);
+        }
+
+        .castle-estar .castle-base {
+            background: linear-gradient(180deg, 
+                #c0392b 0%, 
+                #a93226 30%, 
+                #8b1a1a 100%
+            );
+            box-shadow: 
+                inset 5px 0 20px rgba(0,0,0,0.3),
+                inset -5px 0 20px rgba(0,0,0,0.3),
+                0 0 30px rgba(139, 26, 26, 0.5);
+        }
+
+        /* Stone texture overlay */
+        .castle-base::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 20px,
+                    rgba(0,0,0,0.1) 20px,
+                    rgba(0,0,0,0.1) 22px
+                ),
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 30px,
+                    rgba(0,0,0,0.05) 30px,
+                    rgba(0,0,0,0.05) 32px
+                );
+            border-radius: inherit;
+        }
+
+        /* Towers */
+        .tower {
+            position: absolute;
+            bottom: 55%;
+            width: 25%;
+            height: 50%;
+            border-radius: 5px 5px 0 0;
+        }
+
+        .tower::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+        }
+
+        .castle-ser .tower {
+            background: linear-gradient(180deg, #3d5a80 0%, #1e3a5f 100%);
+        }
+
+        .castle-estar .tower {
+            background: linear-gradient(180deg, #b83227 0%, #8b1a1a 100%);
+        }
+
+        .tower.left { left: 5%; }
+        .tower.right { right: 5%; }
+
+        .castle-ser .tower::before {
+            border-bottom: 30px solid var(--ser-secondary);
+        }
+
+        .castle-estar .tower::before {
+            border-bottom: 30px solid var(--estar-secondary);
+        }
+
+        /* Battlements */
+        .battlements {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 20px;
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .merlon {
+            width: 15%;
+            height: 100%;
+            border-radius: 2px 2px 0 0;
+        }
+
+        .castle-ser .merlon {
+            background: var(--ser-primary);
+        }
+
+        .castle-estar .merlon {
+            background: var(--estar-primary);
+        }
+
+        /* Flag */
+        .flag-pole {
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 80px;
+            background: linear-gradient(90deg, #8b7355 0%, #a08060 50%, #8b7355 100%);
+            border-radius: 3px;
+        }
+
+        .flag {
+            position: absolute;
+            top: 0;
+            left: 6px;
+            width: 60px;
+            height: 40px;
+            animation: wave-flag 2s ease-in-out infinite;
+            transform-origin: left center;
+            clip-path: polygon(0 0, 85% 10%, 100% 50%, 85% 90%, 0 100%);
+        }
+
+        .castle-ser .flag {
+            background: linear-gradient(135deg, var(--ser-secondary) 0%, var(--ser-primary) 100%);
+        }
+
+        .castle-estar .flag {
+            background: linear-gradient(135deg, var(--estar-secondary) 0%, var(--estar-primary) 100%);
+        }
+
+        @keyframes wave-flag {
+            0%, 100% { transform: skewY(0deg) scaleX(1); }
+            25% { transform: skewY(2deg) scaleX(0.95); }
+            75% { transform: skewY(-2deg) scaleX(1.02); }
+        }
+
+        /* Castle Gate */
+        .gate {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 35%;
+            height: 35%;
+            background: linear-gradient(180deg, #2c1810 0%, #1a0f0a 100%);
+            border-radius: 50% 50% 0 0;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+            overflow: hidden;
+        }
+
+        .gate::before {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 85%;
+            background: repeating-linear-gradient(
+                0deg,
+                #4a3728 0px,
+                #4a3728 8px,
+                #3a2718 8px,
+                #3a2718 10px
+            );
+            border-radius: 40% 40% 0 0;
+        }
+
+        .gate.open::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(ellipse at center bottom, #ffd700 0%, transparent 70%);
+            animation: gate-glow 0.5s ease-out;
+        }
+
+        @keyframes gate-glow {
+            0% { opacity: 0; }
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Castle Label */
+        .castle-label {
+            position: absolute;
+            bottom: calc(60% + 30px);
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Uncial Antiqua', serif;
+            font-size: clamp(1.2rem, 3vw, 2rem);
+            color: var(--parchment);
+            text-shadow: 
+                2px 2px 0 var(--ink),
+                -2px -2px 0 var(--ink),
+                2px -2px 0 var(--ink),
+                -2px 2px 0 var(--ink),
+                0 3px 10px rgba(0,0,0,0.5);
+            white-space: nowrap;
+            letter-spacing: 2px;
+        }
+
+        .castle-rules {
+            position: absolute;
+            bottom: calc(60% + 5px);
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: clamp(0.6rem, 1.5vw, 0.9rem);
+            color: var(--parchment);
+            text-shadow: 1px 1px 3px var(--ink);
+            opacity: 0.9;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        /* The Bubble (Projectile) */
+        .bubble {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            min-width: 180px;
+            max-width: 300px;
+            padding: 20px 25px;
+            background: 
+                radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.3) 0%, transparent 50%),
+                linear-gradient(135deg, #d4c4a8 0%, #c4b498 50%, #b4a488 100%);
+            border: 4px solid #8b7355;
+            border-radius: 50%;
+            box-shadow: 
+                0 8px 25px rgba(0,0,0,0.4),
+                inset 0 -5px 15px rgba(0,0,0,0.2),
+                inset 0 5px 15px rgba(255,255,255,0.3);
+            cursor: grab;
+            z-index: 50;
+            text-align: center;
+            transition: box-shadow 0.2s;
+        }
+
+        .bubble:active {
+            cursor: grabbing;
+        }
+
+        .bubble.grabbed {
+            cursor: grabbing;
+            box-shadow: 
+                0 15px 40px rgba(0,0,0,0.5),
+                inset 0 -5px 15px rgba(0,0,0,0.2),
+                inset 0 5px 15px rgba(255,255,255,0.3);
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        .bubble.flying {
+            transition: none;
+            pointer-events: none;
+        }
+
+        .bubble.splat {
+            animation: splat 0.6s ease-out forwards;
+        }
+
+        @keyframes splat {
+            0% { 
+                transform: translate(-50%, -50%) scale(1); 
+                opacity: 1;
+            }
+            30% { 
+                transform: translate(-50%, -50%) scale(1.5, 0.3); 
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(0.8, 0.4);
+            }
+            100% { 
+                transform: translate(-50%, 100px) scale(0.6, 0.2); 
+                opacity: 0.5;
+            }
+        }
+
+        .bubble.success {
+            animation: success-fly 0.4s ease-in forwards;
+        }
+
+        @keyframes success-fly {
+            0% { 
+                transform: translate(-50%, -50%) scale(1); 
+                opacity: 1;
+            }
+            100% { 
+                transform: translate(-50%, -50%) scale(0.3); 
+                opacity: 0;
+            }
+        }
+
+        .bubble-text {
+            font-family: 'MedievalSharp', cursive;
+            font-size: clamp(1rem, 2.5vw, 1.4rem);
+            color: var(--ink);
+            line-height: 1.4;
+        }
+
+        .bubble-blank {
+            display: inline-block;
+            min-width: 60px;
+            border-bottom: 3px solid var(--ink);
+            margin: 0 5px;
+        }
+
+        /* Splat Text */
+        .splat-text {
+            position: absolute;
+            font-family: 'Uncial Antiqua', serif;
+            font-size: 3rem;
+            color: #ff4444;
+            text-shadow: 
+                3px 3px 0 #aa0000,
+                -1px -1px 0 #ffaaaa;
+            animation: splat-appear 0.5s ease-out;
+            z-index: 60;
+            pointer-events: none;
+        }
+
+        @keyframes splat-appear {
+            0% { 
+                transform: scale(0) rotate(-20deg); 
+                opacity: 0;
+            }
+            50% { 
+                transform: scale(1.3) rotate(10deg); 
+            }
+            100% { 
+                transform: scale(1) rotate(0deg); 
+                opacity: 1;
+            }
+        }
+
+        /* Confetti */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            pointer-events: none;
+            z-index: 70;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(300px) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        /* Rule Feedback */
+        .rule-feedback {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, var(--parchment) 0%, #e8d4a0 100%);
+            border: 4px solid #8b4513;
+            border-radius: 15px;
+            padding: 20px 40px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            z-index: 80;
+            animation: feedback-appear 0.4s ease-out;
+        }
+
+        @keyframes feedback-appear {
+            0% { 
+                transform: translate(-50%, -50%) scale(0); 
+                opacity: 0;
+            }
+            70% { 
+                transform: translate(-50%, -50%) scale(1.1); 
+            }
+            100% { 
+                transform: translate(-50%, -50%) scale(1); 
+                opacity: 1;
+            }
+        }
+
+        .rule-feedback.correct {
+            border-color: #2ecc71;
+            background: linear-gradient(135deg, #d5f5e3 0%, #a9dfbf 100%);
+        }
+
+        .rule-feedback.incorrect {
+            border-color: #e74c3c;
+            background: linear-gradient(135deg, #fadbd8 0%, #f5b7b1 100%);
+        }
+
+        .rule-feedback h3 {
+            font-family: 'Uncial Antiqua', serif;
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        .rule-feedback.correct h3 {
+            color: #27ae60;
+        }
+
+        .rule-feedback.incorrect h3 {
+            color: #c0392b;
+        }
+
+        .rule-feedback p {
+            font-size: 1.1rem;
+            color: var(--ink);
+        }
+
+        /* Instructions */
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(244, 228, 188, 0.95);
+            border: 3px solid #8b4513;
+            border-radius: 10px;
+            padding: 10px 25px;
+            text-align: center;
+            z-index: 40;
+        }
+
+        .instructions p {
+            font-size: 1rem;
+            color: var(--ink);
+        }
+
+        .instructions span {
+            font-weight: bold;
+        }
+
+        /* Game Over Screen */
+        .game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            animation: fade-in 0.5s ease-out;
+        }
+
+        @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .game-over-content {
+            background: linear-gradient(135deg, var(--parchment) 0%, #e8d4a0 100%);
+            border: 6px solid #8b4513;
+            border-radius: 20px;
+            padding: 40px 60px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            animation: game-over-appear 0.6s ease-out;
+        }
+
+        @keyframes game-over-appear {
+            0% { 
+                transform: scale(0) rotate(-10deg); 
+                opacity: 0;
+            }
+            100% { 
+                transform: scale(1) rotate(0deg); 
+                opacity: 1;
+            }
+        }
+
+        .game-over h2 {
+            font-family: 'Uncial Antiqua', serif;
+            font-size: 2.5rem;
+            color: var(--ink);
+            margin-bottom: 20px;
+        }
+
+        .game-over .final-score {
+            font-size: 1.5rem;
+            color: #5a3e2b;
+            margin-bottom: 30px;
+        }
+
+        .game-over button {
+            font-family: 'MedievalSharp', cursive;
+            font-size: 1.3rem;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #8b4513 0%, #654321 100%);
+            color: var(--parchment);
+            border: 3px solid #5a3e2b;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .game-over button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+            background: linear-gradient(135deg, #a0522d 0%, #8b4513 100%);
+        }
+
+        /* Round indicator */
+        .round-indicator {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'MedievalSharp', cursive;
+            font-size: 1rem;
+            color: var(--ink);
+            background: rgba(244, 228, 188, 0.9);
+            padding: 5px 15px;
+            border-radius: 5px;
+            border: 2px solid #8b4513;
+            z-index: 90;
+        }
+
+        /* Trajectory hint arrow */
+        .trajectory-hint {
+            position: absolute;
+            pointer-events: none;
+            z-index: 45;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .trajectory-hint.visible {
+            opacity: 0.6;
+        }
+
+        .trajectory-arrow {
+            stroke: var(--ink);
+            stroke-width: 3;
+            fill: none;
+            stroke-dasharray: 10, 5;
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 768px) {
+            .castle {
+                width: 32%;
+            }
+            
+            .bubble {
+                min-width: 140px;
+                padding: 15px 20px;
+            }
+            
+            .scoreboard {
+                padding: 8px 20px;
+                gap: 20px;
+            }
+            
+            .instructions {
+                bottom: 10px;
+                padding: 8px 15px;
+            }
+            
+            .instructions p {
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container" id="gameContainer">
+        <!-- Clouds -->
+        <div class="clouds">
+            <div class="cloud"></div>
+            <div class="cloud"></div>
+            <div class="cloud"></div>
+        </div>
+
+        <!-- Scoreboard -->
+        <div class="scoreboard">
+            <div class="score-item">
+                <div class="score-label">Score</div>
+                <div class="score-value" id="score">0</div>
+            </div>
+            <div class="score-item">
+                <div class="score-label">Streak</div>
+                <div class="score-value" id="streak">0</div>
+            </div>
+        </div>
+
+        <div class="round-indicator" id="roundIndicator">Question 1 of 15</div>
+
+        <!-- Castle of SER (Left) -->
+        <div class="castle castle-ser" id="castleSer">
+            <div class="castle-structure">
+                <div class="flag-pole">
+                    <div class="flag"></div>
+                </div>
+                <div class="tower left">
+                    <div class="battlements">
+                        <div class="merlon"></div>
+                        <div class="merlon"></div>
+                    </div>
+                </div>
+                <div class="tower right">
+                    <div class="battlements">
+                        <div class="merlon"></div>
+                        <div class="merlon"></div>
+                    </div>
+                </div>
+                <div class="castle-base">
+                    <div class="battlements">
+                        <div class="merlon"></div>
+                        <div class="merlon"></div>
+                        <div class="merlon"></div>
+                        <div class="merlon"></div>
+                        <div class="merlon"></div>
+                    </div>
+                    <div class="gate" id="gateSer"></div>
+                </div>
+            </div>
+            <div class="castle-label">⚔️ SER ⚔️</div>
+            <div class="castle-rules">Identity • Time • Characteristics</div>
+        </div>
+
+        <!-- Castle of ESTAR (Right) -->
+        <div class="castle castle-estar" id="castleEstar">
+            <div class="castle-structure">
+                <div class="flag-pole">
+                    <div class="flag"></div>
+                </div>
+                <div class="tower left">
+                    <div class="battlements">
+                        <div class="merlon"></div>
+                        <div class="merlon"></div>
+                    </div>
+                </div>
+                <div class="tower right">
+                    <div class="battlements">
+                        <div class="merlon"></div>
+                        <div class="merlon"></div>
+                    </div>
+                </div>
+                <div class="castle-base">
+                    <div class="battlements">
+                        <div class="merlon"></div>
+                        <div class="merlon"></div>
+                        <div class="merlon"></div>
+                        <div class="merlon"></div>
+                        <div class="merlon"></div>
+                    </div>
+                    <div class="gate" id="gateEstar"></div>
+                </div>
+            </div>
+            <div class="castle-label">🛡️ ESTAR 🛡️</div>
+            <div class="castle-rules">Location • Emotions • Conditions</div>
+        </div>
+
+        <!-- The Bubble -->
+        <div class="bubble" id="bubble">
+            <div class="bubble-text" id="bubbleText">
+                Yo <span class="bubble-blank"></span> alto
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="instructions">
+            <p>🎯 <span>Drag and fling</span> the bubble to the correct castle!</p>
+        </div>
+
+        <!-- Trajectory hint (SVG) -->
+        <svg class="trajectory-hint" id="trajectoryHint" width="100%" height="100%">
+            <path class="trajectory-arrow" id="trajectoryPath"></path>
+        </svg>
+    </div>
+
+    <script>
+        // ==========================================
+        // GAME DATA - THE AMMUNITION (100+ sentences)
+        // ==========================================
+        const sentences = [
+            // ========== SER - Physical Characteristics ==========
+            { text: "Yo ___ alto", type: 'SER', rule: 'Physical Characteristic - Height is a permanent trait' },
+            { text: "Ella ___ inteligente", type: 'SER', rule: 'Inherent Characteristic - Intelligence is an inherent quality' },
+            { text: "El coche ___ rojo", type: 'SER', rule: 'Physical Characteristic - Color is a defining feature' },
+            { text: "La casa ___ grande", type: 'SER', rule: 'Physical Characteristic - Size is a permanent trait' },
+            { text: "Mi hermano ___ guapo", type: 'SER', rule: 'Physical Characteristic - Appearance as inherent quality' },
+            { text: "Los elefantes ___ enormes", type: 'SER', rule: 'Physical Characteristic - Size is a defining trait' },
+            { text: "El cielo ___ azul", type: 'SER', rule: 'Physical Characteristic - Inherent color' },
+            { text: "La nieve ___ blanca", type: 'SER', rule: 'Physical Characteristic - Inherent color' },
+            { text: "Tu perro ___ pequeño", type: 'SER', rule: 'Physical Characteristic - Size is a permanent trait' },
+            { text: "Las montañas ___ altas", type: 'SER', rule: 'Physical Characteristic - Height is inherent' },
+            { text: "El edificio ___ muy viejo", type: 'SER', rule: 'Physical Characteristic - Age as defining quality' },
+            { text: "La pizza ___ redonda", type: 'SER', rule: 'Physical Characteristic - Shape is inherent' },
+            { text: "Sus ojos ___ verdes", type: 'SER', rule: 'Physical Characteristic - Eye color is permanent' },
+            { text: "El río ___ largo", type: 'SER', rule: 'Physical Characteristic - Length is inherent' },
+            
+            // ========== SER - Identity ==========
+            { text: "Nosotros ___ estudiantes", type: 'SER', rule: 'Identity - Describing what someone is' },
+            { text: "Yo ___ americano", type: 'SER', rule: 'Identity - Nationality is part of identity' },
+            { text: "Ella ___ mi madre", type: 'SER', rule: 'Identity - Family relationship' },
+            { text: "Ellos ___ mis amigos", type: 'SER', rule: 'Identity - Relationship definition' },
+            { text: "Tú ___ mi mejor amigo", type: 'SER', rule: 'Identity - Relationship definition' },
+            { text: "Nosotros ___ hermanos", type: 'SER', rule: 'Identity - Family relationship' },
+            { text: "¿Quién ___ ella?", type: 'SER', rule: 'Identity - Asking about someone\'s identity' },
+            { text: "Yo ___ Juan", type: 'SER', rule: 'Identity - Name is part of identity' },
+            { text: "Eso ___ un problema", type: 'SER', rule: 'Identity - Defining what something is' },
+            { text: "Esta ___ mi casa", type: 'SER', rule: 'Identity - Identifying ownership' },
+            { text: "Él ___ el presidente", type: 'SER', rule: 'Identity - Title/Role definition' },
+            
+            // ========== SER - Profession ==========
+            { text: "Él ___ doctor", type: 'SER', rule: 'Profession - Occupation defines identity' },
+            { text: "Mi padre ___ ingeniero", type: 'SER', rule: 'Profession - Occupation defines identity' },
+            { text: "Ella ___ profesora", type: 'SER', rule: 'Profession - Occupation defines identity' },
+            { text: "Ellos ___ abogados", type: 'SER', rule: 'Profession - Occupation defines identity' },
+            { text: "Mi tía ___ enfermera", type: 'SER', rule: 'Profession - Occupation defines identity' },
+            { text: "Yo ___ músico", type: 'SER', rule: 'Profession - Occupation defines identity' },
+            { text: "Nosotros ___ artistas", type: 'SER', rule: 'Profession - Occupation defines identity' },
+            { text: "¿Tú ___ policía?", type: 'SER', rule: 'Profession - Asking about occupation' },
+            { text: "Mi vecino ___ bombero", type: 'SER', rule: 'Profession - Occupation defines identity' },
+            { text: "Ella ___ escritora famosa", type: 'SER', rule: 'Profession - Occupation defines identity' },
+            
+            // ========== SER - Origin ==========
+            { text: "Ellos ___ de México", type: 'SER', rule: 'Origin - Where someone is from' },
+            { text: "Yo ___ de Nueva York", type: 'SER', rule: 'Origin - Where someone is from' },
+            { text: "¿De dónde ___ tú?", type: 'SER', rule: 'Origin - Asking about origin' },
+            { text: "El café ___ de Colombia", type: 'SER', rule: 'Origin - Where something comes from' },
+            { text: "Mis abuelos ___ de España", type: 'SER', rule: 'Origin - Where someone is from' },
+            { text: "Este vino ___ de Francia", type: 'SER', rule: 'Origin - Where something comes from' },
+            { text: "La pizza ___ de Italia", type: 'SER', rule: 'Origin - Where something originates' },
+            { text: "Nosotros ___ de California", type: 'SER', rule: 'Origin - Where someone is from' },
+            
+            // ========== SER - Time ==========
+            { text: "___ las tres de la tarde", type: 'SER', rule: 'Time - Telling time uses SER' },
+            { text: "Hoy ___ lunes", type: 'SER', rule: 'Date - Days of the week use SER' },
+            { text: "___ el cinco de mayo", type: 'SER', rule: 'Date - Calendar dates use SER' },
+            { text: "¿Qué hora ___?", type: 'SER', rule: 'Time - Asking time uses SER' },
+            { text: "___ medianoche", type: 'SER', rule: 'Time - Telling time uses SER' },
+            { text: "___ la una de la mañana", type: 'SER', rule: 'Time - Telling time uses SER' },
+            { text: "Mañana ___ martes", type: 'SER', rule: 'Date - Days of the week use SER' },
+            { text: "___ verano", type: 'SER', rule: 'Time - Seasons use SER' },
+            { text: "___ primavera", type: 'SER', rule: 'Time - Seasons use SER' },
+            { text: "Ya ___ tarde", type: 'SER', rule: 'Time - General time reference uses SER' },
+            
+            // ========== SER - Material ==========
+            { text: "La mesa ___ de madera", type: 'SER', rule: 'Material - What something is made of' },
+            { text: "El anillo ___ de oro", type: 'SER', rule: 'Material - What something is made of' },
+            { text: "La camisa ___ de algodón", type: 'SER', rule: 'Material - What something is made of' },
+            { text: "Las ventanas ___ de vidrio", type: 'SER', rule: 'Material - What something is made of' },
+            { text: "El puente ___ de acero", type: 'SER', rule: 'Material - What something is made of' },
+            { text: "Mi bolsa ___ de cuero", type: 'SER', rule: 'Material - What something is made of' },
+            
+            // ========== SER - Possession ==========
+            { text: "El libro ___ de mi hermana", type: 'SER', rule: 'Possession - Ownership uses SER + de' },
+            { text: "Este carro ___ de mi padre", type: 'SER', rule: 'Possession - Ownership uses SER + de' },
+            { text: "¿De quién ___ este lápiz?", type: 'SER', rule: 'Possession - Asking about ownership' },
+            { text: "La casa ___ de mis abuelos", type: 'SER', rule: 'Possession - Ownership uses SER + de' },
+            
+            // ========== SER - Events ==========
+            { text: "La fiesta ___ en mi casa", type: 'SER', rule: 'Event Location - Where events take place uses SER' },
+            { text: "El concierto ___ mañana", type: 'SER', rule: 'Event Time - When events occur uses SER' },
+            { text: "La reunión ___ a las diez", type: 'SER', rule: 'Event Time - When events occur uses SER' },
+            { text: "La boda ___ en la iglesia", type: 'SER', rule: 'Event Location - Where events take place uses SER' },
+            { text: "El examen ___ el viernes", type: 'SER', rule: 'Event Time - When events occur uses SER' },
+            
+            // ========== ESTAR - Location ==========
+            { text: "Nosotros ___ en la escuela", type: 'ESTAR', rule: 'Location - Physical position of people/things' },
+            { text: "El gato ___ debajo de la cama", type: 'ESTAR', rule: 'Location - Physical position' },
+            { text: "Madrid ___ en España", type: 'ESTAR', rule: 'Location - Geographic position' },
+            { text: "¿Dónde ___ el baño?", type: 'ESTAR', rule: 'Location - Asking about position' },
+            { text: "Los libros ___ en la mesa", type: 'ESTAR', rule: 'Location - Physical position of objects' },
+            { text: "Mi teléfono ___ en mi bolsillo", type: 'ESTAR', rule: 'Location - Physical position' },
+            { text: "El restaurante ___ cerca", type: 'ESTAR', rule: 'Location - Relative position' },
+            { text: "Tu mochila ___ en el carro", type: 'ESTAR', rule: 'Location - Physical position' },
+            { text: "¿___ lejos el aeropuerto?", type: 'ESTAR', rule: 'Location - Asking about distance' },
+            { text: "El perro ___ en el jardín", type: 'ESTAR', rule: 'Location - Physical position' },
+            { text: "Mis llaves ___ en la cocina", type: 'ESTAR', rule: 'Location - Physical position of objects' },
+            { text: "Ella ___ en el trabajo", type: 'ESTAR', rule: 'Location - Where someone currently is' },
+            { text: "Nosotros ___ de vacaciones", type: 'ESTAR', rule: 'Location - Current situation/state' },
+            { text: "El banco ___ a la derecha", type: 'ESTAR', rule: 'Location - Directional position' },
+            { text: "Los niños ___ en el parque", type: 'ESTAR', rule: 'Location - Physical position' },
+            
+            // ========== ESTAR - Temporary Conditions ==========
+            { text: "La sopa ___ fría", type: 'ESTAR', rule: 'Temporary Condition - Temperature can change' },
+            { text: "Yo ___ cansado hoy", type: 'ESTAR', rule: 'Temporary Condition - Fatigue is temporary' },
+            { text: "Ella ___ enferma", type: 'ESTAR', rule: 'Temporary Condition - Illness is temporary' },
+            { text: "El café ___ caliente", type: 'ESTAR', rule: 'Temporary Condition - Temperature can change' },
+            { text: "La puerta ___ abierta", type: 'ESTAR', rule: 'State/Condition - Result of an action' },
+            { text: "La tienda ___ cerrada", type: 'ESTAR', rule: 'State/Condition - Current state' },
+            { text: "El agua ___ sucia", type: 'ESTAR', rule: 'Temporary Condition - Cleanliness can change' },
+            { text: "Mi cuarto ___ limpio", type: 'ESTAR', rule: 'Temporary Condition - Cleanliness can change' },
+            { text: "La comida ___ lista", type: 'ESTAR', rule: 'State/Condition - Result of preparation' },
+            { text: "El carro ___ roto", type: 'ESTAR', rule: 'State/Condition - Result of damage' },
+            { text: "La luz ___ apagada", type: 'ESTAR', rule: 'State/Condition - Current state' },
+            { text: "La ventana ___ rota", type: 'ESTAR', rule: 'State/Condition - Result of action' },
+            { text: "Tu pelo ___ mojado", type: 'ESTAR', rule: 'Temporary Condition - Will dry eventually' },
+            { text: "La pizza ___ fría ahora", type: 'ESTAR', rule: 'Temporary Condition - Temperature changed' },
+            { text: "El pastel ___ delicioso", type: 'ESTAR', rule: 'Temporary Condition - Taste experience now' },
+            
+            // ========== ESTAR - Emotions ==========
+            { text: "Ellos ___ contentos", type: 'ESTAR', rule: 'Emotion - Feelings are temporary states' },
+            { text: "Yo ___ nervioso por el examen", type: 'ESTAR', rule: 'Emotion - Temporary feeling' },
+            { text: "María ___ triste hoy", type: 'ESTAR', rule: 'Emotion - Current emotional state' },
+            { text: "Tú ___ muy feliz", type: 'ESTAR', rule: 'Emotion - Current emotional state' },
+            { text: "Mi mamá ___ preocupada", type: 'ESTAR', rule: 'Emotion - Temporary feeling' },
+            { text: "Nosotros ___ emocionados", type: 'ESTAR', rule: 'Emotion - Temporary feeling' },
+            { text: "El profesor ___ enojado", type: 'ESTAR', rule: 'Emotion - Current emotional state' },
+            { text: "Yo ___ aburrido", type: 'ESTAR', rule: 'Emotion - Temporary feeling' },
+            { text: "Ella ___ sorprendida", type: 'ESTAR', rule: 'Emotion - Reaction/feeling' },
+            { text: "Ellos ___ asustados", type: 'ESTAR', rule: 'Emotion - Temporary feeling' },
+            { text: "¿Por qué ___ tú tan serio?", type: 'ESTAR', rule: 'Emotion - Current demeanor' },
+            { text: "Mi hermana ___ celosa", type: 'ESTAR', rule: 'Emotion - Temporary feeling' },
+            { text: "Yo ___ confundido", type: 'ESTAR', rule: 'Emotion - Current mental state' },
+            { text: "Nosotros ___ orgullosos de ti", type: 'ESTAR', rule: 'Emotion - Current feeling' },
+            
+            // ========== ESTAR - Progressive Tense ==========
+            { text: "Yo ___ estudiando español", type: 'ESTAR', rule: 'Progressive - Action happening now (ESTAR + gerund)' },
+            { text: "Ellos ___ comiendo pizza", type: 'ESTAR', rule: 'Progressive - Action happening now (ESTAR + gerund)' },
+            { text: "Nosotros ___ viendo una película", type: 'ESTAR', rule: 'Progressive - Action happening now (ESTAR + gerund)' },
+            { text: "¿Qué ___ haciendo tú?", type: 'ESTAR', rule: 'Progressive - Asking about current action' },
+            { text: "Ella ___ hablando por teléfono", type: 'ESTAR', rule: 'Progressive - Action happening now (ESTAR + gerund)' },
+            { text: "El bebé ___ durmiendo", type: 'ESTAR', rule: 'Progressive - Action happening now (ESTAR + gerund)' },
+            { text: "Yo ___ leyendo un libro", type: 'ESTAR', rule: 'Progressive - Action happening now (ESTAR + gerund)' },
+            { text: "Ellos ___ bailando", type: 'ESTAR', rule: 'Progressive - Action happening now (ESTAR + gerund)' },
+            { text: "Nosotros ___ esperando el autobús", type: 'ESTAR', rule: 'Progressive - Action happening now (ESTAR + gerund)' },
+            { text: "Mi papá ___ trabajando", type: 'ESTAR', rule: 'Progressive - Action happening now (ESTAR + gerund)' },
+            { text: "Los estudiantes ___ escribiendo", type: 'ESTAR', rule: 'Progressive - Action happening now (ESTAR + gerund)' },
+            { text: "Yo ___ aprendiendo mucho", type: 'ESTAR', rule: 'Progressive - Ongoing action (ESTAR + gerund)' },
+            
+            // ========== ESTAR - Health ==========
+            { text: "¿Cómo ___ tú?", type: 'ESTAR', rule: 'Health/Wellbeing - Asking about current state' },
+            { text: "Yo ___ bien, gracias", type: 'ESTAR', rule: 'Health/Wellbeing - Current state' },
+            { text: "Mi abuelo ___ mal hoy", type: 'ESTAR', rule: 'Health/Wellbeing - Temporary health state' },
+            { text: "Ella ___ mejor ahora", type: 'ESTAR', rule: 'Health/Wellbeing - Changed condition' },
+            { text: "Nosotros ___ muy bien", type: 'ESTAR', rule: 'Health/Wellbeing - Current state' },
+            
+            // ========== Tricky Pairs (SER vs ESTAR with same adjective) ==========
+            { text: "Él ___ muy listo", type: 'SER', rule: 'SER + listo = clever/smart (permanent trait)' },
+            { text: "Él ___ listo para salir", type: 'ESTAR', rule: 'ESTAR + listo = ready (temporary state)' },
+            { text: "La manzana ___ verde", type: 'SER', rule: 'SER + verde = green color (characteristic)' },
+            { text: "La manzana ___ verde", type: 'ESTAR', rule: 'ESTAR + verde = unripe (temporary condition)' },
+            { text: "Mi tío ___ muy rico", type: 'SER', rule: 'SER + rico = wealthy (characteristic)' },
+            { text: "Este pastel ___ muy rico", type: 'ESTAR', rule: 'ESTAR + rico = delicious (taste experience)' },
+            { text: "Ella ___ muy guapa", type: 'SER', rule: 'SER + guapa = beautiful (inherent trait)' },
+            { text: "Ella ___ muy guapa hoy", type: 'ESTAR', rule: 'ESTAR + guapa = looks beautiful today (appearance now)' },
+            { text: "Mi abuelo ___ viejo", type: 'SER', rule: 'SER + viejo = old/elderly (characteristic)' },
+            { text: "Este pan ___ viejo", type: 'ESTAR', rule: 'ESTAR + viejo = stale (temporary condition)' },
+        ];
+
+        // ==========================================
+        // AUDIO MANAGER
+        // ==========================================
+        const AudioManager = {
+            sounds: {
+                grab: 'sfx_rubber_stretch.mp3',
+                throw: 'sfx_throw_whoosh.mp3',
+                correct: 'sfx_castle_enter.mp3',
+                wrong: 'sfx_splat_fail.mp3',
+                gameOver: 'sfx_gameover_lute.mp3'
+            },
+            
+            play(soundName) {
+                // In production, this would play actual audio files
+                // For now, we'll use the Web Audio API to generate fun sounds
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                switch(soundName) {
+                    case 'grab':
+                        this.playSquish(audioContext);
+                        break;
+                    case 'throw':
+                        this.playWhoosh(audioContext);
+                        break;
+                    case 'correct':
+                        this.playFanfare(audioContext);
+                        break;
+                    case 'wrong':
+                        this.playSplat(audioContext);
+                        break;
+                    case 'gameOver':
+                        this.playSadLute(audioContext);
+                        break;
+                }
+            },
+            
+            playSquish(ctx) {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.setValueAtTime(150, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.15);
+            },
+            
+            playWhoosh(ctx) {
+                const bufferSize = ctx.sampleRate * 0.3;
+                const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+                }
+                const noise = ctx.createBufferSource();
+                noise.buffer = buffer;
+                const filter = ctx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(1000, ctx.currentTime);
+                filter.frequency.exponentialRampToValueAtTime(3000, ctx.currentTime + 0.2);
+                const gain = ctx.createGain();
+                gain.gain.setValueAtTime(0.4, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(ctx.destination);
+                noise.start();
+            },
+            
+            playFanfare(ctx) {
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                notes.forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.frequency.value = freq;
+                    const startTime = ctx.currentTime + i * 0.08;
+                    gain.gain.setValueAtTime(0, startTime);
+                    gain.gain.linearRampToValueAtTime(0.25, startTime + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.4);
+                    osc.start(startTime);
+                    osc.stop(startTime + 0.4);
+                });
+                
+                // Cha-ching!
+                setTimeout(() => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.frequency.setValueAtTime(2500, ctx.currentTime);
+                    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.3);
+                }, 350);
+            },
+            
+            playSplat(ctx) {
+                // Low thud
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.setValueAtTime(150, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.5, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.2);
+                
+                // Splat noise
+                const bufferSize = ctx.sampleRate * 0.2;
+                const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
+                }
+                const noise = ctx.createBufferSource();
+                noise.buffer = buffer;
+                const noiseGain = ctx.createGain();
+                noiseGain.gain.value = 0.3;
+                noise.connect(noiseGain);
+                noiseGain.connect(ctx.destination);
+                noise.start(ctx.currentTime + 0.05);
+            },
+            
+            playSadLute(ctx) {
+                const notes = [329.63, 293.66, 261.63, 220]; // E4, D4, C4, A3
+                notes.forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.frequency.value = freq;
+                    const startTime = ctx.currentTime + i * 0.3;
+                    gain.gain.setValueAtTime(0.2, startTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.5);
+                    osc.start(startTime);
+                    osc.stop(startTime + 0.5);
+                });
+            }
+        };
+
+        // ==========================================
+        // GAME STATE
+        // ==========================================
+        const GameState = {
+            score: 0,
+            streak: 0,
+            currentIndex: 0,
+            totalQuestions: 15,
+            usedIndices: new Set(),
+            isAnimating: false,
+            
+            reset() {
+                this.score = 0;
+                this.streak = 0;
+                this.currentIndex = 0;
+                this.usedIndices.clear();
+                this.isAnimating = false;
+            },
+            
+            getRandomSentence() {
+                const availableIndices = [];
+                for (let i = 0; i < sentences.length; i++) {
+                    if (!this.usedIndices.has(i)) {
+                        availableIndices.push(i);
+                    }
+                }
+                
+                if (availableIndices.length === 0) {
+                    this.usedIndices.clear();
+                    return sentences[Math.floor(Math.random() * sentences.length)];
+                }
+                
+                const randomIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+                this.usedIndices.add(randomIndex);
+                return sentences[randomIndex];
+            }
+        };
+
+        // ==========================================
+        // DOM ELEMENTS
+        // ==========================================
+        const gameContainer = document.getElementById('gameContainer');
+        const bubble = document.getElementById('bubble');
+        const bubbleText = document.getElementById('bubbleText');
+        const scoreDisplay = document.getElementById('score');
+        const streakDisplay = document.getElementById('streak');
+        const roundIndicator = document.getElementById('roundIndicator');
+        const castleSer = document.getElementById('castleSer');
+        const castleEstar = document.getElementById('castleEstar');
+        const gateSer = document.getElementById('gateSer');
+        const gateEstar = document.getElementById('gateEstar');
+        const trajectoryHint = document.getElementById('trajectoryHint');
+        const trajectoryPath = document.getElementById('trajectoryPath');
+
+        // ==========================================
+        // PHYSICS VARIABLES
+        // ==========================================
+        let isDragging = false;
+        let startX, startY;
+        let currentX, currentY;
+        let lastX, lastY;
+        let velocityX = 0;
+        let velocityY = 0;
+        let lastTime = 0;
+        let currentSentence = null;
+
+        // ==========================================
+        // INITIALIZE GAME
+        // ==========================================
+        function initGame() {
+            GameState.reset();
+            updateScore();
+            loadNextSentence();
+            setupEventListeners();
+        }
+
+        function loadNextSentence() {
+            if (GameState.currentIndex >= GameState.totalQuestions) {
+                endGame();
+                return;
+            }
+            
+            GameState.currentIndex++;
+            currentSentence = GameState.getRandomSentence();
+            
+            // Update bubble text
+            const textParts = currentSentence.text.split('___');
+            if (textParts.length === 2) {
+                bubbleText.innerHTML = `${textParts[0]}<span class="bubble-blank"></span>${textParts[1]}`;
+            } else {
+                bubbleText.textContent = currentSentence.text;
+            }
+            
+            // Reset bubble position
+            bubble.style.left = '50%';
+            bubble.style.top = '50%';
+            bubble.style.transform = 'translate(-50%, -50%)';
+            bubble.className = 'bubble';
+            bubble.style.display = 'block';
+            
+            // Update round indicator
+            roundIndicator.textContent = `Question ${GameState.currentIndex} of ${GameState.totalQuestions}`;
+            
+            GameState.isAnimating = false;
+        }
+
+        function updateScore() {
+            scoreDisplay.textContent = GameState.score;
+            streakDisplay.textContent = GameState.streak;
+        }
+
+        // ==========================================
+        // EVENT LISTENERS
+        // ==========================================
+        function setupEventListeners() {
+            // Mouse events
+            bubble.addEventListener('mousedown', handleStart);
+            document.addEventListener('mousemove', handleMove);
+            document.addEventListener('mouseup', handleEnd);
+            
+            // Touch events
+            bubble.addEventListener('touchstart', handleStart, { passive: false });
+            document.addEventListener('touchmove', handleMove, { passive: false });
+            document.addEventListener('touchend', handleEnd);
+        }
+
+        function handleStart(e) {
+            if (GameState.isAnimating) return;
+            
+            e.preventDefault();
+            isDragging = true;
+            
+            const pos = getEventPosition(e);
+            startX = pos.x;
+            startY = pos.y;
+            lastX = startX;
+            lastY = startY;
+            lastTime = Date.now();
+            
+            bubble.classList.add('grabbed');
+            AudioManager.play('grab');
+        }
+
+        function handleMove(e) {
+            if (!isDragging || GameState.isAnimating) return;
+            
+            e.preventDefault();
+            const pos = getEventPosition(e);
+            currentX = pos.x;
+            currentY = pos.y;
+            
+            // Calculate velocity
+            const now = Date.now();
+            const dt = now - lastTime;
+            if (dt > 0) {
+                velocityX = (currentX - lastX) / dt * 16; // Normalize to ~60fps
+                velocityY = (currentY - lastY) / dt * 16;
+            }
+            
+            lastX = currentX;
+            lastY = currentY;
+            lastTime = now;
+            
+            // Move bubble
+            bubble.style.left = currentX + 'px';
+            bubble.style.top = currentY + 'px';
+            bubble.style.transform = 'translate(-50%, -50%) scale(1.1)';
+            
+            // Show trajectory hint
+            updateTrajectoryHint(currentX, currentY, velocityX, velocityY);
+        }
+
+        function handleEnd(e) {
+            if (!isDragging || GameState.isAnimating) return;
+            
+            isDragging = false;
+            bubble.classList.remove('grabbed');
+            trajectoryHint.classList.remove('visible');
+            
+            // Determine throw direction based on velocity
+            const speed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
+            
+            if (speed > 2) { // Minimum speed threshold
+                AudioManager.play('throw');
+                throwBubble(velocityX, velocityY);
+            } else {
+                // Snap back to center
+                bubble.style.left = '50%';
+                bubble.style.top = '50%';
+                bubble.style.transform = 'translate(-50%, -50%)';
+            }
+        }
+
+        function getEventPosition(e) {
+            if (e.touches && e.touches.length > 0) {
+                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+            return { x: e.clientX, y: e.clientY };
+        }
+
+        function updateTrajectoryHint(x, y, vx, vy) {
+            const speed = Math.sqrt(vx * vx + vy * vy);
+            if (speed < 2) {
+                trajectoryHint.classList.remove('visible');
+                return;
+            }
+            
+            trajectoryHint.classList.add('visible');
+            
+            // Normalize and extend
+            const length = 100;
+            const endX = x + (vx / speed) * length;
+            const endY = y + (vy / speed) * length;
+            
+            trajectoryPath.setAttribute('d', `M ${x} ${y} L ${endX} ${endY}`);
+        }
+
+        // ==========================================
+        // PHYSICS & ANIMATION
+        // ==========================================
+        function throwBubble(vx, vy) {
+            GameState.isAnimating = true;
+            bubble.classList.add('flying');
+            
+            let x = parseFloat(bubble.style.left) || window.innerWidth / 2;
+            let y = parseFloat(bubble.style.top) || window.innerHeight / 2;
+            
+            // Amplify velocity for more dramatic throws
+            vx *= 3;
+            vy *= 3;
+            
+            const friction = 0.98;
+            const gravity = 0.3;
+            
+            function animate() {
+                x += vx;
+                y += vy;
+                
+                // Apply friction and gravity
+                vx *= friction;
+                vy = vy * friction + gravity;
+                
+                bubble.style.left = x + 'px';
+                bubble.style.top = y + 'px';
+                
+                // Check collision with castles
+                const containerRect = gameContainer.getBoundingClientRect();
+                const relativeX = x / containerRect.width;
+                
+                // Hit left castle (SER)
+                if (relativeX < 0.30 && y > containerRect.height * 0.3) {
+                    handleHit('SER', x, y);
+                    return;
+                }
+                
+                // Hit right castle (ESTAR)
+                if (relativeX > 0.70 && y > containerRect.height * 0.3) {
+                    handleHit('ESTAR', x, y);
+                    return;
+                }
+                
+                // Out of bounds
+                if (y > containerRect.height + 100 || x < -100 || x > containerRect.width + 100) {
+                    // Reset without penalty
+                    setTimeout(loadNextSentence, 500);
+                    return;
+                }
+                
+                // Continue animation
+                if (Math.abs(vx) > 0.1 || Math.abs(vy) > 0.1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    // Stopped moving - reset
+                    setTimeout(loadNextSentence, 500);
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        function handleHit(castleType, x, y) {
+            const isCorrect = currentSentence.type === castleType;
+            
+            if (isCorrect) {
+                handleCorrect(castleType, x, y);
+            } else {
+                handleWrong(castleType, x, y);
+            }
+        }
+
+        function handleCorrect(castleType, x, y) {
+            AudioManager.play('correct');
+            
+            // Update score
+            GameState.streak++;
+            const points = 100 * (1 + Math.floor(GameState.streak / 3) * 0.5); // Streak bonus
+            GameState.score += Math.floor(points);
+            updateScore();
+            
+            // Animate bubble success
+            bubble.classList.add('success');
+            
+            // Open gate and bounce castle
+            const castle = castleType === 'SER' ? castleSer : castleEstar;
+            const gate = castleType === 'SER' ? gateSer : gateEstar;
+            
+            castle.classList.add('bounce');
+            gate.classList.add('open');
+            
+            // Create confetti
+            createConfetti(x, y);
+            
+            // Show rule feedback
+            showFeedback(true, currentSentence.rule);
+            
+            setTimeout(() => {
+                castle.classList.remove('bounce');
+                gate.classList.remove('open');
+            }, 600);
+            
+            setTimeout(loadNextSentence, 1500);
+        }
+
+        function handleWrong(castleType, x, y) {
+            AudioManager.play('wrong');
+            
+            // Reset streak
+            GameState.streak = 0;
+            updateScore();
+            
+            // Animate bubble splat
+            bubble.classList.add('splat');
+            
+            // Show SPLAT text
+            showSplatText(x, y);
+            
+            // Shake castle
+            const castle = castleType === 'SER' ? castleSer : castleEstar;
+            castle.style.animation = 'none';
+            castle.offsetHeight; // Trigger reflow
+            castle.style.animation = 'shake 0.5s ease-out';
+            
+            // Show rule feedback
+            showFeedback(false, currentSentence.rule, currentSentence.type);
+            
+            setTimeout(loadNextSentence, 2000);
+        }
+
+        function createConfetti(x, y) {
+            const colors = ['#ffd700', '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7'];
+            
+            for (let i = 0; i < 30; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = x + 'px';
+                confetti.style.top = y + 'px';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.width = (5 + Math.random() * 10) + 'px';
+                confetti.style.height = (5 + Math.random() * 10) + 'px';
+                confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                
+                const angle = Math.random() * Math.PI * 2;
+                const velocity = 5 + Math.random() * 10;
+                const vx = Math.cos(angle) * velocity;
+                const vy = Math.sin(angle) * velocity - 5;
+                
+                gameContainer.appendChild(confetti);
+                
+                let posX = x;
+                let posY = y;
+                let velX = vx;
+                let velY = vy;
+                let rotation = 0;
+                
+                function animateConfetti() {
+                    posX += velX;
+                    posY += velY;
+                    velY += 0.3;
+                    velX *= 0.98;
+                    rotation += velX * 2;
+                    
+                    confetti.style.left = posX + 'px';
+                    confetti.style.top = posY + 'px';
+                    confetti.style.transform = `rotate(${rotation}deg)`;
+                    confetti.style.opacity = Math.max(0, 1 - (posY - y) / 300);
+                    
+                    if (posY < window.innerHeight + 50 && confetti.style.opacity > 0) {
+                        requestAnimationFrame(animateConfetti);
+                    } else {
+                        confetti.remove();
+                    }
+                }
+                
+                requestAnimationFrame(animateConfetti);
+            }
+        }
+
+        function showSplatText(x, y) {
+            const splat = document.createElement('div');
+            splat.className = 'splat-text';
+            splat.textContent = '¡SPLAT!';
+            splat.style.left = x + 'px';
+            splat.style.top = y + 'px';
+            gameContainer.appendChild(splat);
+            
+            setTimeout(() => splat.remove(), 1500);
+        }
+
+        function showFeedback(isCorrect, rule, correctType = null) {
+            const existing = document.querySelector('.rule-feedback');
+            if (existing) existing.remove();
+            
+            const feedback = document.createElement('div');
+            feedback.className = `rule-feedback ${isCorrect ? 'correct' : 'incorrect'}`;
+            
+            if (isCorrect) {
+                feedback.innerHTML = `
+                    <h3>Correct! ✓</h3>
+                    <p><strong>Rule:</strong> ${rule}</p>
+                `;
+            } else {
+                feedback.innerHTML = `
+                    <h3>Incorrect! ✗</h3>
+                    <p>The correct answer is <strong>${correctType}</strong></p>
+                    <p><strong>Rule:</strong> ${rule}</p>
+                `;
+            }
+            
+            gameContainer.appendChild(feedback);
+            
+            setTimeout(() => feedback.remove(), isCorrect ? 1200 : 1800);
+        }
+
+        function endGame() {
+            AudioManager.play('gameOver');
+            
+            const gameOver = document.createElement('div');
+            gameOver.className = 'game-over';
+            gameOver.innerHTML = `
+                <div class="game-over-content">
+                    <h2>🏰 Game Over! 🏰</h2>
+                    <p class="final-score">
+                        Final Score: <strong>${GameState.score}</strong><br>
+                        Best Streak: <strong>${GameState.streak}</strong>
+                    </p>
+                    <button onclick="restartGame()">⚔️ Play Again ⚔️</button>
+                </div>
+            `;
+            
+            gameContainer.appendChild(gameOver);
+            bubble.style.display = 'none';
+        }
+
+        function restartGame() {
+            const gameOver = document.querySelector('.game-over');
+            if (gameOver) gameOver.remove();
+            
+            initGame();
+        }
+
+        // Add shake animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                20% { transform: translateX(-10px) rotate(-1deg); }
+                40% { transform: translateX(10px) rotate(1deg); }
+                60% { transform: translateX(-10px) rotate(-1deg); }
+                80% { transform: translateX(10px) rotate(1deg); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Start the game!
+        initGame();
+    </script>
+</body>
+</html>

@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>El Escritor Creativo</title>
+    <style>
+      :root {
+        --bg: #111827;
+        --card: #1f2937;
+        --accent: #fbbf24;
+        --accent-soft: #fef3c7;
+        --accent-strong: #f59e0b;
+        --text-main: #f9fafb;
+        --text-muted: #9ca3af;
+        --danger: #f87171;
+        --success: #34d399;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+          sans-serif;
+        background: radial-gradient(circle at top, #1e293b 0, #020617 55%);
+        color: var(--text-main);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 24px;
+      }
+
+      .game-wrapper {
+        width: 100%;
+        max-width: 980px;
+        background: linear-gradient(135deg, #020617, #111827);
+        border-radius: 18px;
+        box-shadow: 0 18px 60px rgba(0, 0, 0, 0.65);
+        padding: 20px 24px 24px;
+        border: 1px solid rgba(248, 250, 252, 0.06);
+      }
+
+      h1 {
+        margin: 0 0 4px;
+        font-size: 1.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      h1 span.icon {
+        font-size: 2.1rem;
+      }
+
+      .subtitle {
+        margin: 0 0 16px;
+        color: var(--text-muted);
+        font-size: 0.95rem;
+      }
+
+      .top-row {
+        display: grid;
+        grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+        gap: 18px;
+        margin-bottom: 18px;
+      }
+
+      .scene-container {
+        position: relative;
+        height: 280px;
+        border-radius: 16px;
+        border: 2px solid rgba(15, 23, 42, 0.8);
+        overflow: hidden;
+        box-shadow: inset 0 0 30px rgba(15, 23, 42, 0.7);
+        background: #87ceeb;
+      }
+
+      .scene-inner-glow {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: radial-gradient(
+          circle at top,
+          rgba(255, 255, 255, 0.35),
+          transparent 60%
+        );
+        mix-blend-mode: soft-light;
+      }
+
+      .emoji {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        filter: drop-shadow(0 4px 4px rgba(15, 23, 42, 0.6));
+        pointer-events: none;
+      }
+
+      .side-panel {
+        background: rgba(15, 23, 42, 0.9);
+        border-radius: 16px;
+        padding: 14px 14px 12px;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .side-panel h2 {
+        margin: 0;
+        font-size: 1.05rem;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+
+      .side-panel h2 span {
+        font-size: 1.1rem;
+      }
+
+      .word-bank {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 6px;
+        margin-bottom: 4px;
+      }
+
+      .word-chip {
+        border: none;
+        border-radius: 999px;
+        padding: 5px 10px;
+        font-size: 0.82rem;
+        background: rgba(15, 118, 110, 0.14);
+        color: var(--text-main);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+        transition:
+          transform 0.12s ease,
+          box-shadow 0.12s ease,
+          background 0.12s ease;
+      }
+
+      .word-chip::before {
+        content: '➕';
+        font-size: 0.7rem;
+        opacity: 0.7;
+      }
+
+      .word-chip:hover {
+        transform: translateY(-1px) scale(1.02);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        background: rgba(5, 150, 105, 0.35);
+      }
+
+      .scene-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 6px;
+        gap: 8px;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+
+      .scene-label-pill {
+        padding: 3px 9px;
+        border-radius: 999px;
+        background: rgba(30, 64, 175, 0.5);
+        color: #eff6ff;
+        font-weight: 500;
+      }
+
+      .scene-random-btn {
+        border-radius: 999px;
+        border: none;
+        padding: 5px 9px;
+        font-size: 0.78rem;
+        background: rgba(55, 65, 81, 0.9);
+        color: var(--text-main);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        box-shadow: 0 1px 5px rgba(0, 0, 0, 0.45);
+        transition:
+          background 0.13s ease,
+          transform 0.13s ease,
+          box-shadow 0.13s ease;
+      }
+
+      .scene-random-btn:hover {
+        background: rgba(75, 85, 99, 0.95);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+      }
+
+      .scene-random-btn span.icon {
+        font-size: 0.85rem;
+      }
+
+      .bottom-row {
+        margin-top: 2px;
+      }
+
+      .textarea-label {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 0.86rem;
+        color: var(--text-muted);
+      }
+
+      #sentence-input {
+        width: 100%;
+        min-height: 110px;
+        max-height: 220px;
+        resize: vertical;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        padding: 10px 11px;
+        font-size: 0.95rem;
+        background: rgba(15, 23, 42, 0.95);
+        color: var(--text-main);
+        outline: none;
+        box-shadow: inset 0 0 8px rgba(15, 23, 42, 0.85);
+      }
+
+      #sentence-input:focus {
+        border-color: var(--accent-strong);
+        box-shadow:
+          0 0 0 1px rgba(251, 191, 36, 0.7),
+          inset 0 0 10px rgba(15, 23, 42, 0.9);
+      }
+
+      .controls {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 8px;
+        gap: 12px;
+      }
+
+      #check-btn {
+        border: none;
+        border-radius: 999px;
+        padding: 8px 18px;
+        font-size: 0.96rem;
+        font-weight: 600;
+        background: linear-gradient(135deg, #f97316, #facc15);
+        color: #111827;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 8px 22px rgba(248, 181, 0, 0.6);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        transition:
+          transform 0.12s ease,
+          box-shadow 0.12s ease,
+          filter 0.12s ease,
+          opacity 0.12s ease;
+      }
+
+      #check-btn span.icon {
+        font-size: 1.1rem;
+      }
+
+      #check-btn:hover {
+        transform: translateY(-1px) scale(1.01);
+        filter: brightness(1.05);
+        box-shadow: 0 12px 26px rgba(248, 181, 0, 0.75);
+      }
+
+      #check-btn:active {
+        transform: translateY(0) scale(0.99);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+      }
+
+      #check-btn:disabled {
+        opacity: 0.55;
+        cursor: default;
+        box-shadow: none;
+      }
+
+      .feedback {
+        flex: 1;
+        font-size: 0.86rem;
+        color: var(--text-muted);
+      }
+
+      .feedback.feedback-success {
+        color: var(--success);
+      }
+
+      .feedback.feedback-error {
+        color: var(--danger);
+      }
+
+      @keyframes shake {
+        0% {
+          transform: translateX(0);
+        }
+        20% {
+          transform: translateX(-4px);
+        }
+        40% {
+          transform: translateX(4px);
+        }
+        60% {
+          transform: translateX(-4px);
+        }
+        80% {
+          transform: translateX(4px);
+        }
+        100% {
+          transform: translateX(0);
+        }
+      }
+
+      .shake {
+        animation: shake 0.35s ease;
+      }
+
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(
+          circle at top,
+          rgba(251, 191, 36, 0.1),
+          rgba(15, 23, 42, 0.9)
+        );
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+      }
+
+      .modal-overlay.hidden {
+        display: none;
+      }
+
+      .modal {
+        background: radial-gradient(circle at top, #111827, #020617);
+        border-radius: 18px;
+        padding: 20px 22px 18px;
+        width: min(420px, 90vw);
+        border: 1px solid rgba(250, 204, 21, 0.7);
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.7);
+        text-align: center;
+      }
+
+      .modal h2 {
+        margin: 0 0 8px;
+        font-size: 1.45rem;
+      }
+
+      .modal p {
+        margin: 0 0 14px;
+        font-size: 0.95rem;
+      }
+
+      #next-scene-btn {
+        border-radius: 999px;
+        border: none;
+        padding: 7px 15px;
+        font-size: 0.94rem;
+        font-weight: 600;
+        background: linear-gradient(135deg, #22c55e, #a3e635);
+        color: #052e16;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 8px 20px rgba(34, 197, 94, 0.6);
+        transition:
+          transform 0.12s ease,
+          box-shadow 0.12s ease,
+          filter 0.12s ease;
+      }
+
+      #next-scene-btn span.icon {
+        font-size: 1rem;
+      }
+
+      #next-scene-btn:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.03);
+        box-shadow: 0 11px 24px rgba(22, 163, 74, 0.8);
+      }
+
+      #next-scene-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.65);
+      }
+
+      @media (max-width: 840px) {
+        .game-wrapper {
+          padding: 16px;
+        }
+
+        .top-row {
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        .scene-container {
+          height: 230px;
+        }
+      }
+
+      @media (max-width: 560px) {
+        h1 {
+          font-size: 1.6rem;
+        }
+
+        .scene-container {
+          height: 210px;
+        }
+
+        #sentence-input {
+          min-height: 90px;
+        }
+
+        .controls {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .feedback {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-wrapper">
+      <h1>
+        <span class="icon">✏️</span>
+        El Escritor Creativo
+      </h1>
+      <p class="subtitle">
+        Mira la escena y escribe una oración completa en español que la describa.
+      </p>
+
+      <div class="top-row">
+        <div id="scene-container" class="scene-container">
+          <div class="scene-inner-glow"></div>
+          <!-- Emojis injected by JS -->
+        </div>
+
+        <aside class="side-panel">
+          <h2>
+            <span>💡</span>
+            Palabras útiles
+          </h2>
+          <div id="word-bank" class="word-bank"></div>
+
+          <div class="scene-info">
+            <span id="scene-label" class="scene-label-pill">Escena 1</span>
+            <button
+              type="button"
+              id="random-scene-btn"
+              class="scene-random-btn"
+            >
+              <span class="icon">🔄</span>
+              Nueva escena
+            </button>
+          </div>
+        </aside>
+      </div>
+
+      <div class="bottom-row">
+        <label for="sentence-input" class="textarea-label">Tu oración:</label>
+        <textarea
+          id="sentence-input"
+          placeholder="Escribe una frase aquí..."
+        ></textarea>
+        <div class="controls">
+          <button id="check-btn" type="button">
+            <span class="icon">✅</span>
+            ¡Verificar!
+          </button>
+          <span id="feedback" class="feedback"></span>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-overlay" class="modal-overlay hidden">
+      <div class="modal">
+        <h2>🎉 ¡Excelente trabajo!</h2>
+        <p id="modal-message"></p>
+        <button id="next-scene-btn" type="button">
+          <span class="icon">▶</span>
+          Siguiente escena
+        </button>
+      </div>
+    </div>
+
+    <script>
+      class AudioManager {
+        constructor(sources = {}) {
+          this.sounds = {};
+          Object.entries(sources).forEach(([key, src]) => {
+            const audio = new Audio(src);
+            audio.preload = 'auto';
+            this.sounds[key] = audio;
+          });
+        }
+
+        play(name, { loop = false, reset = true } = {}) {
+          const audio = this.sounds[name];
+          if (!audio) return;
+          audio.loop = loop;
+          if (reset) {
+            try {
+              audio.currentTime = 0;
+            } catch (e) {
+              /* ignore */
+            }
+          }
+          audio
+            .play()
+            .catch(() => {
+              // User may not have interacted yet; ignore errors
+            });
+        }
+
+        stop(name) {
+          const audio = this.sounds[name];
+          if (!audio) return;
+          audio.pause();
+          try {
+            audio.currentTime = 0;
+          } catch (e) {
+            /* ignore */
+          }
+          audio.loop = false;
+        }
+
+        stopAll() {
+          Object.keys(this.sounds).forEach((key) => this.stop(key));
+        }
+      }
+
+      const audioManager = new AudioManager({
+        typing: 'sfx_type_squeak.mp3', // comical typing squeak
+        wordClick: 'sfx_word_pop.mp3', // bubble / pop when using word bank
+        thinking: 'sfx_thinking.mp3', // humming / ticking while checking
+        success: 'sfx_opera_win.mp3', // opera singer + applause
+        fail: 'sfx_chicken_fail.mp3', // chicken cluck / confused sound
+      });
+
+      const scenes = [
+        {
+          id: 1,
+          background: '#87CEEB', // sky blue
+          emojis: [
+            { char: '🌞', x: '15%', y: '12%', size: '40px' },
+            { char: '🌳', x: '18%', y: '70%', size: '70px' },
+            { char: '🐕', x: '55%', y: '63%', size: '80px' },
+            { char: '🎩', x: '57%', y: '46%', size: '40px' },
+          ],
+          wordBank: [
+            'El perro',
+            'El sombrero',
+            'lleva',
+            'es',
+            'muy elegante',
+            'en el jardín',
+          ],
+          requiredKeywords: ['perro', 'sombrero'],
+          successMessage: '¡Excelente! El perro es muy elegante con su sombrero.',
+        },
+        {
+          id: 2,
+          background: '#1E90FF', // ocean blue
+          emojis: [
+            { char: '🌊', x: '20%', y: '75%', size: '70px' },
+            { char: '🌊', x: '50%', y: '78%', size: '70px' },
+            { char: '🌊', x: '80%', y: '76%', size: '70px' },
+            { char: '🐟', x: '40%', y: '45%', size: '60px' },
+            { char: '🐠', x: '70%', y: '40%', size: '50px' },
+            { char: '🪸', x: '12%', y: '70%', size: '50px' },
+          ],
+          wordBank: [
+            'El pez',
+            'Nada',
+            'En el agua',
+            'azul',
+            'feliz',
+            'en el océano',
+          ],
+          requiredKeywords: ['pez', 'agua'],
+          successMessage:
+            '¡Muy bien! El pez nada feliz en el agua azul del océano.',
+        },
+        {
+          id: 3,
+          background: '#FDEBD0', // cozy room
+          emojis: [
+            { char: '🛏️', x: '50%', y: '65%', size: '90px' },
+            { char: '🐈', x: '45%', y: '45%', size: '60px' },
+            { char: '💤', x: '63%', y: '32%', size: '35px' },
+            { char: '🕯️', x: '20%', y: '50%', size: '32px' },
+          ],
+          wordBank: [
+            'El gato',
+            'La cama',
+            'duerme',
+            'tranquilo',
+            'en el dormitorio',
+            'pequeño',
+          ],
+          requiredKeywords: ['gato', 'cama'],
+          successMessage:
+            '¡Genial! El gato duerme muy tranquilo sobre la cama cómoda.',
+        },
+        {
+          id: 4,
+          background: '#FFF3CD', // warm kitchen
+          emojis: [
+            { char: '👦', x: '35%', y: '55%', size: '70px' },
+            { char: '🍕', x: '60%', y: '60%', size: '60px' },
+            { char: '🍽️', x: '58%', y: '72%', size: '40px' },
+            { char: '🥤', x: '25%', y: '68%', size: '40px' },
+          ],
+          wordBank: [
+            'El niño',
+            'come',
+            'la pizza',
+            'deliciosa',
+            'en la cocina',
+            'tiene hambre',
+          ],
+          requiredKeywords: ['niño', 'pizza'],
+          successMessage:
+            '¡Perfecto! El niño come una pizza deliciosa y tiene mucha hambre.',
+        },
+        {
+          id: 5,
+          background: '#E0F7FA', // futuristic classroom
+          emojis: [
+            { char: '🏫', x: '18%', y: '30%', size: '50px' },
+            { char: '🤖', x: '50%', y: '55%', size: '70px' },
+            { char: '📚', x: '70%', y: '55%', size: '48px' },
+            { char: '💡', x: '50%', y: '25%', size: '38px' },
+          ],
+          wordBank: [
+            'El robot',
+            'lee',
+            'un libro',
+            'en la escuela',
+            'es inteligente',
+            'estudia',
+          ],
+          requiredKeywords: ['robot', 'libro'],
+          successMessage:
+            '¡Impresionante! El robot lee un libro y es muy inteligente.',
+        },
+      ];
+
+      const sceneContainer = document.getElementById('scene-container');
+      const wordBankEl = document.getElementById('word-bank');
+      const sentenceInput = document.getElementById('sentence-input');
+      const checkBtn = document.getElementById('check-btn');
+      const feedbackEl = document.getElementById('feedback');
+      const sceneLabelEl = document.getElementById('scene-label');
+      const randomSceneBtn = document.getElementById('random-scene-btn');
+      const modalOverlay = document.getElementById('modal-overlay');
+      const modalMessageEl = document.getElementById('modal-message');
+      const nextSceneBtn = document.getElementById('next-scene-btn');
+
+      let currentSceneIndex = 0;
+      let keystrokeCount = 0;
+      let usedSceneIds = new Set();
+
+      function normalize(text) {
+        if (!text) return '';
+        return text
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '');
+      }
+
+      function loadScene(index) {
+        currentSceneIndex = index;
+        const scene = scenes[index];
+
+        sceneContainer.style.background = scene.background;
+        Array.from(sceneContainer.querySelectorAll('.emoji')).forEach((el) =>
+          el.remove()
+        );
+
+        scene.emojis.forEach((item) => {
+          const span = document.createElement('span');
+          span.className = 'emoji';
+          span.textContent = item.char;
+          span.style.left = item.x;
+          span.style.top = item.y;
+          span.style.fontSize = item.size;
+          sceneContainer.appendChild(span);
+        });
+
+        wordBankEl.innerHTML = '';
+        scene.wordBank.forEach((word) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'word-chip';
+          btn.textContent = word;
+          btn.addEventListener('click', () => {
+            appendWordToTextarea(word);
+            audioManager.play('wordClick');
+          });
+          wordBankEl.appendChild(btn);
+        });
+
+        sentenceInput.value = '';
+        feedbackEl.textContent = '';
+        feedbackEl.className = 'feedback';
+        keystrokeCount = 0;
+        sceneLabelEl.textContent = `Escena ${scene.id}`;
+
+        sentenceInput.focus();
+      }
+
+      function getRandomSceneIndex() {
+        if (scenes.length <= 1) return 0;
+
+        let availableIds = scenes.map((s) => s.id).filter((id) => !usedSceneIds.has(id));
+        if (availableIds.length === 0) {
+          usedSceneIds.clear();
+          availableIds = scenes.map((s) => s.id);
+        }
+
+        const randomId =
+          availableIds[Math.floor(Math.random() * availableIds.length)];
+        const index = scenes.findIndex((s) => s.id === randomId);
+        return index === -1 ? 0 : index;
+      }
+
+      function appendWordToTextarea(word) {
+        const current = sentenceInput.value;
+        const needsSpace = current.length > 0 && !/\s$/.test(current);
+        sentenceInput.value = needsSpace
+          ? `${current} ${word}`
+          : `${current}${word}`;
+        sentenceInput.focus();
+      }
+
+      function handleTypingSound() {
+        keystrokeCount += 1;
+        if (keystrokeCount % 3 === 0) {
+          audioManager.play('typing', { reset: true });
+        }
+      }
+
+      function startThinkingAndValidate() {
+        const rawText = sentenceInput.value.trim();
+        if (!rawText) {
+          feedbackEl.textContent = 'Primero escribe una frase 😊';
+          feedbackEl.className = 'feedback feedback-error';
+          audioManager.play('fail');
+          sentenceInput.classList.remove('shake');
+          void sentenceInput.offsetWidth;
+          sentenceInput.classList.add('shake');
+          return;
+        }
+
+        feedbackEl.textContent = 'Pensando...';
+        feedbackEl.className = 'feedback';
+
+        checkBtn.disabled = true;
+        audioManager.stopAll();
+        audioManager.play('thinking', { loop: true, reset: true });
+
+        setTimeout(() => {
+          audioManager.stop('thinking');
+          checkBtn.disabled = false;
+          runValidation();
+        }, 1000);
+      }
+
+      function runValidation() {
+        const scene = scenes[currentSceneIndex];
+        const userTextNorm = normalize(sentenceInput.value);
+
+        const missing = scene.requiredKeywords.filter((kw) => {
+          const kwNorm = normalize(kw);
+          return !userTextNorm.includes(kwNorm);
+        });
+
+        if (missing.length === 0) {
+          handleSuccess(scene);
+        } else {
+          handleFail(missing);
+        }
+      }
+
+      function handleSuccess(scene) {
+        audioManager.stopAll();
+        audioManager.play('success');
+        feedbackEl.textContent = '';
+        feedbackEl.className = 'feedback feedback-success';
+
+        usedSceneIds.add(scene.id);
+
+        modalMessageEl.textContent = scene.successMessage;
+        modalOverlay.classList.remove('hidden');
+      }
+
+      function handleFail(missingKeywords) {
+        audioManager.stopAll();
+        audioManager.play('fail');
+
+        let hint = '';
+        if (missingKeywords.length === 1) {
+          hint = `Te falta la palabra: "${missingKeywords[0]}".`;
+        } else {
+          const last = missingKeywords[missingKeywords.length - 1];
+          const rest = missingKeywords.slice(0, -1).join('", "');
+          hint = `Te faltan las palabras: "${rest}" y "${last}".`;
+        }
+
+        feedbackEl.textContent = hint;
+        feedbackEl.className = 'feedback feedback-error';
+
+        sentenceInput.classList.remove('shake');
+        void sentenceInput.offsetWidth;
+        sentenceInput.classList.add('shake');
+      }
+
+      function goToNextScene() {
+        const nextIndex = getRandomSceneIndex();
+        modalOverlay.classList.add('hidden');
+        loadScene(nextIndex);
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        const initialIndex = getRandomSceneIndex();
+        loadScene(initialIndex);
+
+        sentenceInput.addEventListener('input', handleTypingSound);
+        checkBtn.addEventListener('click', startThinkingAndValidate);
+        randomSceneBtn.addEventListener('click', () => {
+          const index = getRandomSceneIndex();
+          loadScene(index);
+        });
+        nextSceneBtn.addEventListener('click', goToNextScene);
+
+        modalOverlay.addEventListener('click', (event) => {
+          if (event.target === modalOverlay) {
+            modalOverlay.classList.add('hidden');
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

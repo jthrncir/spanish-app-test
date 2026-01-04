@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Robot Traductor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --metal-light: #cfcfcf;
+            --metal-dark: #7a7a7a;
+            --metal-rust: #a05a2c;
+            --screen-bg: #1a2f1a;
+            --screen-text: #33ff33;
+            --eye-off: #333;
+            --eye-happy: #00ff00;
+            --eye-angry: #ff0000;
+            --eye-thinking: #ffff00;
+            --eye-skip: #00ffff;
+            --bg-color: #222;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#333 1px, transparent 1px);
+            background-size: 20px 20px;
+            font-family: 'VT323', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            color: white;
+        }
+
+        /* --- THE ROBOT CONTAINER --- */
+        #robot-container {
+            position: relative;
+            width: 360px;
+            height: 540px; /* Taller for buttons */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.1s;
+        }
+
+        /* --- HEAD --- */
+        .head {
+            width: 300px;
+            height: 220px;
+            background: linear-gradient(135deg, var(--metal-light), var(--metal-dark));
+            border-radius: 40px 40px 15px 15px;
+            border: 4px solid #444;
+            box-shadow: inset 5px 5px 15px rgba(255,255,255,0.5), inset -5px -5px 15px rgba(0,0,0,0.5), 0 10px 20px rgba(0,0,0,0.5);
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 30px;
+        }
+
+        /* Bolts */
+        .bolt {
+            width: 15px;
+            height: 15px;
+            background: #888;
+            border-radius: 50%;
+            border: 1px solid #333;
+            box-shadow: inset 1px 1px 2px white;
+            position: absolute;
+        }
+        .bolt.tl { top: 10px; left: 10px; }
+        .bolt.tr { top: 10px; right: 10px; }
+        .bolt.bl { bottom: 10px; left: 10px; }
+        .bolt.br { bottom: 10px; right: 10px; }
+
+        /* Antenna */
+        .antenna {
+            width: 8px;
+            height: 50px;
+            background: #666;
+            position: absolute;
+            top: -45px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1;
+        }
+        .antenna::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: -6px;
+            width: 20px;
+            height: 20px;
+            background: red;
+            border-radius: 50%;
+            border: 2px solid #333;
+            box-shadow: inset -2px -2px 5px rgba(0,0,0,0.5);
+            animation: pulse-light 2s infinite;
+        }
+
+        /* --- EARS (Steam Vents) --- */
+        .ear {
+            width: 30px;
+            height: 60px;
+            background: #555;
+            position: absolute;
+            top: 80px;
+            border: 2px solid #222;
+        }
+        .ear.left { left: -32px; border-radius: 10px 0 0 10px; }
+        .ear.right { right: -32px; border-radius: 0 10px 10px 0; }
+
+        .steam {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* --- EYES --- */
+        .eyes-container {
+            width: 220px;
+            height: 60px;
+            background: #111;
+            border-radius: 30px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: inset 0 0 10px #000;
+            border: 2px solid #666;
+            margin-bottom: 20px;
+            padding: 0 10px;
+        }
+
+        .eye {
+            width: 40px;
+            height: 40px;
+            background-color: var(--eye-off);
+            border-radius: 50%;
+            box-shadow: 0 0 5px var(--eye-off);
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .eye::after {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            width: 10px;
+            height: 10px;
+            background: rgba(255,255,255,0.6);
+            border-radius: 50%;
+        }
+
+        /* --- MOUTH (INPUT) --- */
+        .mouth-container {
+            width: 180px;
+            height: 40px;
+            position: relative;
+        }
+
+        input#mouth-input {
+            width: 100%;
+            height: 100%;
+            background: #222;
+            border: 3px solid #555;
+            border-radius: 5px;
+            color: var(--screen-text);
+            font-family: 'Press Start 2P', cursive; /* Retro pixel font */
+            font-size: 14px;
+            text-align: center;
+            outline: none;
+            box-shadow: inset 0 0 5px black;
+            text-transform: uppercase;
+        }
+
+        input#mouth-input:focus {
+            border-color: #888;
+            box-shadow: 0 0 10px var(--screen-text);
+        }
+
+        /* --- BODY / CHEST --- */
+        .body {
+            width: 240px;
+            height: 220px;
+            background: linear-gradient(to bottom, #666, #444);
+            margin-top: -15px; /* Tuck under head */
+            border-radius: 0 0 30px 30px;
+            border: 4px solid #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 25px 20px;
+            z-index: 1;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.6);
+        }
+
+        .screen-bezel {
+            width: 100%;
+            height: 90px;
+            background: #333;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: inset 0 0 5px black;
+            margin-bottom: 15px;
+            border: 2px solid #777;
+        }
+
+        #screen-content {
+            width: 100%;
+            height: 100%;
+            background: var(--screen-bg);
+            color: var(--screen-text);
+            font-family: 'VT323', monospace;
+            font-size: 1.4rem;
+            line-height: 1.2;
+            padding: 5px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            box-sizing: border-box;
+            text-shadow: 0 0 2px var(--screen-text);
+            white-space: pre-wrap;
+        }
+
+        .controls {
+            display: flex;
+            width: 100%;
+            gap: 10px;
+        }
+
+        button {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            padding: 15px 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.1s;
+            text-transform: uppercase;
+            border-width: 2px;
+            border-style: solid;
+        }
+
+        button:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 transparent !important;
+        }
+
+        button:disabled {
+            background: #777 !important;
+            border-color: #555 !important;
+            box-shadow: none !important;
+            cursor: not-allowed;
+            transform: translateY(4px);
+        }
+
+        #translate-btn {
+            flex: 2;
+            background: linear-gradient(#e74c3c, #c0392b);
+            border-color: #96281b;
+            color: white;
+            box-shadow: 0 4px 0 #96281b, 0 5px 10px rgba(0,0,0,0.3);
+        }
+
+        #skip-btn {
+            flex: 1;
+            background: linear-gradient(#f1c40f, #f39c12);
+            border-color: #d35400;
+            color: #444;
+            box-shadow: 0 4px 0 #d35400, 0 5px 10px rgba(0,0,0,0.3);
+        }
+
+        /* --- ANIMATION CLASSES --- */
+
+        /* Happy Robot */
+        .robot-success .eye {
+            background-color: var(--eye-happy);
+            box-shadow: 0 0 15px var(--eye-happy);
+            height: 15px; /* Squint with joy */
+            top: 12px;
+        }
+        .robot-success #robot-container {
+            animation: happy-bounce 0.5s ease-in-out;
+        }
+
+        /* Angry Robot */
+        .robot-fail .eye {
+            background-color: var(--eye-angry);
+            box-shadow: 0 0 15px var(--eye-angry);
+            clip-path: polygon(0 0, 100% 20%, 100% 100%, 0% 100%); /* Angry slant */
+        }
+        .robot-fail #robot-container {
+            animation: robot-shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        /* Thinking Robot */
+        .robot-thinking .eye {
+            background-color: var(--eye-thinking);
+            animation: thinking-blink 0.5s infinite alternate;
+        }
+        .robot-thinking #robot-container {
+            animation: vibrate 0.1s infinite;
+        }
+
+        /* Skip/Confused Robot */
+        .robot-skip .eye {
+            background-color: var(--eye-skip);
+            height: 10px;
+            width: 30px;
+        }
+        .robot-skip .eye.left-eye { transform: rotate(-20deg); }
+        .robot-skip .eye.right-eye { transform: rotate(20deg); }
+
+        /* KEYFRAMES */
+        @keyframes robot-shake {
+            10%, 90% { transform: translate3d(-4px, 0, 0); }
+            20%, 80% { transform: translate3d(6px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-8px, 0, 0); }
+            40%, 60% { transform: translate3d(8px, 0, 0); }
+        }
+
+        @keyframes happy-bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes thinking-blink {
+            0% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes vibrate {
+            0% { transform: translate(1px, 1px); }
+            25% { transform: translate(-1px, -1px); }
+            50% { transform: translate(-1px, 1px); }
+            75% { transform: translate(1px, -1px); }
+            100% { transform: translate(1px, 1px); }
+        }
+
+        @keyframes steam-rise {
+            0% { transform: translateY(0) scale(1); opacity: 0.8; }
+            100% { transform: translateY(-40px) scale(2); opacity: 0; }
+        }
+
+        @keyframes pulse-light {
+            0% { background: #500; }
+            50% { background: #f00; box-shadow: 0 0 10px red; }
+            100% { background: #500; }
+        }
+
+        /* Helper for steam particles */
+        .puff {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            top: 70px;
+            z-index: 0;
+            animation: steam-rise 1s ease-out forwards;
+        }
+
+        /* Overlay text for feedback */
+        .feedback-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3rem;
+            font-weight: bold;
+            font-family: 'Press Start 2P', cursive;
+            text-shadow: 3px 3px 0 #000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            width: 100%;
+            text-align: center;
+            z-index: 10;
+        }
+        .feedback-success { color: #00ff00; }
+        .feedback-fail { color: #ff0000; }
+        .feedback-skip { color: #00ffff; font-size: 2rem; }
+
+    </style>
+</head>
+<body>
+
+    <div id="robot-container">
+        <div class="antenna"></div>
+        
+        <!-- Ears -->
+        <div class="ear left" id="ear-left"></div>
+        <div class="ear right" id="ear-right"></div>
+
+        <div class="head">
+            <div class="bolt tl"></div>
+            <div class="bolt tr"></div>
+            <div class="bolt bl"></div>
+            <div class="bolt br"></div>
+
+            <div class="eyes-container">
+                <div class="eye left-eye"></div>
+                <div class="eye right-eye"></div>
+            </div>
+
+            <div class="mouth-container">
+                <input type="text" id="mouth-input" placeholder="Type Spanish here..." autocomplete="off">
+            </div>
+        </div>
+
+        <div class="body">
+            <div class="screen-bezel">
+                <div id="screen-content">INITIALIZING...</div>
+            </div>
+            <div class="controls">
+                <button id="translate-btn">TRADUCIR</button>
+                <button id="skip-btn">SALTAR</button>
+            </div>
+        </div>
+
+        <div id="feedback-text" class="feedback-overlay"></div>
+    </div>
+
+    <script>
+        /**
+         * AUDIO MANAGER
+         */
+        class RobotAudio {
+            constructor() {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            playTone(freq, type, duration, startTime = 0) {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime + startTime);
+                
+                gain.gain.setValueAtTime(0.1, this.ctx.currentTime + startTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + startTime + duration);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(this.ctx.currentTime + startTime);
+                osc.stop(this.ctx.currentTime + startTime + duration);
+            }
+
+            playType() {
+                this.playTone(800 + Math.random() * 400, 'square', 0.05);
+            }
+
+            playProcessing() {
+                for(let i=0; i<8; i++) {
+                    const time = i * 0.15;
+                    const freq = 400 + Math.random() * 800;
+                    this.playTone(freq, 'sine', 0.1, time);
+                }
+            }
+
+            playSuccess() {
+                const now = 0;
+                this.playTone(523.25, 'triangle', 0.2, 0); // C
+                this.playTone(659.25, 'triangle', 0.2, 0.15); // E
+                this.playTone(783.99, 'triangle', 0.4, 0.3); // G
+                
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.frequency.setValueAtTime(1200, this.ctx.currentTime);
+                osc.type = 'sawtooth';
+                gain.gain.setValueAtTime(0.05, this.ctx.currentTime + 0.3);
+                gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.8);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(this.ctx.currentTime + 0.3);
+                osc.stop(this.ctx.currentTime + 0.8);
+            }
+
+            playFail() {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.8);
+                
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.8);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.8);
+            }
+
+            playSkip() {
+                // Info dump sound - fast descending slide
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(200, this.ctx.currentTime + 0.3);
+                
+                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.3);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.3);
+            }
+        }
+
+        /**
+         * GAME DATA (100+ SENTENCES)
+         */
+        const rawLevels = [
+            { english: "I have a red pen", answers: ["tengo un boligrafo rojo", "tengo una pluma roja"] },
+            { english: "Where is the library?", answers: ["donde esta la biblioteca"] },
+            { english: "My name is Roberto", answers: ["me llamo roberto", "mi nombre es roberto"] },
+            { english: "I like tacos", answers: ["me gustan los tacos", "me gusta los tacos"] },
+            { english: "The cat is black", answers: ["el gato es negro", "la gata es negra"] },
+            { english: "Goodbye, friend!", answers: ["adios amigo", "adios amiga"] },
+            { english: "Good morning", answers: ["buenos dias"] },
+            { english: "Good night", answers: ["buenas noches"] },
+            { english: "How are you?", answers: ["como estas", "como esta usted", "que tal"] },
+            { english: "I am fine", answers: ["estoy bien", "yo estoy bien"] },
+            { english: "Thank you very much", answers: ["muchas gracias"] },
+            { english: "You are welcome", answers: ["de nada"] },
+            { english: "Please", answers: ["por favor"] },
+            { english: "Yes", answers: ["si"] },
+            { english: "No", answers: ["no"] },
+            { english: "Excuse me", answers: ["perdon", "disculpe", "con permiso"] },
+            { english: "I do not understand", answers: ["no entiendo", "no comprendo"] },
+            { english: "I speak a little Spanish", answers: ["hablo un poco de espanol", "yo hablo un poco de espanol"] },
+            { english: "What time is it?", answers: ["que hora es"] },
+            { english: "It is one o'clock", answers: ["es la una"] },
+            { english: "It is two o'clock", answers: ["son las dos"] },
+            { english: "I want water", answers: ["quiero agua", "yo quiero agua"] },
+            { english: "I am hungry", answers: ["tengo hambre"] },
+            { english: "I am thirsty", answers: ["tengo sed"] },
+            { english: "The dog runs", answers: ["el perro corre"] },
+            { english: "The house is big", answers: ["la casa es grande"] },
+            { english: "The car is blue", answers: ["el carro es azul", "el coche es azul", "el auto es azul"] },
+            { english: "My mother is tall", answers: ["mi madre es alta", "mi mama es alta"] },
+            { english: "My father is short", answers: ["mi padre es bajo", "mi papa es bajo"] },
+            { english: "I have a brother", answers: ["tengo un hermano", "yo tengo un hermano"] },
+            { english: "I have a sister", answers: ["tengo una hermana", "yo tengo una hermana"] },
+            { english: "Where is the bathroom?", answers: ["donde esta el bano"] },
+            { english: "I like to play soccer", answers: ["me gusta jugar al futbol", "me gusta jugar futbol"] },
+            { english: "Today is Monday", answers: ["hoy es lunes"] },
+            { english: "Tomorrow is Tuesday", answers: ["manana es martes"] },
+            { english: "I go to school", answers: ["voy a la escuela", "yo voy a la escuela"] },
+            { english: "The book is interesting", answers: ["el libro es interesante"] },
+            { english: "I have a green apple", answers: ["tengo una manzana verde"] },
+            { english: "I like milk", answers: ["me gusta la leche"] },
+            { english: "I do not like spiders", answers: ["no me gustan las aranas"] },
+            { english: "He is my friend", answers: ["el es mi amigo"] },
+            { english: "She is my teacher", answers: ["ella es mi maestra", "ella es mi profesora"] },
+            { english: "We are happy", answers: ["estamos felices", "nosotros estamos felices", "estamos contentos"] },
+            { english: "They are sad", answers: ["ellos estan tristes", "ellas estan tristes", "estan tristes"] },
+            { english: "The sun is yellow", answers: ["el sol es amarillo"] },
+            { english: "The sky is blue", answers: ["el cielo es azul"] },
+            { english: "It is hot", answers: ["hace calor"] },
+            { english: "It is cold", answers: ["hace frio"] },
+            { english: "It is raining", answers: ["esta lloviendo", "llueve"] },
+            { english: "One, two, three", answers: ["uno dos tres"] },
+            { english: "Red, white, and blue", answers: ["rojo blanco y azul"] },
+            { english: "I wear a shirt", answers: ["uso una camisa", "llevo una camisa"] },
+            { english: "The shoes are black", answers: ["los zapatos son negros"] },
+            { english: "I need help", answers: ["necesito ayuda"] },
+            { english: "Where are you from?", answers: ["de donde eres", "de donde es usted"] },
+            { english: "I am from the United States", answers: ["soy de los estados unidos", "yo soy de los estados unidos"] },
+            { english: "Do you have a pet?", answers: ["tienes una mascota", "tienes mascota"] },
+            { english: "I love my family", answers: ["amo a mi familia", "quiero a mi familia"] },
+            { english: "Happy Birthday", answers: ["feliz cumpleanos"] },
+            { english: "Merry Christmas", answers: ["feliz navidad"] },
+            { english: "Open the door", answers: ["abre la puerta"] },
+            { english: "Close the window", answers: ["cierra la ventana"] },
+            { english: "Listen to the music", answers: ["escucha la musica"] },
+            { english: "Read the book", answers: ["lee el libro"] },
+            { english: "Write your name", answers: ["escribe tu nombre"] },
+            { english: "Stand up", answers: ["levantate"] },
+            { english: "Sit down", answers: ["sientate"] },
+            { english: "Be quiet", answers: ["silencio", "callate"] },
+            { english: "Let's go", answers: ["vamonos", "vamos"] },
+            { english: "Wait a moment", answers: ["espera un momento", "un momento"] },
+            { english: "I am sorry", answers: ["lo siento"] },
+            { english: "What is this?", answers: ["que es esto"] },
+            { english: "Who is he?", answers: ["quien es el"] },
+            { english: "Why?", answers: ["por que"] },
+            { english: "Because", answers: ["porque"] },
+            { english: "When?", answers: ["cuando"] },
+            { english: "I like pizza", answers: ["me gusta la pizza"] },
+            { english: "I like ice cream", answers: ["me gusta el helado"] },
+            { english: "The table is brown", answers: ["la mesa es marron", "la mesa es cafe"] },
+            { english: "The flower is beautiful", answers: ["la flor es bonita", "la flor es hermosa"] },
+            { english: "I have ten dollars", answers: ["tengo diez dolares"] },
+            { english: "It is expensive", answers: ["es caro"] },
+            { english: "It is cheap", answers: ["es barato"] },
+            { english: "I buy bread", answers: ["compro pan", "yo compro pan"] },
+            { english: "I drink coffee", answers: ["bebo cafe", "tomo cafe"] },
+            { english: "I eat chicken", answers: ["como pollo"] },
+            { english: "The fish swims", answers: ["el pez nada"] },
+            { english: "The bird sings", answers: ["el pajaro canta", "el ave canta"] },
+            { english: "I study Spanish", answers: ["estudio espanol", "yo estudio espanol"] },
+            { english: "The computer is broken", answers: ["la computadora esta rota", "el ordenador esta roto"] },
+            { english: "I have a phone", answers: ["tengo un telefono", "tengo un celular"] },
+            { english: "Call me", answers: ["llamame"] },
+            { english: "See you later", answers: ["hasta luego", "nos vemos"] },
+            { english: "See you tomorrow", answers: ["hasta manana"] },
+            { english: "I am tired", answers: ["estoy cansado", "estoy cansada"] },
+            { english: "I am sick", answers: ["estoy enfermo", "estoy enferma"] },
+            { english: "What happens?", answers: ["que pasa"] },
+            { english: "Nothing", answers: ["nada"] },
+            { english: "Everything is good", answers: ["todo esta bien"] },
+            { english: "Where is the beach?", answers: ["donde esta la playa"] },
+            { english: "I like the summer", answers: ["me gusta el verano"] }
+        ];
+
+        /**
+         * GAME LOGIC
+         */
+        const sfx = new RobotAudio();
+        let gameQueue = [];
+        let currentLevelData = null;
+        let isProcessing = false;
+
+        const ui = {
+            container: document.getElementById('robot-container'),
+            screen: document.getElementById('screen-content'),
+            input: document.getElementById('mouth-input'),
+            btnTranslate: document.getElementById('translate-btn'),
+            btnSkip: document.getElementById('skip-btn'),
+            feedback: document.getElementById('feedback-text'),
+            earLeft: document.getElementById('ear-left'),
+            earRight: document.getElementById('ear-right')
+        };
+
+        // --- Shuffle Function ---
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // --- Normalization Function ---
+        function normalizeString(str) {
+            return str
+                .toLowerCase()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
+                .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()¿?¡!]/g,"") // Remove punctuation
+                .replace(/\s{2,}/g," ") // Remove extra spaces
+                .trim();
+        }
+
+        // --- Core Functions ---
+        function initGame() {
+            // Create a fresh shuffled copy of the data
+            gameQueue = shuffleArray([...rawLevels]);
+            loadNextLevel();
+        }
+
+        function loadNextLevel() {
+            if(gameQueue.length === 0) {
+                ui.screen.textContent = "MISSION COMPLETE!\nSYSTEM REBOOTING...";
+                setTimeout(initGame, 4000);
+                return;
+            }
+
+            currentLevelData = gameQueue.pop(); // Take one from the stack
+            
+            ui.screen.textContent = `"${currentLevelData.english}"`;
+            ui.screen.style.color = "var(--screen-text)";
+            ui.input.value = "";
+            
+            // Reset UI state
+            ui.container.className = "";
+            ui.feedback.style.opacity = 0;
+            ui.input.disabled = false;
+            ui.btnTranslate.disabled = false;
+            ui.btnSkip.disabled = false;
+            
+            ui.input.focus();
+        }
+
+        function createSteam() {
+            for(let i=0; i<3; i++) {
+                setTimeout(() => {
+                    const puffL = document.createElement('div');
+                    puffL.className = 'puff';
+                    puffL.style.left = '-10px';
+                    ui.earLeft.appendChild(puffL);
+
+                    const puffR = document.createElement('div');
+                    puffR.className = 'puff';
+                    puffR.style.left = '20px';
+                    ui.earRight.appendChild(puffR);
+
+                    setTimeout(() => {
+                        puffL.remove();
+                        puffR.remove();
+                    }, 1000);
+                }, i * 200);
+            }
+        }
+
+        function toggleControls(enable) {
+            ui.input.disabled = !enable;
+            ui.btnTranslate.disabled = !enable;
+            ui.btnSkip.disabled = !enable;
+        }
+
+        function handleTranslate() {
+            if (isProcessing) return;
+            if (sfx.ctx.state === 'suspended') sfx.ctx.resume();
+
+            const userText = normalizeString(ui.input.value);
+            if(!userText) return;
+
+            isProcessing = true;
+            toggleControls(false);
+
+            // Thinking Phase
+            ui.container.classList.add('robot-thinking');
+            ui.screen.textContent = "PROCESSING...";
+            sfx.playProcessing();
+
+            setTimeout(() => {
+                validateAnswer(userText);
+            }, 1500);
+        }
+
+        function handleSkip() {
+            if (isProcessing) return;
+            if (sfx.ctx.state === 'suspended') sfx.ctx.resume();
+
+            isProcessing = true;
+            toggleControls(false);
+
+            ui.container.classList.add('robot-skip');
+            sfx.playSkip();
+
+            // Show answer
+            const cleanAnswer = currentLevelData.answers[0].toUpperCase();
+            ui.screen.style.color = "var(--eye-skip)";
+            ui.screen.textContent = cleanAnswer;
+
+            ui.feedback.textContent = "SKIPPED";
+            ui.feedback.className = "feedback-overlay feedback-skip";
+            ui.feedback.style.opacity = 1;
+
+            setTimeout(() => {
+                isProcessing = false;
+                loadNextLevel();
+            }, 3000); // Give them 3 seconds to read the answer
+        }
+
+        function validateAnswer(input) {
+            ui.container.classList.remove('robot-thinking');
+            
+            // Normalize accepted answers
+            const normalizedAnswers = currentLevelData.answers.map(a => normalizeString(a));
+            const isCorrect = normalizedAnswers.includes(input);
+
+            if (isCorrect) {
+                // SUCCESS
+                ui.container.classList.add('robot-success');
+                sfx.playSuccess();
+                createSteam();
+                
+                ui.screen.textContent = "TRANSLATION ACCEPTED!";
+                ui.feedback.textContent = "¡EXCELENTE!";
+                ui.feedback.className = "feedback-overlay feedback-success";
+                ui.feedback.style.opacity = 1;
+
+                setTimeout(() => {
+                    isProcessing = false;
+                    loadNextLevel();
+                }, 2500);
+
+            } else {
+                // FAIL
+                ui.container.classList.add('robot-fail');
+                sfx.playFail();
+
+                ui.screen.style.color = "red";
+                ui.screen.textContent = "ERROR: SYSTEM MALFUNCTION";
+                
+                ui.feedback.textContent = "¡INCORRECTO!";
+                ui.feedback.className = "feedback-overlay feedback-fail";
+                ui.feedback.style.opacity = 1;
+
+                setTimeout(() => {
+                    isProcessing = false;
+                    ui.container.classList.remove('robot-fail');
+                    ui.feedback.style.opacity = 0;
+                    ui.screen.style.color = "var(--screen-text)";
+                    ui.screen.textContent = `"${currentLevelData.english}"`;
+                    toggleControls(true);
+                    ui.input.focus();
+                }, 2000);
+            }
+        }
+
+        // --- Event Listeners ---
+        ui.btnTranslate.addEventListener('click', handleTranslate);
+        ui.btnSkip.addEventListener('click', handleSkip);
+        
+        ui.input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                handleTranslate();
+            } else {
+                if(Math.random() > 0.5) sfx.playType();
+            }
+        });
+
+        // Start
+        initGame();
+
+    </script>
+</body>
+</html>

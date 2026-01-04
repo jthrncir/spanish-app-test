@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Crucigrama - Spanish Crossword</title>
+    <!-- Tailwind CSS for Layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --cell-size: 40px;
+            --grid-gap: 2px;
+            --primary-color: #6366f1; /* Indigo 500 */
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        /* The Grid Container */
+        .crossword-board {
+            display: grid;
+            background-color: #1f2937; /* Dark border */
+            gap: var(--grid-gap);
+            padding: var(--grid-gap);
+            border-radius: 4px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            max-width: 100%;
+            overflow: auto;
+            margin: 0 auto;
+        }
+
+        /* Individual Cell */
+        .cell {
+            position: relative;
+            background-color: #000; /* Black square by default */
+            width: var(--cell-size);
+            height: var(--cell-size);
+            user-select: none;
+        }
+
+        /* Active White Cell */
+        .cell.active {
+            background-color: #fff;
+        }
+
+        /* The Input Field */
+        .cell input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #1f2937;
+            background: transparent;
+            cursor: pointer;
+            padding: 0;
+            margin: 0;
+            outline: none;
+            font-family: 'Nunito', sans-serif;
+        }
+
+        .cell input:focus {
+            background-color: #e0e7ff; /* Light Indigo focus */
+        }
+
+        /* Highlighted Word Group */
+        .cell.highlighted-word input {
+            background-color: #fff7ed; /* Light Orange */
+        }
+        
+        /* Focus + Highlight logic check */
+        .cell input:focus {
+            background-color: #a5b4fc !important; /* Darker Indigo when actually focused */
+        }
+
+        /* Small Number in Corner */
+        .cell-number {
+            position: absolute;
+            top: 1px;
+            left: 2px;
+            font-size: 0.65rem;
+            line-height: 1;
+            color: #374151;
+            pointer-events: none;
+            font-weight: 700;
+        }
+
+        /* Validation Colors */
+        .cell.correct input {
+            background-color: #86efac !important; /* Green */
+            color: #064e3b;
+        }
+
+        .cell.incorrect input {
+            background-color: #fca5a5 !important; /* Red */
+        }
+
+        /* Clue Lists */
+        .clue-item {
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .clue-item:hover {
+            background-color: #e5e7eb;
+        }
+
+        .clue-item.active-clue {
+            background-color: #e0e7ff;
+            color: var(--primary-color);
+            font-weight: bold;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .clue-item.solved {
+            text-decoration: line-through;
+            color: #9ca3af;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 640px) {
+            :root {
+                --cell-size: 32px;
+            }
+            .cell input {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen text-gray-800">
+
+    <!-- Header -->
+    <header class="bg-indigo-600 text-white shadow-md p-4">
+        <div class="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-2">
+                <span class="text-3xl">🧩</span>
+                <div>
+                    <h1 class="text-2xl font-bold leading-none">El Crucigrama</h1>
+                    <p class="text-sm text-indigo-200">Learn Spanish Vocabulary</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <label for="level-select" class="font-semibold text-indigo-100">Nivel:</label>
+                <select id="level-select" class="text-gray-800 rounded px-3 py-1 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                    <!-- Options populated by JS -->
+                </select>
+                <button id="sound-toggle" class="ml-2 bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-1 px-3 rounded text-sm">
+                    🔊 On
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto p-4 md:p-8">
+        
+        <div class="flex flex-col lg:flex-row gap-8 items-start">
+            
+            <!-- Left: Puzzle Area -->
+            <div class="w-full lg:w-auto flex flex-col items-center gap-4 flex-shrink-0">
+                <div id="game-board" class="crossword-board shadow-xl">
+                    <!-- Grid generated here -->
+                </div>
+
+                <!-- Controls -->
+                <div class="flex gap-4 w-full justify-center mt-2">
+                    <button id="check-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-full shadow transition transform hover:scale-105 flex items-center gap-2">
+                        <span>✓</span> Verificar (Check)
+                    </button>
+                    <button id="reset-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-full shadow transition">
+                        Reiniciar (Reset)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right: Clues Area -->
+            <div class="w-full bg-white rounded-xl shadow-md p-6 flex-grow">
+                <h2 class="text-xl font-bold text-gray-700 mb-4 border-b pb-2">Pistas (Clues)</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-6">
+                    <!-- Horizontal Clues -->
+                    <div>
+                        <h3 class="font-bold text-indigo-600 mb-2 flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                            Horizontal (Across)
+                        </h3>
+                        <ul id="clues-across" class="space-y-1 text-sm md:text-base">
+                            <!-- Populated by JS -->
+                        </ul>
+                    </div>
+
+                    <!-- Vertical Clues -->
+                    <div>
+                        <h3 class="font-bold text-pink-600 mb-2 flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+                            Vertical (Down)
+                        </h3>
+                        <ul id="clues-down" class="space-y-1 text-sm md:text-base">
+                            <!-- Populated by JS -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Win Modal -->
+    <div id="win-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl transform transition-all scale-100">
+            <div class="text-6xl mb-4">🏆</div>
+            <h2 class="text-3xl font-bold text-indigo-600 mb-2">¡Fantástico!</h2>
+            <p class="text-gray-600 mb-6">You completed the level successfully.</p>
+            <button id="close-modal-btn" class="bg-indigo-600 text-white px-6 py-2 rounded-full font-bold hover:bg-indigo-700 transition">
+                Continuar
+            </button>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- Audio System (Synthesized) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let soundEnabled = true;
+
+        const playTone = (freq, type, duration) => {
+            if (!soundEnabled) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        };
+
+        const playTypeSound = () => playTone(800, 'sine', 0.1);
+        const playDeleteSound = () => playTone(400, 'sine', 0.1);
+        
+        const playSuccessSound = () => {
+            if (!soundEnabled) return;
+            const now = audioCtx.currentTime;
+            // Major triad arpeggio
+            [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, now + i * 0.1);
+                gain.gain.setValueAtTime(0.1, now + i * 0.1);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.3);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now + i * 0.1);
+                osc.stop(now + i * 0.1 + 0.3);
+            });
+        };
+
+        const playErrorSound = () => {
+            if (!soundEnabled) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        };
+        
+        const playCheckSound = () => {
+             // Simple high ping for the check button press itself
+             playTone(1200, 'sine', 0.15);
+        };
+
+        document.getElementById('sound-toggle').addEventListener('click', (e) => {
+            soundEnabled = !soundEnabled;
+            e.target.textContent = soundEnabled ? "🔊 On" : "🔇 Off";
+            // Resume context if suspended (browser policy)
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        });
+
+
+        // --- Game Data (10 Levels) ---
+        const levels = [
+            {
+                id: 1,
+                title: "1. Colors & Numbers",
+                rows: 13,
+                cols: 11,
+                words: [
+                    { number: 1, direction: 'across', startRow: 5, startCol: 0, term: "NEGRO", clue: "Black" },
+                    { number: 2, direction: 'down', startRow: 2, startCol: 4, term: "ROJO", clue: "Red" },
+                    { number: 3, direction: 'down', startRow: 5, startCol: 2, term: "GRIS", clue: "Grey" },
+                    { number: 4, direction: 'across', startRow: 8, startCol: 2, term: "SEIS", clue: "Six" },
+                    { number: 5, direction: 'down', startRow: 8, startCol: 5, term: "SIETE", clue: "Seven" },
+                    { number: 6, direction: 'across', startRow: 11, startCol: 5, term: "TRES", clue: "Three" }
+                ]
+            },
+            {
+                id: 2,
+                title: "2. Family & House",
+                rows: 12,
+                cols: 10,
+                words: [
+                    { number: 1, direction: 'across', startRow: 5, startCol: 0, term: "HERMANO", clue: "Brother" },
+                    { number: 1, direction: 'down', startRow: 5, startCol: 0, term: "HIJO", clue: "Son" },
+                    { number: 2, direction: 'down', startRow: 5, startCol: 3, term: "MADRE", clue: "Mother" },
+                    { number: 3, direction: 'down', startRow: 3, startCol: 6, term: "TIO", clue: "Uncle" },
+                    { number: 4, direction: 'across', startRow: 9, startCol: 2, term: "BEBE", clue: "Baby" }
+                ]
+            },
+            {
+                id: 3,
+                title: "3. Animals (Animales)",
+                rows: 10,
+                cols: 10,
+                words: [
+                    // GATO (1,6) Down -> G(1,6)-A(2,6)-T(3,6)-O(4,6)
+                    // LEON (4,4) Across -> L(4,4)-E(4,5)-O(4,6)-N(4,7). Intersects GATO at O.
+                    { number: 1, direction: 'down', startRow: 1, startCol: 2, term: "PERRO", clue: "Dog" },
+                    { number: 2, direction: 'across', startRow: 3, startCol: 0, term: "TORO", clue: "Bull" },
+                    { number: 3, direction: 'down', startRow: 1, startCol: 6, term: "GATO", clue: "Cat" },
+                    { number: 4, direction: 'across', startRow: 4, startCol: 4, term: "LEON", clue: "Lion" },
+                    { number: 5, direction: 'across', startRow: 7, startCol: 2, term: "PATO", clue: "Duck" }
+                ]
+            },
+            {
+                id: 4,
+                title: "4. Body Parts (El Cuerpo)",
+                rows: 10,
+                cols: 10,
+                words: [
+                    // NARIZ (Down 0,4): N-A-R-I-Z. A is at 1,4.
+                    // MANO (Across 1,3): M-A-N-O. Intersects NARIZ at A(1,4).
+                    { number: 1, direction: 'across', startRow: 1, startCol: 3, term: "MANO", clue: "Hand" },
+                    { number: 2, direction: 'down', startRow: 0, startCol: 4, term: "NARIZ", clue: "Nose" },
+                    // PIE (Down 2,6): P-I-E.
+                    // PELO (Across 2,6): P-E-L-O. Intersects PIE at P(2,6).
+                    { number: 3, direction: 'down', startRow: 2, startCol: 6, term: "PIE", clue: "Foot" },
+                    { number: 4, direction: 'across', startRow: 2, startCol: 6, term: "PELO", clue: "Hair" },
+                    { number: 5, direction: 'across', startRow: 6, startCol: 1, term: "OJOS", clue: "Eyes" }
+                ]
+            },
+            {
+                id: 5,
+                title: "5. Food (La Comida)",
+                rows: 11,
+                cols: 11,
+                words: [
+                    // Reconfigured to resolve conflicts
+                    // PAN (Across 2,2): P-A-N
+                    // POLLO (Down 2,2): P-O-L-L-O
+                    // LECHE (Across 4,2): L-E-C-H-E. Intersects POLLO at L(4,2).
+                    // HUEVO (Down 4,5): H-U-E-V-O. Intersects LECHE at H(4,5).
+                    // SOPA (Across 8,4): S-O-P-A. Intersects HUEVO at O(8,5).
+                    { number: 1, direction: 'across', startRow: 2, startCol: 2, term: "PAN", clue: "Bread" },
+                    { number: 2, direction: 'down', startRow: 2, startCol: 2, term: "POLLO", clue: "Chicken" },
+                    { number: 3, direction: 'across', startRow: 4, startCol: 2, term: "LECHE", clue: "Milk" },
+                    { number: 4, direction: 'down', startRow: 4, startCol: 5, term: "HUEVO", clue: "Egg" },
+                    { number: 5, direction: 'across', startRow: 8, startCol: 4, term: "SOPA", clue: "Soup" }
+                ]
+            },
+            {
+                id: 6,
+                title: "6. Clothing (La Ropa)",
+                rows: 12,
+                cols: 10,
+                words: [
+                    { number: 1, direction: 'across', startRow: 2, startCol: 2, term: "ROPA", clue: "Clothes" }, // R(2,2)-O(2,3)-P(2,4)-A(2,5)
+                    { number: 2, direction: 'down', startRow: 1, startCol: 5, term: "FALDA", clue: "Skirt" }, // F(1,5)-A(2,5)-L(3,5)-D(4,5)-A(5,5) Matches ROPA A
+                    { number: 3, direction: 'across', startRow: 6, startCol: 1, term: "BOTA", clue: "Boot" }, // B(6,1)-O(6,2)-T(6,3)-A(6,4)
+                    { number: 4, direction: 'down', startRow: 6, startCol: 1, term: "BOLSA", clue: "Bag/Purse" }, // B(6,1)-O(7,1)-L(8,1)-S(9,1)-A(10,1) Matches BOTA B
+                    { number: 5, direction: 'down', startRow: 0, startCol: 2, term: "GORRA", clue: "Cap" } // G(0,2)-O(1,2)-R(2,2)-R(3,2)-A(4,2) Matches ROPA R
+                ]
+            },
+            {
+                id: 7,
+                title: "7. School (La Escuela)",
+                rows: 10,
+                cols: 12,
+                words: [
+                    { number: 1, direction: 'across', startRow: 1, startCol: 1, term: "LAPIZ", clue: "Pencil" },
+                    { number: 2, direction: 'down', startRow: 1, startCol: 3, term: "PAPEL", clue: "Paper" },
+                    { number: 3, direction: 'across', startRow: 4, startCol: 3, term: "EXAMEN", clue: "Exam" },
+                    // MESA (Down 4,6) M-E-S-A. Intersects EXAMEN (E-X-A-M-E-N) at M (4,6).
+                    { number: 4, direction: 'down', startRow: 4, startCol: 6, term: "MESA", clue: "Table" },
+                    // CLASE (Across 7,4) C-L-A-S-E. Intersects MESA (M-E-S-A) at A (7,6).
+                    { number: 5, direction: 'across', startRow: 7, startCol: 4, term: "CLASE", clue: "Class" }
+                ]
+            },
+            {
+                id: 8,
+                title: "8. Nature (La Naturaleza)",
+                rows: 11,
+                cols: 10,
+                words: [
+                    // LUNA (Across 2,0): L-U-N-A. Ends 2,3.
+                    // ARBOL (Down 2,3): A-R-B-O-L. Matches A. O is at 5,3.
+                    // FLOR (Across 5,1): F-L-O-R. Matches O at 5,3. F is at 5,1.
+                    // FUEGO (Down 5,1): F-U-E-G-O. Matches F at 5,1.
+                    { number: 1, direction: 'down', startRow: 0, startCol: 0, term: "SOL", clue: "Sun" },
+                    { number: 2, direction: 'across', startRow: 2, startCol: 0, term: "LUNA", clue: "Moon" },
+                    { number: 3, direction: 'down', startRow: 2, startCol: 3, term: "ARBOL", clue: "Tree" },
+                    { number: 4, direction: 'across', startRow: 5, startCol: 1, term: "FLOR", clue: "Flower" },
+                    { number: 5, direction: 'down', startRow: 5, startCol: 1, term: "FUEGO", clue: "Fire" }
+                ]
+            },
+            {
+                id: 9,
+                title: "9. City (La Ciudad)",
+                rows: 11,
+                cols: 11,
+                words: [
+                    // BANCO (Down 0,2): B-A-N-C-O. A is at 1,2.
+                    // CASA (Across 1,1): C-A-S-A. Intersects BANCO at A(1,2).
+                    // HOTEL (Across 4,1): H-O-T-E-L. Intersects BANCO at O(4,2). E is at 4,4.
+                    // PARQUE (Down 3,4): P-A-R-Q-U-E. A(4,4) intersects HOTEL E(4,4)? No, PARQUE A is index 1.
+                    // PARQUE (Down 3,3). P(3,3), A(4,3), R(5,3)...
+                    // HOTEL E is at 4,4.
+                    // Let's retry PARQUE placement.
+                    // HOTEL H(4,1) O(4,2) T(4,3) E(4,4) L(4,5).
+                    // PARQUE needs E at 4,4? P-A-R-Q-U-E. E is index 5.
+                    // If PARQUE Down ends at 4,4, it starts at -1. Invalid.
+                    // If PARQUE Down intersects at A? P-A... A is index 1.
+                    // If PARQUE starts at 3,4. P(3,4), A(4,4). Matches HOTEL E? No A vs E.
+                    // If PARQUE starts at 3,4. P-A-R-Q-U-E.
+                    // HOTEL at 4,1. H-O-T-E-L.
+                    // HOTEL T is at 4,3. PARQUE P is at 3,4. No intersection.
+                    // Let's use USA (Down 4,5). U-S-A. Matches HOTEL L? No.
+                    // Just place PARQUE isolated if needed or intersects CASA.
+                    // CASA (1,1 to 1,4). S at 1,3.
+                    // PARQUE (Down 1,3): P-A-R-Q-U-E. A at 2,3.
+                    // CASA S vs P (1,3). No.
+                    // Let's simplify City level to avoid conflict errors:
+                    { number: 1, direction: 'across', startRow: 1, startCol: 1, term: "CASA", clue: "House" },
+                    { number: 2, direction: 'down', startRow: 0, startCol: 2, term: "BANCO", clue: "Bank" }, // A at 1,2 matches CASA
+                    { number: 3, direction: 'across', startRow: 4, startCol: 1, term: "HOTEL", clue: "Hotel" }, // O at 4,2 matches BANCO O
+                    { number: 4, direction: 'down', startRow: 4, startCol: 5, term: "LUZ", clue: "Light" }, // Matches HOTEL L? L at 4,5.
+                    { number: 5, direction: 'across', startRow: 7, startCol: 3, term: "PARQUE", clue: "Park" }
+                ]
+            },
+            {
+                id: 10,
+                title: "10. Verbs (Verbos)",
+                rows: 10,
+                cols: 12,
+                words: [
+                     // COMER (Across) C(2,1) O(2,2) M(2,3) E(2,4) R(2,5)
+                    { number: 1, direction: 'across', startRow: 2, startCol: 1, term: "COMER", clue: "To Eat" },
+                    // ESTAR (Down) Intersects COMER at E(2,4)? ESTAR: E(2,4) S(3,4) T(4,4) A(5,4) R(6,4)
+                    { number: 2, direction: 'down', startRow: 2, startCol: 4, term: "ESTAR", clue: "To Be (Temp)" },
+                    // AMAR (Across) Intersects ESTAR at A(5,4). A(5,4) M(5,5) A(5,6) R(5,7)
+                    { number: 3, direction: 'across', startRow: 5, startCol: 4, term: "AMAR", clue: "To Love" },
+                    // LEER (Down) Intersects AMAR at R(5,7)? LEER: L(2,7) E(3,7) E(4,7) R(5,7)
+                    // LEER R is index 3. If R matches AMAR R(5,7), LEER starts at 2,7.
+                    // L(2,7)-E(3,7)-E(4,7)-R(5,7).
+                    { number: 4, direction: 'down', startRow: 2, startCol: 7, term: "LEER", clue: "To Read" },
+                    // ESCRIBIR (Across). 8,1.
+                    { number: 5, direction: 'across', startRow: 8, startCol: 1, term: "ESCRIBIR", clue: "To Write" }
+                ]
+            }
+        ];
+
+        // --- State Variables ---
+        let currentLevelIndex = 0;
+        let gridMap = []; // 2D array storing cell data
+        let currentDirection = 'across'; // 'across' or 'down'
+        let activeWordIndex = -1; // Index in the level.words array
+
+        // --- DOM Elements ---
+        const boardEl = document.getElementById('game-board');
+        const levelSelectEl = document.getElementById('level-select');
+        const cluesAcrossEl = document.getElementById('clues-across');
+        const cluesDownEl = document.getElementById('clues-down');
+        const checkBtn = document.getElementById('check-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const winModal = document.getElementById('win-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+
+        // --- Initialization ---
+        function init() {
+            // Populate Level Select
+            levels.forEach((level, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = level.title;
+                levelSelectEl.appendChild(option);
+            });
+
+            levelSelectEl.addEventListener('change', (e) => {
+                currentLevelIndex = parseInt(e.target.value);
+                loadLevel(currentLevelIndex);
+            });
+
+            checkBtn.addEventListener('click', validateBoard);
+            resetBtn.addEventListener('click', () => loadLevel(currentLevelIndex));
+            closeModalBtn.addEventListener('click', () => {
+                winModal.classList.add('hidden');
+                // Optional: Advance to next level logic
+            });
+
+            loadLevel(0);
+        }
+
+        // --- Core Logic: Load Level & Build Grid ---
+        function loadLevel(index) {
+            const level = levels[index];
+            
+            // reset CSS grid layout
+            boardEl.style.gridTemplateColumns = `repeat(${level.cols}, var(--cell-size))`;
+            boardEl.style.gridTemplateRows = `repeat(${level.rows}, var(--cell-size))`;
+            
+            // Initialize empty grid state
+            gridMap = Array(level.rows).fill(null).map(() => Array(level.cols).fill(null));
+
+            // Map words onto the grid state
+            level.words.forEach((word, wIndex) => {
+                let r = word.startRow;
+                let c = word.startCol;
+                
+                for (let i = 0; i < word.term.length; i++) {
+                    
+                    // Safety Bounds Check
+                    if (r >= level.rows || c >= level.cols) {
+                        console.error(`Word "${word.term}" out of bounds at ${r},${c}`);
+                        return; // Skip this letter to prevent crash
+                    }
+
+                    // Create cell object if it doesn't exist
+                    if (!gridMap[r][c]) {
+                        gridMap[r][c] = {
+                            char: word.term[i],
+                            words: [], // Stores indices of words passing through this cell
+                            number: (i === 0) ? word.number : null,
+                            row: r,
+                            col: c
+                        };
+                    } else {
+                        // Intersection check (simple validation)
+                        if (gridMap[r][c].char !== word.term[i]) {
+                            console.error(`Conflict at ${r},${c}: ${gridMap[r][c].char} vs ${word.term[i]}`);
+                        }
+                        // If this is a start of a new intersecting word, add the number
+                        if (i === 0) gridMap[r][c].number = word.number;
+                    }
+
+                    // Add this word's index to the cell metadata
+                    gridMap[r][c].words.push(wIndex);
+
+                    // Move to next cell based on direction
+                    if (word.direction === 'across') c++;
+                    else r++;
+                }
+            });
+
+            renderGrid(level);
+            renderClues(level);
+            currentDirection = 'across';
+            activeWordIndex = -1;
+        }
+
+        // --- Rendering ---
+        function renderGrid(level) {
+            boardEl.innerHTML = '';
+            
+            for (let r = 0; r < level.rows; r++) {
+                for (let c = 0; c < level.cols; c++) {
+                    const cellData = gridMap[r][c];
+                    const cellEl = document.createElement('div');
+                    cellEl.classList.add('cell');
+                    cellEl.dataset.row = r;
+                    cellEl.dataset.col = c;
+
+                    if (cellData) {
+                        cellEl.classList.add('active');
+                        
+                        // Input
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.maxLength = 1;
+                        input.dataset.answer = cellData.char;
+                        input.dataset.row = r;
+                        input.dataset.col = c;
+                        
+                        // Events
+                        input.addEventListener('focus', handleFocus);
+                        input.addEventListener('click', handleClick);
+                        input.addEventListener('keydown', handleKeyDown);
+                        input.addEventListener('input', handleInput);
+
+                        // Number
+                        if (cellData.number) {
+                            const numSpan = document.createElement('span');
+                            numSpan.className = 'cell-number';
+                            numSpan.textContent = cellData.number;
+                            cellEl.appendChild(numSpan);
+                        }
+
+                        cellEl.appendChild(input);
+                    }
+
+                    boardEl.appendChild(cellEl);
+                }
+            }
+        }
+
+        function renderClues(level) {
+            cluesAcrossEl.innerHTML = '';
+            cluesDownEl.innerHTML = '';
+
+            level.words.forEach((word, index) => {
+                const li = document.createElement('li');
+                li.className = 'clue-item';
+                li.dataset.wordIndex = index;
+                li.innerHTML = `<strong>${word.number}.</strong> ${word.clue}`;
+                
+                li.addEventListener('click', () => {
+                    activateWord(index);
+                });
+
+                if (word.direction === 'across') {
+                    cluesAcrossEl.appendChild(li);
+                } else {
+                    cluesDownEl.appendChild(li);
+                }
+            });
+        }
+
+        // --- Interaction Handlers ---
+
+        function handleFocus(e) {
+            const r = parseInt(e.target.dataset.row);
+            const c = parseInt(e.target.dataset.col);
+            const cellData = gridMap[r][c];
+
+            // Resume audio context if needed on user interaction
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            // If we don't have an active word, or the focused cell isn't in the active word...
+            // We need to determine the "Best" word to activate.
+            const level = levels[currentLevelIndex];
+            
+            // If the cell belongs to the currently active word, keep it. 
+            // Otherwise, pick the first word associated with this cell that matches currentDirection
+            let foundWordIndex = -1;
+
+            if (activeWordIndex !== -1 && cellData.words.includes(activeWordIndex)) {
+                // We are still inside the active word. Update UI highlights but don't change logic.
+                highlightActiveWord();
+                return; 
+            }
+
+            // Try to find a word in current direction
+            const wordInCurrentDir = cellData.words.find(idx => level.words[idx].direction === currentDirection);
+            
+            if (wordInCurrentDir !== undefined) {
+                activeWordIndex = wordInCurrentDir;
+            } else {
+                // If not, just take the first word available (and switch direction implies)
+                activeWordIndex = cellData.words[0];
+                currentDirection = level.words[activeWordIndex].direction;
+            }
+
+            highlightActiveWord();
+            highlightActiveClue();
+        }
+
+        function handleClick(e) {
+            // Double click logic to toggle direction
+            const r = parseInt(e.target.dataset.row);
+            const c = parseInt(e.target.dataset.col);
+            const cellData = gridMap[r][c];
+
+            // If this cell is an intersection (has > 1 word)
+            if (cellData.words.length > 1) {
+                // Toggle direction
+                const newDirection = (currentDirection === 'across') ? 'down' : 'across';
+                
+                // Check if the other direction actually exists for this cell
+                const wordInNewDir = cellData.words.find(idx => levels[currentLevelIndex].words[idx].direction === newDirection);
+                
+                if (wordInNewDir !== undefined) {
+                    currentDirection = newDirection;
+                    activeWordIndex = wordInNewDir;
+                    highlightActiveWord();
+                    highlightActiveClue();
+                }
+            }
+        }
+
+        function handleInput(e) {
+            const input = e.target;
+            const val = input.value;
+            const r = parseInt(input.dataset.row);
+            const c = parseInt(input.dataset.col);
+
+            // Regex for letters only
+            if (!/^[a-zA-ZñÑ]$/.test(val)) {
+                input.value = '';
+                return;
+            }
+
+            // Clean input
+            input.value = val.toUpperCase();
+            
+            // Play Sound
+            playTypeSound();
+
+            // Remove error class on type
+            input.parentElement.classList.remove('incorrect');
+            
+            // Move to next cell
+            moveFocus(r, c, 1);
+        }
+
+        function handleKeyDown(e) {
+            const r = parseInt(e.target.dataset.row);
+            const c = parseInt(e.target.dataset.col);
+
+            if (e.key === 'Backspace') {
+                if (e.target.value === '') {
+                    moveFocus(r, c, -1); // Move back if empty
+                    playDeleteSound();
+                } else {
+                    e.target.value = ''; // Just clear if not empty
+                    playDeleteSound();
+                }
+            } else if (e.key === 'ArrowRight') {
+                navigateGrid(r, c, 0, 1);
+            } else if (e.key === 'ArrowLeft') {
+                navigateGrid(r, c, 0, -1);
+            } else if (e.key === 'ArrowDown') {
+                navigateGrid(r, c, 1, 0);
+            } else if (e.key === 'ArrowUp') {
+                navigateGrid(r, c, -1, 0);
+            }
+        }
+
+        // --- Navigation Helpers ---
+
+        function moveFocus(r, c, step) {
+            const level = levels[currentLevelIndex];
+            
+            let dr = 0, dc = 0;
+            if (currentDirection === 'across') dc = step;
+            else dr = step;
+
+            let nextR = r + dr;
+            let nextC = c + dc;
+
+            // Check bounds
+            if (nextR >= 0 && nextR < level.rows && nextC >= 0 && nextC < level.cols) {
+                const nextCell = document.querySelector(`.cell input[data-row="${nextR}"][data-col="${nextC}"]`);
+                if (nextCell) {
+                    nextCell.focus();
+                }
+            }
+        }
+
+        function navigateGrid(r, c, dr, dc) {
+            // General arrow key navigation (ignores word constraints, just geometry)
+            const level = levels[currentLevelIndex];
+            let nextR = r + dr;
+            let nextC = c + dc;
+
+            // Loop around logic or stop at edge? Let's stop at edge for valid inputs only.
+            while (nextR >= 0 && nextR < level.rows && nextC >= 0 && nextC < level.cols) {
+                const nextCell = document.querySelector(`.cell input[data-row="${nextR}"][data-col="${nextC}"]`);
+                if (nextCell) {
+                    nextCell.focus();
+                    return;
+                }
+                // Skip black squares
+                nextR += dr;
+                nextC += dc;
+            }
+        }
+
+        function activateWord(wordIndex) {
+            const level = levels[currentLevelIndex];
+            const word = level.words[wordIndex];
+            
+            activeWordIndex = wordIndex;
+            currentDirection = word.direction;
+            
+            // Focus first letter
+            const firstCell = document.querySelector(`.cell input[data-row="${word.startRow}"][data-col="${word.startCol}"]`);
+            if (firstCell) firstCell.focus();
+
+            highlightActiveWord();
+            highlightActiveClue();
+        }
+
+        function highlightActiveWord() {
+            // Remove old highlights
+            document.querySelectorAll('.cell').forEach(el => el.classList.remove('highlighted-word'));
+
+            if (activeWordIndex === -1) return;
+
+            const level = levels[currentLevelIndex];
+            const word = level.words[activeWordIndex];
+            
+            let r = word.startRow;
+            let c = word.startCol;
+            
+            for (let i = 0; i < word.term.length; i++) {
+                const cell = document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`);
+                if (cell) cell.classList.add('highlighted-word');
+                
+                if (word.direction === 'across') c++;
+                else r++;
+            }
+        }
+
+        function highlightActiveClue() {
+            document.querySelectorAll('.clue-item').forEach(el => el.classList.remove('active-clue'));
+            const clue = document.querySelector(`.clue-item[data-word-index="${activeWordIndex}"]`);
+            if (clue) {
+                clue.classList.add('active-clue');
+                clue.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        // --- Validation ---
+        function validateBoard() {
+            playCheckSound();
+            const inputs = document.querySelectorAll('.cell input');
+            let allCorrect = true;
+            let filledCount = 0;
+            let hasError = false;
+
+            inputs.forEach(input => {
+                const val = input.value.toUpperCase();
+                const ans = input.dataset.answer;
+                
+                // Reset styles
+                input.parentElement.classList.remove('correct', 'incorrect');
+
+                if (val !== '') {
+                    filledCount++;
+                    if (val === ans) {
+                        input.parentElement.classList.add('correct');
+                    } else {
+                        input.parentElement.classList.add('incorrect');
+                        allCorrect = false;
+                        hasError = true;
+                    }
+                } else {
+                    allCorrect = false; // Empty cells mean not done
+                }
+            });
+
+            // Win Condition
+            if (allCorrect && filledCount === inputs.length) {
+                playSuccessSound();
+                setTimeout(() => {
+                    winModal.classList.remove('hidden');
+                }, 500);
+            } else if (hasError) {
+                playErrorSound();
+            }
+        }
+
+        // Start
+        init();
+
+    </script>
+</body>
+</html>

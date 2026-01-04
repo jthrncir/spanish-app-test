@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurante Rápido</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Open+Sans:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background-color: #FFD54F; /* Cheese Yellow */
+            background-image: radial-gradient(#FFCA28 20%, transparent 20%),
+                              radial-gradient(#FFA000 20%, transparent 20%);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            overflow: hidden;
+            touch-action: none; /* Prevent scrolling on mobile drag */
+        }
+
+        h1, h2, .game-font {
+            font-family: 'Fredoka One', cursive;
+        }
+
+        /* Draggable Styles */
+        .draggable-item {
+            cursor: grab;
+            transition: transform 0.1s, opacity 0.2s;
+            user-select: none;
+        }
+        .draggable-item:active {
+            cursor: grabbing;
+            transform: scale(1.1);
+        }
+        .draggable-item.dragging {
+            opacity: 0.5;
+        }
+
+        /* Tray Drop Zone */
+        .tray-zone {
+            transition: all 0.2s;
+            background: #e0e0e0;
+            border: 4px dashed #9e9e9e;
+        }
+        .tray-zone.drag-over {
+            background: #dcedc8;
+            border-color: #8bc34a;
+            transform: scale(1.02);
+        }
+
+        /* Speech Bubble */
+        .speech-bubble {
+            position: relative;
+            background: #ffffff;
+            border-radius: .4em;
+        }
+        .speech-bubble:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 20%;
+            width: 0;
+            height: 0;
+            border: 20px solid transparent;
+            border-top-color: #ffffff;
+            border-bottom: 0;
+            border-left: 0;
+            margin-left: -10px;
+            margin-bottom: -20px;
+        }
+
+        /* Animations */
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(-30px);}
+            60% {transform: translateY(-15px);}
+        }
+
+        .shake-anim {
+            animation: shake 0.5s;
+            border-color: red !important;
+            background-color: #ffebee !important;
+        }
+
+        .success-anim {
+            animation: bounce 0.5s;
+            background-color: #e8f5e9 !important;
+        }
+
+        /* Custom Scrollbar for Tray items */
+        .tray-items-container::-webkit-scrollbar {
+            height: 6px;
+        }
+        .tray-items-container::-webkit-scrollbar-thumb {
+            background: #bdbdbd;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col items-center justify-center text-gray-800">
+
+    <!-- START SCREEN OVERLAY -->
+    <div id="start-screen" class="fixed inset-0 z-50 bg-orange-500 flex flex-col items-center justify-center text-white">
+        <h1 class="text-6xl mb-4 text-center drop-shadow-lg">Restaurante Rápido</h1>
+        <p class="text-xl mb-8 max-w-md text-center">¡Hola! Customers are hungry. Read their orders in Spanish and serve them before time runs out!</p>
+        <button onclick="startGame()" class="game-font bg-white text-orange-600 px-8 py-4 rounded-full text-3xl shadow-xl hover:scale-105 transition transform border-4 border-yellow-300">
+            ¡Empezar Turno!
+        </button>
+    </div>
+
+    <!-- GAME OVER OVERLAY -->
+    <div id="game-over-screen" class="hidden fixed inset-0 z-50 bg-gray-900 bg-opacity-90 flex flex-col items-center justify-center text-white">
+        <h1 class="text-6xl mb-4 game-font text-red-400">¡Tiempo!</h1>
+        <div class="text-center mb-8">
+            <p class="text-2xl">Puntaje Final:</p>
+            <p id="final-score" class="text-6xl font-bold text-yellow-300">0</p>
+        </div>
+        <button onclick="location.reload()" class="game-font bg-green-500 text-white px-8 py-4 rounded-full text-2xl shadow-xl hover:bg-green-600 transition">
+            Jugar Otra Vez
+        </button>
+    </div>
+
+    <!-- TOP BAR: STATS -->
+    <header class="w-full max-w-4xl flex justify-between items-center p-4 bg-white shadow-md rounded-b-xl z-10 border-b-4 border-orange-400">
+        <div class="flex items-center">
+            <span class="text-3xl mr-2">💰</span>
+            <div class="flex flex-col">
+                <span class="text-xs uppercase font-bold text-gray-500">Puntaje</span>
+                <span id="score-display" class="text-3xl font-bold game-font text-green-600">0</span>
+            </div>
+        </div>
+        <div class="flex items-center">
+            <div class="flex flex-col items-end">
+                <span class="text-xs uppercase font-bold text-gray-500">Tiempo</span>
+                <span id="timer-display" class="text-3xl font-bold game-font text-red-500">90</span>
+            </div>
+            <span class="text-3xl ml-2">⏰</span>
+        </div>
+    </header>
+
+    <!-- MIDDLE: CUSTOMER & TRAY -->
+    <main class="flex-grow w-full max-w-4xl flex flex-col md:flex-row gap-4 p-4 items-stretch justify-center">
+        
+        <!-- LEFT: CUSTOMER AREA -->
+        <section class="flex-1 bg-white rounded-xl shadow-lg border-4 border-blue-200 p-4 flex flex-col items-center relative overflow-hidden">
+            <!-- Speech Bubble -->
+            <div class="speech-bubble w-full p-6 mb-4 bg-gray-50 border-2 border-gray-200 shadow-sm min-h-[120px] flex items-center justify-center text-center">
+                <p id="order-text" class="text-xl md:text-2xl font-bold text-gray-700">
+                    <!-- Text inserted by JS -->
+                </p>
+            </div>
+            
+            <!-- Customer Avatar -->
+            <div id="customer-avatar" class="text-9xl transition-transform duration-300">
+                👤
+            </div>
+            
+            <!-- Feedback Text (Pop up) -->
+            <div id="feedback-msg" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-4xl font-bold hidden pointer-events-none drop-shadow-md game-font" style="text-shadow: 2px 2px 0 #fff;">
+                ¡Excelente!
+            </div>
+        </section>
+
+        <!-- RIGHT: SERVING TRAY AREA -->
+        <section class="flex-1 bg-gray-100 rounded-xl shadow-lg border-4 border-gray-300 p-4 flex flex-col items-center">
+            <h2 class="text-gray-400 font-bold mb-2 uppercase tracking-wide text-sm">Bandeja (Tray)</h2>
+            
+            <!-- Drop Zone -->
+            <div id="tray" class="tray-zone w-full flex-grow rounded-lg mb-4 flex flex-wrap content-start items-start justify-center p-2 gap-2 relative min-h-[150px]">
+                <p id="tray-hint" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">
+                    Arrastra la comida aquí
+                </p>
+                <!-- Dropped items go here -->
+            </div>
+
+            <!-- Action Button -->
+            <button id="serve-btn" class="w-full bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-bold py-4 px-6 rounded-xl shadow-[0_4px_0_rgb(21,128,61)] active:shadow-[0_0px_0_rgb(21,128,61)] active:translate-y-1 transition-all text-2xl uppercase game-font">
+                ¡Servir!
+            </button>
+        </section>
+    </main>
+
+    <!-- BOTTOM: KITCHEN BAR -->
+    <footer class="w-full bg-orange-100 border-t-8 border-orange-400 p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.1)]">
+        <div class="max-w-4xl mx-auto">
+            <h3 class="text-center text-orange-800 font-bold mb-2 text-sm uppercase">La Cocina (Kitchen)</h3>
+            <div id="kitchen-shelf" class="flex justify-around items-center gap-2 overflow-x-auto pb-2">
+                <!-- Kitchen items generated by JS -->
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // --- DATA & CONFIG ---
+        const GAME_DURATION = 90; // Seconds
+        const MENU = [
+            { id: 'burger', nameES: 'la hamburguesa', nameEN: 'Hamburger', emoji: '🍔' },
+            { id: 'fries', nameES: 'las papas fritas', nameEN: 'Fries', emoji: '🍟' },
+            { id: 'soda', nameES: 'el refresco', nameEN: 'Soda', emoji: '🥤' },
+            { id: 'pizza', nameES: 'la pizza', nameEN: 'Pizza', emoji: '🍕' },
+            { id: 'salad', nameES: 'la ensalada', nameEN: 'Salad', emoji: '🥗' },
+            { id: 'icecream', nameES: 'el helado', nameEN: 'Ice Cream', emoji: '🍦' }
+        ];
+        
+        const CUSTOMER_EMOJIS = ['👨', '👩', '👴', '👵', '👮', '🧛', '🤠', '👽', '🐶'];
+
+        // --- STATE ---
+        let state = {
+            score: 0,
+            timeLeft: GAME_DURATION,
+            currentOrder: [], // Array of item IDs
+            trayContents: [], // Array of item IDs
+            gameActive: false,
+            timerInterval: null
+        };
+
+        // --- AUDIO SYSTEM (Web Audio API for Generated Sounds) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        const SoundFX = {
+            playTone: (freq, type, duration, vol = 0.1) => {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            },
+            
+            drag: () => SoundFX.playTone(400, 'sine', 0.1), // "Pop"
+            drop: () => SoundFX.playTone(200, 'triangle', 0.15), // "Thud"
+            
+            success: () => {
+                // Cha-ching / Party feel
+                const now = audioCtx.currentTime;
+                [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.1, now + i * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.08 + 0.3);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now + i * 0.08);
+                    osc.stop(now + i * 0.08 + 0.3);
+                });
+            },
+
+            fail: () => {
+                // Angry buzz
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(50, audioCtx.currentTime + 0.5);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.5);
+            },
+
+            timerHurry: () => {
+                SoundFX.playTone(800, 'square', 0.05, 0.05);
+            }
+        };
+
+        // --- DOM ELEMENTS ---
+        const els = {
+            kitchen: document.getElementById('kitchen-shelf'),
+            tray: document.getElementById('tray'),
+            trayHint: document.getElementById('tray-hint'),
+            orderText: document.getElementById('order-text'),
+            customerAvatar: document.getElementById('customer-avatar'),
+            score: document.getElementById('score-display'),
+            timer: document.getElementById('timer-display'),
+            serveBtn: document.getElementById('serve-btn'),
+            startScreen: document.getElementById('start-screen'),
+            gameOverScreen: document.getElementById('game-over-screen'),
+            finalScore: document.getElementById('final-score'),
+            feedback: document.getElementById('feedback-msg')
+        };
+
+        // --- INITIALIZATION ---
+        function initKitchen() {
+            els.kitchen.innerHTML = '';
+            MENU.forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'draggable-item flex flex-col items-center justify-center bg-white p-2 rounded-lg shadow-md w-20 h-24 border-b-4 border-gray-200 hover:border-orange-300';
+                el.draggable = true;
+                el.dataset.id = item.id;
+                el.innerHTML = `
+                    <span class="text-4xl pointer-events-none">${item.emoji}</span>
+                    <span class="text-[10px] text-center mt-1 leading-tight text-gray-500 font-bold pointer-events-none">${item.nameEN}</span>
+                `;
+                
+                // Drag Events
+                el.addEventListener('dragstart', handleDragStart);
+                el.addEventListener('dragend', handleDragEnd);
+                
+                els.kitchen.appendChild(el);
+            });
+        }
+
+        // --- GAME LOGIC ---
+
+        function startGame() {
+            // Audio context must be resumed after user gesture
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            state.gameActive = true;
+            state.score = 0;
+            state.timeLeft = GAME_DURATION;
+            state.trayContents = [];
+            
+            els.startScreen.classList.add('hidden');
+            els.gameOverScreen.classList.add('hidden');
+            
+            updateStats();
+            initKitchen();
+            generateNewOrder();
+            
+            // Start Timer
+            if (state.timerInterval) clearInterval(state.timerInterval);
+            state.timerInterval = setInterval(gameLoop, 1000);
+        }
+
+        function gameLoop() {
+            state.timeLeft--;
+            updateStats();
+
+            // Warning sound logic
+            if (state.timeLeft <= 10) {
+                SoundFX.timerHurry();
+                els.timer.classList.add('animate-pulse');
+            }
+
+            if (state.timeLeft <= 0) {
+                endGame();
+            }
+        }
+
+        function endGame() {
+            state.gameActive = false;
+            clearInterval(state.timerInterval);
+            els.finalScore.innerText = state.score;
+            els.gameOverScreen.classList.remove('hidden');
+        }
+
+        function updateStats() {
+            els.score.innerText = state.score;
+            els.timer.innerText = state.timeLeft;
+        }
+
+        function generateNewOrder() {
+            // 1. Clear Tray
+            clearTray();
+            
+            // 2. New Customer Avatar
+            const randomAvatar = CUSTOMER_EMOJIS[Math.floor(Math.random() * CUSTOMER_EMOJIS.length)];
+            els.customerAvatar.innerText = randomAvatar;
+            // Reset animations
+            els.customerAvatar.style.transform = "scale(1)";
+            
+            // 3. Determine number of items (1 to 3)
+            const itemCount = Math.floor(Math.random() * 3) + 1;
+            state.currentOrder = [];
+            
+            // 4. Select random unique items
+            let availableMenu = [...MENU];
+            for (let i = 0; i < itemCount; i++) {
+                const randomIndex = Math.floor(Math.random() * availableMenu.length);
+                state.currentOrder.push(availableMenu[randomIndex]);
+                availableMenu.splice(randomIndex, 1); // Remove to prevent duplicates in one order (optional choice)
+            }
+
+            // 5. Construct Spanish Sentence
+            let sentence = "Hola. Quiero ";
+            const names = state.currentOrder.map(item => item.nameES);
+            
+            if (names.length === 1) {
+                sentence += names[0] + ".";
+            } else if (names.length === 2) {
+                sentence += `${names[0]} y ${names[1]}.`;
+            } else {
+                const lastItem = names.pop();
+                sentence += `${names.join(', ')} y ${lastItem}.`;
+            }
+
+            els.orderText.innerText = sentence;
+            SoundFX.drag(); // Small sound for new customer arrival
+        }
+
+        // --- DRAG AND DROP HANDLERS ---
+
+        let draggedItemId = null;
+
+        function handleDragStart(e) {
+            if (!state.gameActive) return;
+            this.classList.add('dragging');
+            draggedItemId = this.dataset.id;
+            SoundFX.drag();
+            
+            // Set drag image (ghost)
+            // e.dataTransfer.effectAllowed = 'copy';
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            draggedItemId = null;
+        }
+
+        // Tray Events
+        els.tray.addEventListener('dragover', (e) => {
+            e.preventDefault(); // Necessary to allow dropping
+            if (state.gameActive) {
+                els.tray.classList.add('drag-over');
+            }
+        });
+
+        els.tray.addEventListener('dragleave', () => {
+            els.tray.classList.remove('drag-over');
+        });
+
+        els.tray.addEventListener('drop', (e) => {
+            e.preventDefault();
+            els.tray.classList.remove('drag-over');
+            
+            if (!state.gameActive || !draggedItemId) return;
+
+            addItemToTray(draggedItemId);
+            SoundFX.drop();
+        });
+
+        function addItemToTray(id) {
+            // Add to state
+            state.trayContents.push(id);
+            
+            // Find item data
+            const itemData = MENU.find(i => i.id === id);
+
+            // Create UI Element
+            const trayItem = document.createElement('div');
+            trayItem.className = 'bg-white rounded-full w-14 h-14 flex items-center justify-center text-3xl shadow-sm border border-gray-300 cursor-pointer hover:bg-red-100 transition relative animate-[bounce_0.3s]';
+            trayItem.innerHTML = itemData.emoji;
+            trayItem.title = "Click to remove";
+            
+            // Allow removal
+            trayItem.addEventListener('click', () => {
+                // Remove from DOM
+                trayItem.remove();
+                // Remove from state (find index of first match)
+                const index = state.trayContents.indexOf(id);
+                if (index > -1) {
+                    state.trayContents.splice(index, 1);
+                }
+                checkTrayEmpty();
+                SoundFX.drag(); // Sound for removal
+            });
+
+            els.tray.appendChild(trayItem);
+            els.trayHint.style.display = 'none';
+        }
+
+        function clearTray() {
+            state.trayContents = [];
+            els.tray.innerHTML = '';
+            els.tray.appendChild(els.trayHint);
+            checkTrayEmpty();
+        }
+
+        function checkTrayEmpty() {
+            if(state.trayContents.length === 0) {
+                els.trayHint.style.display = 'block';
+            }
+        }
+
+        // --- VALIDATION ---
+
+        els.serveBtn.addEventListener('click', validateOrder);
+
+        function validateOrder() {
+            if (!state.gameActive) return;
+
+            // 1. Sort both arrays to compare content regardless of order
+            const orderIds = state.currentOrder.map(i => i.id).sort();
+            const trayIds = [...state.trayContents].sort();
+
+            const isCorrect = JSON.stringify(orderIds) === JSON.stringify(trayIds);
+
+            if (isCorrect) {
+                // SUCCESS
+                handleSuccess();
+            } else {
+                // FAIL
+                handleFail();
+            }
+        }
+
+        function handleSuccess() {
+            SoundFX.success();
+            state.score += 100 + (state.currentOrder.length * 50); // Bonus for complex orders
+            updateStats();
+            
+            // Visuals
+            showFeedback("¡Muy Bien!", "text-green-600");
+            els.customerAvatar.innerText = "😋";
+            els.customerAvatar.classList.add('success-anim');
+            
+            setTimeout(() => {
+                els.customerAvatar.classList.remove('success-anim');
+                generateNewOrder();
+            }, 1000);
+        }
+
+        function handleFail() {
+            SoundFX.fail();
+            state.score = Math.max(0, state.score - 50); // Penalty
+            state.timeLeft = Math.max(0, state.timeLeft - 5); // Time penalty
+            updateStats();
+
+            // Visuals
+            showFeedback("¡Incorrecto!", "text-red-600");
+            els.customerAvatar.innerText = "😡";
+            document.body.classList.add('shake-anim'); // Shake entire screen
+            
+            setTimeout(() => {
+                document.body.classList.remove('shake-anim');
+                // Don't generate new order, let them fix it or clear tray
+            }, 500);
+        }
+
+        function showFeedback(text, colorClass) {
+            els.feedback.innerText = text;
+            els.feedback.className = `absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-5xl font-bold drop-shadow-md game-font animate-[bounce_0.5s] ${colorClass}`;
+            els.feedback.style.textShadow = "3px 3px 0 #fff";
+            
+            setTimeout(() => {
+                els.feedback.classList.add('hidden');
+            }, 1000);
+        }
+
+    </script>
+</body>
+</html>

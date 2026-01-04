@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¡Adivina la Palabra!</title>
+    <style>
+        :root {
+            --color-correct: #6aaa64;
+            --color-present: #c9b458;
+            --color-absent: #787c7e;
+            --color-default: #ffffff;
+            --color-border: #d3d6da;
+            --color-text: #1a1a1b;
+            --key-bg: #d3d6da;
+            --bg-color: #f0f2f5;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif; /* Playful font for kids */
+            background-color: var(--bg-color);
+            color: var(--color-text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* --- Header --- */
+        header {
+            width: 100%;
+            padding: 10px 20px;
+            border-bottom: 1px solid #ccc;
+            background: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: #2c3e50;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 15px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .stat-item span {
+            color: var(--color-correct);
+        }
+
+        button.icon-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* --- Game Area --- */
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-grow: 1;
+            width: 100%;
+            max-width: 500px;
+            padding: 10px;
+        }
+
+        .info-panel {
+            text-align: center;
+            margin-bottom: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            width: 100%;
+        }
+
+        .category-badge {
+            background-color: #e1f5fe;
+            color: #0277bd;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .hint-section {
+            margin-top: 5px;
+            min-height: 24px;
+        }
+
+        .hint-text {
+            font-style: italic;
+            color: #555;
+            display: none;
+            font-size: 0.9rem;
+        }
+
+        .hint-btn {
+            background-color: #ffcc00;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: bold;
+            transition: transform 0.1s;
+        }
+        .hint-btn:active { transform: scale(0.95); }
+
+        /* --- Grid --- */
+        #grid {
+            display: grid;
+            grid-gap: 5px;
+            margin-bottom: 20px;
+            /* Columns set dynamically in JS */
+        }
+
+        .tile {
+            width: 50px;
+            height: 50px;
+            border: 2px solid var(--color-border);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            font-weight: bold;
+            background-color: white;
+            text-transform: uppercase;
+            border-radius: 4px;
+        }
+
+        /* Animation Classes */
+        .tile.filled {
+            border-color: #878a8c;
+            animation: pop 0.1s;
+        }
+
+        .tile.flip {
+            animation: flip 0.5s ease-in;
+        }
+
+        .tile.shake {
+            animation: shake 0.5s;
+        }
+
+        .tile.correct { background-color: var(--color-correct); color: white; border-color: var(--color-correct); }
+        .tile.present { background-color: var(--color-present); color: white; border-color: var(--color-present); }
+        .tile.absent { background-color: var(--color-absent); color: white; border-color: var(--color-absent); }
+
+        /* --- Message Box --- */
+        #message-box {
+            height: 30px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+        }
+
+        /* --- Keyboard --- */
+        #keyboard {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-bottom: 20px;
+        }
+
+        .kb-row {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .key {
+            font-family: inherit;
+            font-weight: bold;
+            border: none;
+            padding: 0;
+            margin: 0;
+            height: 58px;
+            border-radius: 4px;
+            background-color: var(--key-bg);
+            cursor: pointer;
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-transform: uppercase;
+            touch-action: manipulation;
+            font-size: 1.2rem;
+            transition: background-color 0.2s;
+        }
+
+        .key.large {
+            flex: 1.5;
+            font-size: 0.9rem;
+        }
+
+        .key:active {
+            transform: translateY(2px);
+        }
+
+        .key.correct { background-color: var(--color-correct); color: white; }
+        .key.present { background-color: var(--color-present); color: white; }
+        .key.absent { background-color: var(--color-absent); color: white; }
+
+        /* --- Controls --- */
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .btn-primary {
+            background-color: var(--color-correct);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-primary:hover { background-color: #538d4e; }
+
+        .hidden { display: none !important; }
+
+        /* --- Animations --- */
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes flip {
+            0% { transform: rotateX(0); }
+            50% { transform: rotateX(90deg); }
+            100% { transform: rotateX(0); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        @keyframes victory-jump {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* Mobile Responsive Adjustments */
+        @media (max-width: 400px) {
+            .tile { width: 40px; height: 40px; font-size: 1.5rem; }
+            .key { height: 45px; font-size: 1rem; }
+            h1 { font-size: 1.2rem; }
+        }
+
+        /* Overlay for Game Over / Win */
+        #overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        #overlay h2 { font-size: 2.5rem; margin-bottom: 10px; color: var(--color-correct); }
+        #overlay p { font-size: 1.2rem; margin: 5px; }
+        #overlay .word-reveal { font-size: 2rem; font-weight: bold; color: #333; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>¡Adivina la Palabra!</h1>
+        <div class="stats-bar">
+            <div class="stat-item">Pts: <span id="score">0</span></div>
+            <div class="stat-item">Streak: <span id="streak">0</span></div>
+            <button class="icon-btn" id="sound-toggle" aria-label="Toggle Sound">🔊</button>
+        </div>
+    </header>
+
+    <div id="game-container">
+        <div class="info-panel">
+            <div><span class="category-badge" id="category-display">...</span></div>
+            <div class="hint-section">
+                <button class="hint-btn" id="hint-btn">💡 Show Hint (-5 pts)</button>
+                <div class="hint-text" id="hint-text"></div>
+            </div>
+        </div>
+
+        <div id="grid">
+            <!-- Grid generated by JS -->
+        </div>
+
+        <div id="message-box"></div>
+    </div>
+
+    <div id="keyboard">
+        <!-- Keyboard generated by JS -->
+    </div>
+
+    <div class="controls">
+        <button id="new-game-btn" class="btn-primary" style="display:none;">Play Again</button>
+    </div>
+
+    <p style="font-size: 0.8rem; color: #777; margin-bottom: 10px;">
+        Type or click. ENTER to guess. BACKSPACE to delete.
+    </p>
+
+    <!-- Overlay for results -->
+    <div id="overlay" class="hidden">
+        <h2 id="overlay-title">¡Ganaste!</h2>
+        <div class="word-reveal" id="overlay-word">GATO</div>
+        <p id="overlay-trans">Cat</p>
+        <p id="overlay-points">+10 pts</p>
+        <button class="btn-primary" id="overlay-btn">Siguiente Palabra</button>
+    </div>
+
+<script>
+/**
+ * DATA: 60 Beginner Spanish Words
+ */
+const WORDS = [
+    { spanish: "gato", english: "cat", category: "animales", hint: "Dice 'miau'" },
+    { spanish: "perro", english: "dog", category: "animales", hint: "El mejor amigo del hombre" },
+    { spanish: "tigre", english: "tiger", category: "animales", hint: "Un gato grande y naranja con rayas" },
+    { spanish: "leon", english: "lion", category: "animales", hint: "El rey de la selva" },
+    { spanish: "pato", english: "duck", category: "animales", hint: "Nada en el agua y dice 'cuac'" },
+    { spanish: "vaca", english: "cow", category: "animales", hint: "Nos da leche" },
+    { spanish: "toro", english: "bull", category: "animales", hint: "El esposo de la vaca" },
+    { spanish: "rojo", english: "red", category: "colores", hint: "Color de una manzana o sangre" },
+    { spanish: "azul", english: "blue", category: "colores", hint: "Color del cielo y el mar" },
+    { spanish: "gris", english: "gray", category: "colores", hint: "Color de un elefante" },
+    { spanish: "rosa", english: "pink", category: "colores", hint: "Color de un flamenco" },
+    { spanish: "verde", english: "green", category: "colores", hint: "Color del césped" },
+    { spanish: "libro", english: "book", category: "escuela", hint: "Tiene páginas para leer" },
+    { spanish: "lapiz", english: "pencil", category: "escuela", hint: "Usado para escribir, se puede borrar" },
+    { spanish: "papel", english: "paper", category: "escuela", hint: "Escribes sobre esto" },
+    { spanish: "clase", english: "class", category: "escuela", hint: "Donde aprendes con la maestra" },
+    { spanish: "mesa", english: "table", category: "casa", hint: "Comes sobre esto" },
+    { spanish: "silla", english: "chair", category: "casa", hint: "Te sientas aquí" },
+    { spanish: "cama", english: "bed", category: "casa", hint: "Duermes aquí" },
+    { spanish: "casa", english: "house", category: "lugares", hint: "Donde vive una familia" },
+    { spanish: "baño", english: "bathroom", category: "casa", hint: "Donde te duchas" },
+    { spanish: "agua", english: "water", category: "comida", hint: "Bebida esencial para la vida" },
+    { spanish: "pan", english: "bread", category: "comida", hint: "Se usa para hacer sándwiches" },
+    { spanish: "queso", english: "cheese", category: "comida", hint: "A los ratones les gusta" },
+    { spanish: "leche", english: "milk", category: "comida", hint: "Bebida blanca de la vaca" },
+    { spanish: "fruta", english: "fruit", category: "comida", hint: "Manzanas, plátanos, naranjas..." },
+    { spanish: "jugo", english: "juice", category: "comida", hint: "Bebida de frutas" },
+    { spanish: "sopa", english: "soup", category: "comida", hint: "Comida líquida y caliente" },
+    { spanish: "hola", english: "hello", category: "saludos", hint: "Lo primero que dices al ver a alguien" },
+    { spanish: "adios", english: "goodbye", category: "saludos", hint: "Lo dices al irte" },
+    { spanish: "lunes", english: "monday", category: "tiempo", hint: "Primer día de la semana escolar" },
+    { spanish: "enero", english: "january", category: "tiempo", hint: "El primer mes del año" },
+    { spanish: "marzo", english: "march", category: "tiempo", hint: "El tercer mes" },
+    { spanish: "mano", english: "hand", category: "cuerpo", hint: "Tiene cinco dedos" },
+    { spanish: "pie", english: "foot", category: "cuerpo", hint: "Te pones el zapato aquí" },
+    { spanish: "ojos", english: "eyes", category: "cuerpo", hint: "Los usas para ver" },
+    { spanish: "boca", english: "mouth", category: "cuerpo", hint: "La usas para comer y hablar" },
+    { spanish: "pelo", english: "hair", category: "cuerpo", hint: "Crece en tu cabeza" },
+    { spanish: "cara", english: "face", category: "cuerpo", hint: "Donde están tus ojos, nariz y boca" },
+    { spanish: "feliz", english: "happy", category: "emociones", hint: "Lo opuesto de triste" },
+    { spanish: "papá", english: "dad", category: "familia", hint: "El padre" },
+    { spanish: "mamá", english: "mom", category: "familia", hint: "La madre" },
+    { spanish: "bebé", english: "baby", category: "familia", hint: "Una persona muy pequeña" },
+    { spanish: "abuelo", english: "grandfather", category: "familia", hint: "El padre de tu padre" },
+    { spanish: "sol", english: "sun", category: "naturaleza", hint: "Estrella amarilla caliente en el cielo" },
+    { spanish: "luna", english: "moon", category: "naturaleza", hint: "Sale por la noche" },
+    { spanish: "playa", english: "beach", category: "lugares", hint: "Arena y mar" },
+    { spanish: "parque", english: "park", category: "lugares", hint: "Lugar para jugar afuera" },
+    { spanish: "flor", english: "flower", category: "naturaleza", hint: "Planta bonita que huele bien" },
+    { spanish: "arbol", english: "tree", category: "naturaleza", hint: "Planta grande con tronco y hojas" },
+    { spanish: "nieve", english: "snow", category: "clima", hint: "Cae en invierno, es blanca y fría" },
+    { spanish: "calor", english: "heat", category: "clima", hint: "Lo sientes en verano" },
+    { spanish: "frio", english: "cold", category: "clima", hint: "Lo sientes en invierno" },
+    { spanish: "ropa", english: "clothes", category: "objetos", hint: "Camisas, pantalones, vestidos" },
+    { spanish: "reloj", english: "clock", category: "objetos", hint: "Dice la hora" },
+    { spanish: "auto", english: "car", category: "transporte", hint: "Tiene 4 ruedas y motor" },
+    { spanish: "barco", english: "boat", category: "transporte", hint: "Viaja por el agua" },
+    { spanish: "avion", english: "airplane", category: "transporte", hint: "Vuela en el aire" },
+    { spanish: "tren", english: "train", category: "transporte", hint: "Va por las vías" }
+];
+
+/**
+ * AUDIO SYSTEM (Synthesizer)
+ * No external files needed. Uses Web Audio API.
+ */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let soundEnabled = true;
+
+const playTone = (freq, type, duration, vol = 0.1) => {
+    if (!soundEnabled) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+};
+
+const sounds = {
+    start: () => {
+        playTone(400, 'sine', 0.1);
+        setTimeout(() => playTone(600, 'sine', 0.2), 100);
+    },
+    click: () => playTone(800, 'triangle', 0.05, 0.05),
+    invalid: () => {
+        playTone(150, 'sawtooth', 0.1, 0.2);
+        setTimeout(() => playTone(100, 'sawtooth', 0.2, 0.2), 100);
+    },
+    revealCorrect: () => playTone(600, 'sine', 0.1),
+    revealPresent: () => playTone(400, 'sine', 0.1),
+    revealAbsent: () => playTone(200, 'sine', 0.1),
+    win: () => {
+        [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50].forEach((freq, i) => {
+            setTimeout(() => playTone(freq, 'square', 0.2, 0.1), i * 150);
+        });
+    },
+    lose: () => {
+        [300, 250, 200, 150].forEach((freq, i) => {
+            setTimeout(() => playTone(freq, 'sawtooth', 0.4, 0.1), i * 300);
+        });
+    },
+    hint: () => {
+        playTone(1200, 'sine', 0.5, 0.05);
+    }
+};
+
+/**
+ * GAME LOGIC
+ */
+let currentWordObj;
+let targetWord = ""; // Normalized lowercase string
+let attempts = 0;
+let maxAttempts = 6;
+let currentGuess = "";
+let score = 0;
+let streak = 0;
+let hintUsed = false;
+let gameOver = false;
+
+// DOM Elements
+const gridEl = document.getElementById('grid');
+const keyboardEl = document.getElementById('keyboard');
+const messageEl = document.getElementById('message-box');
+const scoreEl = document.getElementById('score');
+const streakEl = document.getElementById('streak');
+const hintBtn = document.getElementById('hint-btn');
+const hintTextEl = document.getElementById('hint-text');
+const categoryBadge = document.getElementById('category-display');
+const soundToggle = document.getElementById('sound-toggle');
+const overlay = document.getElementById('overlay');
+const overlayTitle = document.getElementById('overlay-title');
+const overlayWord = document.getElementById('overlay-word');
+const overlayTrans = document.getElementById('overlay-trans');
+const overlayBtn = document.getElementById('overlay-btn');
+const overlayPoints = document.getElementById('overlay-points');
+
+// Utility to remove accents
+const normalize = (str) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+function initGame() {
+    pickWord();
+    setupGrid();
+    setupKeyboard();
+    resetState();
+    updateStats();
+    sounds.start();
+}
+
+function pickWord() {
+    currentWordObj = WORDS[Math.floor(Math.random() * WORDS.length)];
+    // We normalize the target word to handle special characters gracefully in comparison
+    targetWord = normalize(currentWordObj.spanish);
+    console.log("Secret:", targetWord); // Cheating for debugging ;)
+}
+
+function resetState() {
+    attempts = 0;
+    currentGuess = "";
+    hintUsed = false;
+    gameOver = false;
+    
+    // UI Resets
+    messageEl.textContent = "";
+    hintTextEl.style.display = "none";
+    hintTextEl.textContent = "";
+    hintBtn.disabled = false;
+    hintBtn.textContent = "💡 Show Hint (-5 pts)";
+    hintBtn.classList.remove('hidden');
+    categoryBadge.textContent = "Categoría: " + currentWordObj.category;
+    overlay.classList.add('hidden');
+    
+    // Reset Key Colors
+    document.querySelectorAll('.key').forEach(k => {
+        k.className = 'key';
+        if (k.textContent === 'ENTER' || k.textContent === '⌫') k.classList.add('large');
+    });
+}
+
+function setupGrid() {
+    gridEl.innerHTML = '';
+    const wordLen = targetWord.length;
+    
+    // Dynamic columns based on word length
+    gridEl.style.gridTemplateColumns = `repeat(${wordLen}, 1fr)`;
+    
+    for (let i = 0; i < maxAttempts * wordLen; i++) {
+        const tile = document.createElement('div');
+        tile.classList.add('tile');
+        tile.id = `tile-${i}`;
+        gridEl.appendChild(tile);
+    }
+}
+
+function setupKeyboard() {
+    keyboardEl.innerHTML = '';
+    const rows = [
+        "QWERTYUIOP",
+        "ASDFGHJKLÑ",
+        "ZXCVBNM"
+    ];
+
+    rows.forEach((row, rowIndex) => {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'kb-row';
+        
+        // Add Enter to start of last row
+        if (rowIndex === 2) {
+            const enterKey = createKey("ENTER");
+            enterKey.classList.add('large');
+            enterKey.onclick = submitGuess;
+            rowDiv.appendChild(enterKey);
+        }
+
+        for (let char of row) {
+            const key = createKey(char);
+            key.onclick = () => handleInput(char);
+            rowDiv.appendChild(key);
+        }
+
+        // Add Backspace to end of last row
+        if (rowIndex === 2) {
+            const bsKey = createKey("⌫");
+            bsKey.classList.add('large');
+            bsKey.onclick = handleBackspace;
+            rowDiv.appendChild(bsKey);
+        }
+
+        keyboardEl.appendChild(rowDiv);
+    });
+}
+
+function createKey(char) {
+    const btn = document.createElement('button');
+    btn.textContent = char;
+    btn.classList.add('key');
+    btn.setAttribute('data-key', char);
+    return btn;
+}
+
+// Input Handling
+document.addEventListener('keydown', (e) => {
+    if (gameOver) return;
+    
+    const key = e.key.toUpperCase();
+    
+    if (key === 'ENTER') {
+        submitGuess();
+    } else if (key === 'BACKSPACE') {
+        handleBackspace();
+    } else if (/^[A-ZÑ]$/.test(key)) { // Standard letters
+        handleInput(key);
+    }
+});
+
+function handleInput(char) {
+    if (gameOver) return;
+    if (currentGuess.length < targetWord.length) {
+        currentGuess += char;
+        updateGrid();
+        sounds.click();
+    } else {
+        // Simple wiggle feedback implies full
+        const rowStart = attempts * targetWord.length;
+        const lastTile = document.getElementById(`tile-${rowStart + targetWord.length - 1}`);
+        lastTile.classList.add('filled');
+        setTimeout(() => lastTile.classList.remove('filled'), 100);
+    }
+}
+
+function handleBackspace() {
+    if (gameOver) return;
+    if (currentGuess.length > 0) {
+        currentGuess = currentGuess.slice(0, -1);
+        updateGrid();
+        sounds.click();
+    }
+}
+
+function updateGrid() {
+    const rowStart = attempts * targetWord.length;
+    for (let i = 0; i < targetWord.length; i++) {
+        const tile = document.getElementById(`tile-${rowStart + i}`);
+        tile.textContent = currentGuess[i] || '';
+        
+        // Add 'filled' class for styling borders if there is a letter
+        if (currentGuess[i]) {
+            tile.style.borderColor = "#878a8c"; 
+        } else {
+            tile.style.borderColor = "#d3d6da";
+        }
+    }
+}
+
+function submitGuess() {
+    if (gameOver) return;
+
+    if (currentGuess.length !== targetWord.length) {
+        showMessage("¡Faltan letras!");
+        shakeRow();
+        sounds.invalid();
+        return;
+    }
+
+    // Evaluate
+    evaluateGuess();
+}
+
+function shakeRow() {
+    const rowStart = attempts * targetWord.length;
+    for (let i = 0; i < targetWord.length; i++) {
+        const tile = document.getElementById(`tile-${rowStart + i}`);
+        tile.classList.add('shake');
+        setTimeout(() => tile.classList.remove('shake'), 500);
+    }
+}
+
+function showMessage(msg) {
+    messageEl.textContent = msg;
+    setTimeout(() => { messageEl.textContent = ""; }, 2000);
+}
+
+function evaluateGuess() {
+    const guess = normalize(currentGuess);
+    const target = targetWord;
+    const guessArr = guess.split('');
+    const targetArr = target.split('');
+    const result = Array(target.length).fill('absent');
+    
+    // Frequency map for target to handle duplicates
+    const targetFreq = {};
+    for (let char of targetArr) targetFreq[char] = (targetFreq[char] || 0) + 1;
+
+    // 1. Check Correct (Green)
+    for (let i = 0; i < guessArr.length; i++) {
+        if (guessArr[i] === targetArr[i]) {
+            result[i] = 'correct';
+            targetFreq[guessArr[i]]--;
+        }
+    }
+
+    // 2. Check Present (Yellow)
+    for (let i = 0; i < guessArr.length; i++) {
+        if (result[i] !== 'correct' && targetFreq[guessArr[i]] > 0) {
+            result[i] = 'present';
+            targetFreq[guessArr[i]]--;
+        }
+    }
+
+    // Visual Update Loop with Delay
+    const rowStart = attempts * targetWord.length;
+    
+    guessArr.forEach((char, i) => {
+        setTimeout(() => {
+            const tile = document.getElementById(`tile-${rowStart + i}`);
+            const status = result[i];
+            
+            tile.classList.add('flip');
+            tile.classList.add(status);
+            
+            // Play sound based on result
+            if(status === 'correct') sounds.revealCorrect();
+            else if(status === 'present') sounds.revealPresent();
+            else sounds.revealAbsent();
+
+            // Update Keyboard
+            const keyBtn = document.querySelector(`button[data-key="${currentGuess[i].toUpperCase()}"]`);
+            if (keyBtn) {
+                // Priority: Correct > Present > Absent
+                if (status === 'correct') {
+                    keyBtn.className = 'key correct';
+                } else if (status === 'present' && !keyBtn.classList.contains('correct')) {
+                    keyBtn.className = 'key present';
+                } else if (status === 'absent' && !keyBtn.classList.contains('correct') && !keyBtn.classList.contains('present')) {
+                    keyBtn.className = 'key absent';
+                }
+            }
+
+        }, i * 300); // 300ms cascade
+    });
+
+    // Check End Game after animation
+    setTimeout(() => {
+        if (guess === target) {
+            handleWin();
+        } else {
+            attempts++;
+            if (attempts >= maxAttempts) {
+                handleLoss();
+            } else {
+                currentGuess = "";
+            }
+        }
+    }, targetWord.length * 300 + 100);
+}
+
+function handleWin() {
+    gameOver = true;
+    sounds.win();
+    
+    streak++;
+    let points = 10;
+    // Bonus for early attempts
+    const bonuses = [20, 15, 10, 5, 2, 0];
+    points += bonuses[attempts] || 0;
+    
+    if (hintUsed) points -= 5;
+    if (points < 1) points = 1; // Minimum 1 point
+
+    score += points;
+    updateStats();
+
+    showOverlay("¡Correcto!", true, points);
+}
+
+function handleLoss() {
+    gameOver = true;
+    streak = 0;
+    updateStats();
+    sounds.lose();
+    showOverlay("Fin del Juego", false, 0);
+}
+
+function showOverlay(title, isWin, points) {
+    overlayTitle.textContent = title;
+    overlayTitle.style.color = isWin ? 'var(--color-correct)' : '#d9534f';
+    overlayWord.textContent = currentWordObj.spanish.toUpperCase();
+    overlayTrans.textContent = `(${currentWordObj.english})`;
+    overlayPoints.textContent = isWin ? `+${points} Pts` : "";
+    overlayBtn.textContent = isWin ? "Siguiente Palabra" : "Jugar de Nuevo";
+    overlay.classList.remove('hidden');
+}
+
+overlayBtn.onclick = () => {
+    initGame();
+};
+
+function updateStats() {
+    scoreEl.textContent = score;
+    streakEl.textContent = streak;
+}
+
+// Hint System
+hintBtn.onclick = () => {
+    hintUsed = true;
+    sounds.hint();
+    hintTextEl.innerHTML = `<strong>English:</strong> ${currentWordObj.english}<br><strong>Pista:</strong> ${currentWordObj.hint}`;
+    hintTextEl.style.display = "block";
+    hintBtn.disabled = true;
+    hintBtn.textContent = "Hint Used";
+};
+
+// Sound Toggle
+soundToggle.onclick = () => {
+    soundEnabled = !soundEnabled;
+    soundToggle.textContent = soundEnabled ? '🔊' : '🔇';
+};
+
+// Initialize
+// Wait for user interaction to allow AudioContext (modern browser policy)
+document.body.addEventListener('click', function() {
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+}, {once:true});
+
+// Start the game
+initGame();
+
+</script>
+</body>
+</html>

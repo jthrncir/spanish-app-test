@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tetris de Vocabulario</title>
+    <style>
+        /* --- RETRO NEON STYLING --- */
+        :root {
+            --bg-color: #1a1a1a;
+            --neon-blue: #00f3ff;
+            --neon-pink: #ff00ff;
+            --neon-green: #00ff00;
+            --neon-yellow: #ffff00;
+            --grid-bg: #000;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: white;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            border: 2px solid #333;
+            background-color: #111;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            position: relative;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        /* The Canvas */
+        canvas {
+            border: 4px solid var(--neon-blue);
+            background-color: var(--grid-bg);
+            box-shadow: 0 0 15px var(--neon-blue), inset 0 0 20px rgba(0, 243, 255, 0.2);
+            image-rendering: pixelated; /* Keeps blocks crisp */
+            height: 80vh; /* Make game bigger on screen */
+            width: auto;  /* Maintain aspect ratio */
+            aspect-ratio: 1 / 2; /* Force standard Tetris ratio */
+        }
+
+        /* Sidebar UI */
+        #ui-sidebar {
+            width: 250px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel {
+            background: #222;
+            border: 2px solid var(--neon-pink);
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 0 10px var(--neon-pink);
+        }
+
+        h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            color: var(--neon-yellow);
+            text-shadow: 2px 2px #ff0000;
+        }
+
+        /* Mission Box Styling */
+        #mission-word {
+            font-size: 2rem;
+            font-weight: bold;
+            color: white;
+            display: block;
+            margin: 10px 0;
+            animation: pulse 2s infinite;
+        }
+
+        #score-display {
+            font-size: 2rem;
+            font-family: 'Impact', sans-serif;
+            color: var(--neon-green);
+        }
+
+        /* Buttons */
+        button {
+            background: var(--neon-blue);
+            color: black;
+            border: none;
+            padding: 15px;
+            font-size: 1.2rem;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            background: white;
+            box-shadow: 0 0 15px white;
+            transform: scale(1.05);
+        }
+
+        /* Controls Guide */
+        .controls {
+            font-size: 0.8rem;
+            color: #aaa;
+            text-align: left;
+            line-height: 1.5;
+        }
+        .key {
+            border: 1px solid #666;
+            padding: 2px 5px;
+            border-radius: 4px;
+            color: white;
+        }
+
+        /* Popups */
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 4px solid red;
+            padding: 40px;
+            text-align: center;
+            display: none;
+            z-index: 10;
+        }
+
+        #bonus-msg {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--neon-yellow);
+            font-size: 3rem;
+            font-weight: bold;
+            text-shadow: 0 0 20px gold;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s;
+            z-index: 5;
+            text-align: center;
+        }
+
+        /* Animation Keyframes */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @media (max-width: 600px) {
+            #game-container { flex-direction: column; align-items: center; }
+            #ui-sidebar { width: 100%; max-width: 300px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- The Game Canvas (350x700 = 10 cols x 35px) -->
+        <canvas id="tetris" width="350" height="700"></canvas>
+
+        <div id="ui-sidebar">
+            <div class="panel">
+                <h2>Misión Actual</h2>
+                <div style="font-size: 0.8rem; color: #ccc;">FIND THE WORD:</div>
+                <span id="mission-word">???</span>
+            </div>
+
+            <div class="panel">
+                <h2>Puntaje</h2>
+                <div id="score-display">0</div>
+            </div>
+
+            <div class="panel">
+                <h2>How to Play</h2>
+                <p style="font-size: 0.8rem; color: #ccc; margin: 0; line-height: 1.4;">
+                    Match the <strong>English Mission</strong> word with the falling <strong>Spanish blocks</strong>.
+                    <br><br>
+                    Clear a line with the matching word for <span style="color: var(--neon-pink); font-weight: bold;">TRIPLE POINTS!</span>
+                </p>
+            </div>
+
+            <button id="start-btn" onclick="startGame()">Start Game</button>
+            <button id="mute-btn" onclick="toggleMute()">Mute SFX</button>
+
+            <div class="controls">
+                <p><span class="key">←</span> <span class="key">→</span> Move</p>
+                <p><span class="key">↑</span> Rotate</p>
+                <p><span class="key">↓</span> Soft Drop</p>
+            </div>
+        </div>
+
+        <div id="game-over">
+            <h1 style="color: red; font-size: 3rem; margin: 0;">GAME OVER</h1>
+            <p>Final Score: <span id="final-score">0</span></p>
+            <button onclick="resetGame()">Try Again</button>
+        </div>
+
+        <div id="bonus-msg">¡Misión Cumplida!<br>+300</div>
+    </div>
+
+    <!-- AUDIO ELEMENTS (Placeholders as requested) -->
+    <!-- Note: The JS below also implements a synthesizer fall-back so sound works immediately -->
+    <audio id="sfx_move" src="path/to/sfx_move.mp3"></audio>
+    <audio id="sfx_rotate" src="path/to/sfx_rotate.mp3"></audio>
+    <audio id="sfx_drop" src="path/to/sfx_drop.mp3"></audio>
+    <audio id="sfx_clear_normal" src="path/to/sfx_clear_normal.mp3"></audio>
+    <audio id="sfx_clear_bonus" src="path/to/sfx_clear_bonus.mp3"></audio>
+    <audio id="sfx_gameover" src="path/to/sfx_gameover.mp3"></audio>
+
+<script>
+/**
+ * TETRIS DE VOCABULARIO
+ * Senior Game Dev Implementation
+ */
+
+// --- 1. CONFIGURATION & DATA ---
+
+const canvas = document.getElementById('tetris');
+const ctx = canvas.getContext('2d');
+// Scale canvas context: 350px / 10 cols = 35px per block
+ctx.scale(35, 35); 
+
+// Vocabulary Database
+const vocab = [
+    {es: 'ROJO', en: 'RED'},
+    {es: 'AZUL', en: 'BLUE'},
+    {es: 'GATO', en: 'CAT'},
+    {es: 'PERRO', en: 'DOG'},
+    {es: 'SOL', en: 'SUN'},
+    {es: 'CASA', en: 'HOUSE'},
+    {es: 'AGUA', en: 'WATER'},
+    {es: 'PAN', en: 'BREAD'},
+    {es: 'LUZ', en: 'LIGHT'},
+    {es: 'FLOR', en: 'FLOWER'},
+    {es: 'TREN', en: 'TRAIN'},
+    {es: 'MAR', en: 'SEA'}
+];
+
+// Tetromino Definitions (Matrix + Color)
+const pieces = 'ILJOTSZ';
+const colors = [
+    null,
+    '#FF0D72', // T (Magenta)
+    '#0DC2FF', // I (Cyan)
+    '#0DFF72', // S (Green)
+    '#F538FF', // Z (Purple/Pinkish)
+    '#FF8E0D', // L (Orange)
+    '#FFE138', // J (Yellow)
+    '#3877FF', // O (Blue)
+];
+
+// --- 2. GAME STATE MANAGEMENT ---
+
+// The Arena: 10x20 grid (Standard Tetris dimensions)
+const arenaWidth = 10;
+const arenaHeight = 20;
+
+const player = {
+    pos: {x: 0, y: 0},
+    matrix: null,
+    score: 0,
+    vocabWord: '', // The Spanish word attached to the current piece
+};
+
+let arena = createMatrix(arenaWidth, arenaHeight);
+let dropCounter = 0;
+let dropInterval = 1000;
+let lastTime = 0;
+let gameRunning = false;
+let currentMission = null;
+let sfxEnabled = true;
+
+// --- 3. HELPER FUNCTIONS ---
+
+function createMatrix(w, h) {
+    const matrix = [];
+    while (h--) {
+        // Instead of just 0, we store objects so we can remember words later?
+        // Actually, simpler: 0 is empty. 
+        // When filled, we store { value: colorIndex, vocab: "WORD" }
+        matrix.push(new Array(w).fill(0));
+    }
+    return matrix;
+}
+
+function createPiece(type) {
+    if (type === 'I') {
+        return [
+            [0, 1, 0, 0],
+            [0, 1, 0, 0],
+            [0, 1, 0, 0],
+            [0, 1, 0, 0],
+        ];
+    } else if (type === 'L') {
+        return [
+            [0, 2, 0],
+            [0, 2, 0],
+            [0, 2, 2],
+        ];
+    } else if (type === 'J') {
+        return [
+            [0, 3, 0],
+            [0, 3, 0],
+            [3, 3, 0],
+        ];
+    } else if (type === 'O') {
+        return [
+            [4, 4],
+            [4, 4],
+        ];
+    } else if (type === 'Z') {
+        return [
+            [5, 5, 0],
+            [0, 5, 5],
+            [0, 0, 0],
+        ];
+    } else if (type === 'S') {
+        return [
+            [0, 6, 6],
+            [6, 6, 0],
+            [0, 0, 0],
+        ];
+    } else if (type === 'T') {
+        return [
+            [0, 7, 0],
+            [7, 7, 7],
+            [0, 0, 0],
+        ];
+    }
+}
+
+// --- 4. GAME ENGINE LOGIC ---
+
+function draw() {
+    // Fill background
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw the static arena
+    drawMatrix(arena, {x: 0, y: 0});
+
+    // Draw the active player piece
+    drawMatrix(player.matrix, player.pos);
+    
+    // Draw the Vocabulary Word on the active piece
+    if (player.vocabWord) {
+        drawPieceLabel(player.matrix, player.pos, player.vocabWord);
+    }
+}
+
+function drawMatrix(matrix, offset) {
+    matrix.forEach((row, y) => {
+        row.forEach((value, x) => {
+            // Value is either 0 (empty) or an object {value: int, vocab: string}
+            // Or, for the active player piece, it's just the integer.
+            // We need to normalize this check.
+            
+            let colorIndex = 0;
+            if (typeof value === 'object' && value !== null) {
+                colorIndex = value.value;
+            } else if (typeof value === 'number') {
+                colorIndex = value;
+            }
+
+            if (colorIndex !== 0) {
+                // Main Block Color
+                ctx.fillStyle = colors[colorIndex];
+                ctx.fillRect(x + offset.x, y + offset.y, 1, 1);
+                
+                // Bevel/3D Effect
+                ctx.lineWidth = 0.05;
+                ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+                ctx.strokeRect(x + offset.x, y + offset.y, 1, 1);
+            }
+        });
+    });
+}
+
+function drawPieceLabel(matrix, offset, word) {
+    // Calculate center of the piece to place text
+    // We work in block units (1 unit = 35px due to scale)
+    const centerX = offset.x + (matrix[0].length / 2);
+    const centerY = offset.y + (matrix.length / 2);
+
+    ctx.save();
+    ctx.fillStyle = 'white';
+    // We scale down the text so it fits nicely
+    // Increased size and weight for visibility
+    ctx.font = 'bold 0.75px "Arial Black", Arial, sans-serif'; 
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Add a black outline for readability
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 0.08;
+    ctx.strokeText(word, centerX, centerY);
+    ctx.fillText(word, centerX, centerY);
+    
+    ctx.restore();
+}
+
+function merge(arena, player) {
+    player.matrix.forEach((row, y) => {
+        row.forEach((value, x) => {
+            if (value !== 0) {
+                // CRITICAL: When locking, we store the object containing the Color AND the Word
+                arena[y + player.pos.y][x + player.pos.x] = {
+                    value: value,
+                    vocab: player.vocabWord
+                };
+            }
+        });
+    });
+}
+
+function rotate(matrix, dir) {
+    for (let y = 0; y < matrix.length; ++y) {
+        for (let x = 0; x < y; ++x) {
+            [
+                matrix[x][y],
+                matrix[y][x],
+            ] = [
+                matrix[y][x],
+                matrix[x][y],
+            ];
+        }
+    }
+    if (dir > 0) {
+        matrix.forEach(row => row.reverse());
+    } else {
+        matrix.reverse();
+    }
+}
+
+function playerDrop() {
+    player.pos.y++;
+    if (collide(arena, player)) {
+        player.pos.y--; // Undo move
+        playSound('drop');
+        merge(arena, player);
+        playerReset();
+        arenaSweep(); // Check for lines
+        updateScore();
+    }
+    dropCounter = 0;
+}
+
+function playerMove(dir) {
+    player.pos.x += dir;
+    if (collide(arena, player)) {
+        player.pos.x -= dir;
+    } else {
+        playSound('move');
+    }
+}
+
+function playerReset() {
+    const piecesStr = 'ILJOTSZ';
+    player.matrix = createPiece(piecesStr[piecesStr.length * Math.random() | 0]);
+    player.pos.y = 0;
+    player.pos.x = (arena[0].length / 2 | 0) - (player.matrix[0].length / 2 | 0);
+    
+    // Assign a random vocab word
+    const randIndex = Math.floor(Math.random() * vocab.length);
+    player.vocabWord = vocab[randIndex].es;
+
+    // Game Over Check
+    if (collide(arena, player)) {
+        gameOver();
+    }
+}
+
+function playerRotate(dir) {
+    const pos = player.pos.x;
+    let offset = 1;
+    rotate(player.matrix, dir);
+    // Wall kick/collision check
+    while (collide(arena, player)) {
+        player.pos.x += offset;
+        offset = -(offset + (offset > 0 ? 1 : -1));
+        if (offset > player.matrix[0].length) {
+            rotate(player.matrix, -dir);
+            player.pos.x = pos;
+            return;
+        }
+    }
+    playSound('rotate');
+}
+
+function collide(arena, player) {
+    const [m, o] = [player.matrix, player.pos];
+    for (let y = 0; y < m.length; ++y) {
+        for (let x = 0; x < m[y].length; ++x) {
+            if (m[y][x] !== 0 &&
+               (arena[y + o.y] &&
+                arena[y + o.y][x + o.x]) !== 0) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+// --- 5. THE MISSION LOGIC (Arena Sweep) ---
+
+function arenaSweep() {
+    let rowCount = 0;
+    let missionCompleted = false;
+
+    outer: for (let y = arena.length - 1; y > 0; --y) {
+        for (let x = 0; x < arena[y].length; ++x) {
+            // Check if cell is 0 (empty). If so, row not full.
+            if (arena[y][x] === 0) {
+                continue outer;
+            }
+        }
+
+        // --- ROW IS FULL LOGIC ---
+        const row = arena[y];
+        
+        // CHECK FOR MISSION MATCH
+        // We look at every cell in this cleared row.
+        // If any cell contains the current mission's Spanish word, BONUS!
+        if (currentMission) {
+            for (let cell of row) {
+                // Cell is object {value: int, vocab: string}
+                if (cell.vocab === currentMission.es) {
+                    missionCompleted = true;
+                }
+            }
+        }
+
+        // Remove row and add empty one at top
+        const rowRemoved = arena.splice(y, 1)[0].fill(0);
+        arena.unshift(rowRemoved);
+        ++y;
+        rowCount++;
+    }
+
+    if (rowCount > 0) {
+        if (missionCompleted) {
+            // Bonus Event
+            playSound('clear_bonus');
+            player.score += (rowCount * 10 * 3) + 300; // Triple score + 300 flat
+            showBonusMessage();
+            nextMission();
+        } else {
+            // Normal Clear
+            playSound('clear_normal');
+            player.score += rowCount * 10;
+        }
+        
+        // Speed up slightly
+        dropInterval = Math.max(100, 1000 - (player.score / 5)); 
+    }
+}
+
+function nextMission() {
+    const randIndex = Math.floor(Math.random() * vocab.length);
+    currentMission = vocab[randIndex];
+    
+    const missionEl = document.getElementById('mission-word');
+    missionEl.style.opacity = 0;
+    setTimeout(() => {
+        missionEl.innerText = currentMission.en; // Show ENGLISH
+        missionEl.style.opacity = 1;
+    }, 200);
+}
+
+function showBonusMessage() {
+    const msg = document.getElementById('bonus-msg');
+    msg.style.opacity = 1;
+    msg.style.top = "40%";
+    setTimeout(() => {
+        msg.style.opacity = 0;
+        msg.style.top = "20%"; // Reset pos for animation next time
+    }, 2000);
+}
+
+// --- 6. AUDIO SYSTEM (Synthesizer + Fallback) ---
+
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playSound(type) {
+    if (!sfxEnabled) return;
+
+    // 1. Try to play DOM element (The placeholder path method)
+    // In a real environment with files, this would work.
+    const audioEl = document.getElementById('sfx_' + type);
+    if (audioEl && audioEl.readyState >= 2) {
+        audioEl.currentTime = 0;
+        audioEl.play().catch(e => {}); // Ignore errors if file missing
+    }
+
+    // 2. SYNTHESIZER FALLBACK (So the game works for you right now!)
+    // This creates retro 8-bit sounds procedurally.
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    const now = audioCtx.currentTime;
+
+    if (type === 'move') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(200, now);
+        osc.frequency.linearRampToValueAtTime(50, now + 0.1);
+        gainNode.gain.setValueAtTime(0.1, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.start(now);
+        osc.stop(now + 0.1);
+    } 
+    else if (type === 'rotate') {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(400, now);
+        gainNode.gain.setValueAtTime(0.05, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+        osc.start(now);
+        osc.stop(now + 0.05);
+    }
+    else if (type === 'drop') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(100, now);
+        osc.frequency.exponentialRampToValueAtTime(10, now + 0.2);
+        gainNode.gain.setValueAtTime(0.2, now);
+        gainNode.gain.linearRampToValueAtTime(0, now + 0.2);
+        osc.start(now);
+        osc.stop(now + 0.2);
+    }
+    else if (type === 'clear_normal') {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.setValueAtTime(600, now + 0.1);
+        gainNode.gain.setValueAtTime(0.1, now);
+        gainNode.gain.linearRampToValueAtTime(0, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+    }
+    else if (type === 'clear_bonus') {
+        // Arpeggio for bonus
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(523.25, now); // C
+        osc.frequency.setValueAtTime(659.25, now + 0.1); // E
+        osc.frequency.setValueAtTime(783.99, now + 0.2); // G
+        osc.frequency.setValueAtTime(1046.50, now + 0.3); // High C
+        gainNode.gain.setValueAtTime(0.2, now);
+        gainNode.gain.linearRampToValueAtTime(0, now + 0.6);
+        osc.start(now);
+        osc.stop(now + 0.6);
+    }
+    else if (type === 'gameover') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(200, now);
+        osc.frequency.linearRampToValueAtTime(50, now + 1);
+        gainNode.gain.setValueAtTime(0.2, now);
+        gainNode.gain.linearRampToValueAtTime(0, now + 1);
+        osc.start(now);
+        osc.stop(now + 1);
+    }
+}
+
+function toggleMute() {
+    sfxEnabled = !sfxEnabled;
+    document.getElementById('mute-btn').innerText = sfxEnabled ? "Mute SFX" : "Unmute";
+}
+
+// --- 7. MAIN LOOP & CONTROLS ---
+
+function update(time = 0) {
+    if (!gameRunning) return;
+
+    const deltaTime = time - lastTime;
+    lastTime = time;
+
+    dropCounter += deltaTime;
+    if (dropCounter > dropInterval) {
+        playerDrop();
+    }
+
+    draw();
+    requestAnimationFrame(update);
+}
+
+function updateScore() {
+    document.getElementById('score-display').innerText = player.score;
+}
+
+function startGame() {
+    if (gameRunning) return;
+    
+    // Reset State
+    arena.forEach(row => row.fill(0));
+    player.score = 0;
+    dropInterval = 1000;
+    updateScore();
+    
+    document.getElementById('game-over').style.display = 'none';
+    document.getElementById('start-btn').innerText = "Running...";
+    
+    gameRunning = true;
+    nextMission();
+    playerReset();
+    update();
+}
+
+function gameOver() {
+    gameRunning = false;
+    playSound('gameover');
+    document.getElementById('final-score').innerText = player.score;
+    document.getElementById('game-over').style.display = 'block';
+    document.getElementById('start-btn').innerText = "Start Game";
+}
+
+function resetGame() {
+    startGame();
+}
+
+// Input Handling
+document.addEventListener('keydown', event => {
+    if (!gameRunning) return;
+
+    if (event.keyCode === 37) { // Left
+        playerMove(-1);
+    } else if (event.keyCode === 39) { // Right
+        playerMove(1);
+    } else if (event.keyCode === 40) { // Down
+        playerDrop();
+    } else if (event.keyCode === 38) { // Up
+        playerRotate(1);
+    }
+});
+
+</script>
+</body>
+</html>

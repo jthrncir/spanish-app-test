@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invasores de Conjugación</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #111;
+            color: white;
+            font-family: 'Press Start 2P', cursive;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            position: relative;
+            border: 4px solid #00ff41; /* Retro Green */
+            box-shadow: 0 0 20px #00ff41, inset 0 0 20px #00ff41;
+            width: 800px;
+            height: 600px;
+            background: radial-gradient(circle at bottom, #1a0b2e 0%, #000000 100%);
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .hud-top {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        #mission-box {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #ff00de;
+            padding: 10px 20px;
+            text-align: center;
+            border-radius: 4px;
+            box-shadow: 0 0 10px #ff00de;
+        }
+
+        #mission-label {
+            color: #ff00de;
+            font-size: 10px;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        #mission-target {
+            color: #fff;
+            font-size: 16px;
+            color: #00ffff;
+        }
+
+        /* Screens */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+            text-align: center;
+            z-index: 10;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        h1 {
+            color: #00ff41;
+            text-shadow: 4px 4px 0 #ff00de;
+            font-size: 40px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        button {
+            background: #ff00de;
+            color: white;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            padding: 15px 30px;
+            border: none;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.1s;
+            box-shadow: 4px 4px 0 #fff;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .controls-hint {
+            margin-top: 30px;
+            color: #aaa;
+            font-size: 12px;
+            line-height: 1.8;
+        }
+
+        .key {
+            display: inline-block;
+            background: #333;
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid #555;
+            color: #fff;
+        }
+
+        #btn-end-game {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            bottom: auto;
+            background: #ff3333; /* Red for danger/stop */
+            color: white;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            padding: 10px 15px;
+            border: 2px solid #fff;
+            pointer-events: auto; /* Essential because parent is none */
+            cursor: pointer;
+            box-shadow: 4px 4px 0 #000;
+            transition: transform 0.1s;
+            z-index: 5;
+        }
+
+        #btn-end-game:hover {
+            transform: scale(1.05);
+        }
+
+        #btn-end-game:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        
+        <div id="ui-layer">
+            <div class="hud-top">
+                <div id="score-display">SCORE: 0</div>
+                <div id="lives-display">LIVES: 3</div>
+            </div>
+            <div id="mission-box">
+                <span id="mission-label">MISSION TARGET</span>
+                <span id="mission-target">LOADING...</span>
+            </div>
+            <!-- Added Abort Button -->
+            <button id="btn-end-game" class="hidden">ABORT MISSION</button>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="screen">
+            <h1>INVASORES DE<br>CONJUGACIÓN</h1>
+            <p>Defend the galaxy with grammar!</p>
+            <button id="btn-start">START MISSION</button>
+            <div class="controls-hint">
+                <span class="key">←</span> <span class="key">→</span> MOVE &nbsp;&nbsp; <span class="key">SPACE</span> SHOOT
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="screen hidden">
+            <h1 style="color: #ff3333; text-shadow: 4px 4px 0 #fff;">GAME OVER</h1>
+            <p>Final Score: <span id="final-score">0</span></p>
+            <button id="btn-restart">TRY AGAIN</button>
+        </div>
+    </div>
+
+<script>
+/**
+ * AUDIO SYSTEM
+ * Includes logic for external files + a Synthesis fallback so the preview works.
+ */
+class AudioController {
+    constructor() {
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.enabled = true;
+        
+        // Placeholder Paths (As requested)
+        this.sounds = {
+            laser: 'sfx_laser_pew.mp3',
+            hit: 'sfx_alien_squish.mp3',
+            wrong: 'sfx_metal_clank.mp3',
+            damage: 'sfx_player_ouch.mp3',
+            gameover: 'sfx_gameover_silly.mp3'
+        };
+    }
+
+    play(soundType) {
+        if (!this.enabled) return;
+        
+        // In a real production build, we would load the audio file here.
+        // For this self-contained artifact, we use synth fallback to ensure sound works.
+        this.synth(soundType);
+    }
+
+    synth(type) {
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        const now = this.ctx.currentTime;
+
+        switch (type) {
+            case 'laser':
+                // "Pew" - fast frequency drop
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.15);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
+                break;
+            case 'hit':
+                // "Squish/Sparkle" - high sine waves
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1200, now);
+                osc.frequency.linearRampToValueAtTime(1800, now + 0.1);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+                break;
+            case 'wrong':
+                // "Clank/Boing" - dissonant saw
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.linearRampToValueAtTime(100, now + 0.2);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+                break;
+            case 'damage':
+                // "Oof" - low noise/tri
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(100, now);
+                osc.frequency.linearRampToValueAtTime(50, now + 0.3);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+                break;
+            case 'gameover':
+                // "Sad slide"
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.linearRampToValueAtTime(100, now + 1.5);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0, now + 1.5);
+                osc.start(now);
+                osc.stop(now + 1.5);
+                break;
+        }
+    }
+}
+
+/**
+ * GAME DATA
+ */
+const PRONOUNS = ['YO', 'TÚ', 'ÉL/ELLA', 'NOSOTROS', 'ELLOS/ELLAS'];
+
+const VERB_DB = [
+    // Top Regulars
+    { infinitive: 'HABLAR', forms: ['hablo', 'hablas', 'habla', 'hablamos', 'hablan'] },
+    { infinitive: 'COMER', forms: ['como', 'comes', 'come', 'comemos', 'comen'] },
+    { infinitive: 'VIVIR', forms: ['vivo', 'vives', 'vive', 'vivimos', 'viven'] },
+    { infinitive: 'BAILAR', forms: ['bailo', 'bailas', 'baila', 'bailamos', 'bailan'] },
+    { infinitive: 'ESCRIBIR', forms: ['escribo', 'escribes', 'escribe', 'escribimos', 'escriben'] },
+    { infinitive: 'BEBER', forms: ['bebo', 'bebes', 'bebe', 'bebemos', 'beben'] },
+    { infinitive: 'LEER', forms: ['leo', 'lees', 'lee', 'leemos', 'leen'] },
+    { infinitive: 'CORRER', forms: ['corro', 'corres', 'corre', 'corremos', 'corren'] },
+    { infinitive: 'ABRIR', forms: ['abro', 'abres', 'abre', 'abrimos', 'abren'] },
+    { infinitive: 'CANTAR', forms: ['canto', 'cantas', 'canta', 'cantamos', 'cantan'] },
+    { infinitive: 'APRENDER', forms: ['aprendo', 'aprendes', 'aprende', 'aprendemos', 'aprenden'] },
+    { infinitive: 'COMPRAR', forms: ['compro', 'compras', 'compra', 'compramos', 'compran'] },
+    { infinitive: 'VENDER', forms: ['vendo', 'vendes', 'vende', 'vendemos', 'venden'] },
+    { infinitive: 'RECIBIR', forms: ['recibo', 'recibes', 'recibe', 'recibimos', 'reciben'] },
+    { infinitive: 'ESTUDIAR', forms: ['estudio', 'estudias', 'estudia', 'estudiamos', 'estudian'] },
+    { infinitive: 'COMPRENDER', forms: ['comprendo', 'comprendes', 'comprende', 'comprendemos', 'comprenden'] },
+    { infinitive: 'SUBIR', forms: ['subo', 'subes', 'sube', 'subimos', 'suben'] },
+    { infinitive: 'TRABAJAR', forms: ['trabajo', 'trabajas', 'trabaja', 'trabajamos', 'trabajan'] },
+    { infinitive: 'RESPONDER', forms: ['respondo', 'respondes', 'responde', 'respondemos', 'responden'] },
+    { infinitive: 'COMPARTIR', forms: ['comparto', 'compartes', 'comparte', 'compartimos', 'comparten'] },
+    { infinitive: 'VIAJAR', forms: ['viajo', 'viajas', 'viaja', 'viajamos', 'viajan'] },
+    { infinitive: 'CREER', forms: ['creo', 'crees', 'cree', 'creemos', 'creen'] },
+    { infinitive: 'ASISTIR', forms: ['asisto', 'asistes', 'asiste', 'asistimos', 'asisten'] },
+    { infinitive: 'BUSCAR', forms: ['busco', 'buscas', 'busca', 'buscamos', 'buscan'] },
+    { infinitive: 'DEBER', forms: ['debo', 'debes', 'debe', 'debemos', 'deben'] },
+    { infinitive: 'PERMITIR', forms: ['permito', 'permites', 'permite', 'permitimos', 'permiten'] },
+    { infinitive: 'NECESITAR', forms: ['necesito', 'necesitas', 'necesita', 'necesitamos', 'necesitan'] },
+    { infinitive: 'ROMPER', forms: ['rompo', 'rompes', 'rompe', 'rompemos', 'rompen'] },
+    { infinitive: 'DESCRIBIR', forms: ['describo', 'describes', 'describe', 'describimos', 'describen'] },
+    { infinitive: 'AYUDAR', forms: ['ayudo', 'ayudas', 'ayuda', 'ayudamos', 'ayudan'] },
+    { infinitive: 'ESCONDER', forms: ['escondo', 'escondes', 'esconde', 'escondemos', 'esconden'] },
+    { infinitive: 'DISCUTIR', forms: ['discuto', 'discutes', 'discute', 'discutimos', 'discuten'] },
+    { infinitive: 'CAMBIAR', forms: ['cambio', 'cambias', 'cambia', 'cambiamos', 'cambian'] },
+    { infinitive: 'TEMER', forms: ['temo', 'temes', 'teme', 'tememos', 'temen'] },
+    { infinitive: 'ADMITIR', forms: ['admito', 'admites', 'admite', 'admitimos', 'admiten'] },
+    { infinitive: 'ESPERAR', forms: ['espero', 'esperas', 'espera', 'esperamos', 'esperan'] },
+    { infinitive: 'TOSER', forms: ['toso', 'toses', 'tose', 'tosemos', 'tosen'] },
+    { infinitive: 'AÑADIR', forms: ['añado', 'añades', 'añade', 'añadimos', 'añaden'] },
+    { infinitive: 'PREGUNTAR', forms: ['pregunto', 'preguntas', 'pregunta', 'preguntamos', 'preguntan'] },
+    { infinitive: 'PROMETER', forms: ['prometo', 'prometes', 'promete', 'prometemos', 'prometen'] },
+    { infinitive: 'DEFINIR', forms: ['defino', 'defines', 'define', 'definimos', 'definen'] },
+    { infinitive: 'MIRAR', forms: ['miro', 'miras', 'mira', 'miramos', 'miran'] },
+    { infinitive: 'POSEER', forms: ['poseo', 'posees', 'posee', 'poseemos', 'poseen'] },
+    { infinitive: 'SUFRIR', forms: ['sufro', 'sufres', 'sufre', 'sufrimos', 'sufren'] },
+    { infinitive: 'PAGAR', forms: ['pago', 'pagas', 'paga', 'pagamos', 'pagan'] },
+    { infinitive: 'METER', forms: ['meto', 'metes', 'mete', 'metemos', 'meten'] },
+    { infinitive: 'UNIR', forms: ['uno', 'unes', 'une', 'unimos', 'unen'] },
+    { infinitive: 'USAR', forms: ['uso', 'usas', 'usa', 'usamos', 'usan'] },
+    { infinitive: 'TOCAR', forms: ['toco', 'tocas', 'toca', 'tocamos', 'tocan'] },
+    { infinitive: 'DECIDIR', forms: ['decido', 'decides', 'decide', 'decidimos', 'deciden'] },
+    
+    // Key Irregulars
+    { infinitive: 'SER', forms: ['soy', 'eres', 'es', 'somos', 'son'] },
+    { infinitive: 'ESTAR', forms: ['estoy', 'estás', 'está', 'estamos', 'están'] },
+    { infinitive: 'TENER', forms: ['tengo', 'tienes', 'tiene', 'tenemos', 'tienen'] },
+    { infinitive: 'IR', forms: ['voy', 'vas', 'va', 'vamos', 'van'] },
+    { infinitive: 'HACER', forms: ['hago', 'haces', 'hace', 'hacemos', 'hacen'] },
+    { infinitive: 'VER', forms: ['veo', 'ves', 've', 'vemos', 'ven'] }
+];
+
+/**
+ * CLASSES
+ */
+
+class Particle {
+    constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.size = Math.random() * 4 + 2;
+        this.speedX = (Math.random() - 0.5) * 8;
+        this.speedY = (Math.random() - 0.5) * 8;
+        this.life = 1.0; // Opacity
+    }
+
+    update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.life -= 0.03;
+    }
+
+    draw(ctx) {
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, this.size, this.size);
+        ctx.globalAlpha = 1.0;
+    }
+}
+
+class Bullet {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.width = 4;
+        this.height = 15;
+        this.speed = 10;
+        this.markedForDeletion = false;
+    }
+
+    update() {
+        this.y -= this.speed;
+        if (this.y < 0) this.markedForDeletion = true;
+    }
+
+    draw(ctx) {
+        ctx.fillStyle = '#00ffff';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#00ffff';
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+        ctx.shadowBlur = 0;
+    }
+}
+
+class Alien {
+    constructor(x, y, text, isCorrect, speedMultiplier) {
+        this.x = x;
+        this.y = y;
+        this.width = 60;
+        this.height = 40;
+        this.text = text;
+        this.isCorrect = isCorrect;
+        this.baseSpeed = 0.5 * speedMultiplier;
+        this.speedY = this.baseSpeed;
+        this.markedForDeletion = false;
+        this.isAngry = false;
+        
+        // Sprite animation state
+        this.frame = 0;
+        this.frameCount = 0;
+    }
+
+    update() {
+        this.y += this.speedY;
+        this.frameCount++;
+        
+        // Bobbing animation
+        if (this.frameCount % 20 === 0) {
+            this.frame = this.frame === 0 ? 1 : 0;
+        }
+
+        if (this.y > 600) {
+            this.markedForDeletion = true;
+        }
+    }
+
+    draw(ctx) {
+        // Draw Alien Body (Pixel Art style via rectangles)
+        const color = this.isAngry ? '#ff3333' : '#ff00de';
+        ctx.fillStyle = color;
+        
+        // Simple Space Invader Shape
+        if (this.frame === 0) {
+            // Arms down
+            ctx.fillRect(this.x + 10, this.y, 40, 10); // Head
+            ctx.fillRect(this.x, this.y + 10, 60, 20); // Body
+            ctx.fillRect(this.x + 10, this.y + 30, 10, 10); // Leg L
+            ctx.fillRect(this.x + 40, this.y + 30, 10, 10); // Leg R
+        } else {
+            // Arms up
+            ctx.fillRect(this.x + 10, this.y, 40, 10); // Head
+            ctx.fillRect(this.x, this.y + 10, 60, 20); // Body
+            ctx.fillRect(this.x, this.y, 10, 10); // Arm L
+            ctx.fillRect(this.x + 50, this.y, 10, 10); // Arm R
+            ctx.fillRect(this.x + 20, this.y + 30, 20, 10); // Legs Middle
+        }
+
+        // Eyes
+        ctx.fillStyle = '#111';
+        ctx.fillRect(this.x + 15, this.y + 15, 8, 8);
+        ctx.fillRect(this.x + 37, this.y + 15, 8, 8);
+
+        // Text Label
+        ctx.fillStyle = '#fff';
+        ctx.font = '14px "Press Start 2P"';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = '#000';
+        ctx.shadowBlur = 4;
+        ctx.lineWidth = 3;
+        ctx.strokeText(this.text, this.x + 30, this.y + 60);
+        ctx.fillText(this.text, this.x + 30, this.y + 60);
+        ctx.shadowBlur = 0;
+    }
+}
+
+class Player {
+    constructor(canvasWidth, canvasHeight) {
+        this.canvasWidth = canvasWidth;
+        this.canvasHeight = canvasHeight;
+        this.width = 50;
+        this.height = 40;
+        this.x = canvasWidth / 2 - this.width / 2;
+        this.y = canvasHeight - 60;
+        this.speed = 7;
+        this.color = '#00ff41';
+    }
+
+    moveLeft() {
+        if (this.x > 0) this.x -= this.speed;
+    }
+
+    moveRight() {
+        if (this.x < this.canvasWidth - this.width) this.x += this.speed;
+    }
+
+    draw(ctx) {
+        ctx.fillStyle = this.color;
+        // Vector Triangle Ship
+        ctx.beginPath();
+        ctx.moveTo(this.x + this.width / 2, this.y); // Tip
+        ctx.lineTo(this.x + this.width, this.y + this.height); // Bottom Right
+        ctx.lineTo(this.x + this.width / 2, this.y + this.height - 10); // Indent
+        ctx.lineTo(this.x, this.y + this.height); // Bottom Left
+        ctx.closePath();
+        ctx.fill();
+
+        // Engine flame
+        ctx.fillStyle = '#ff9900';
+        ctx.beginPath();
+        ctx.moveTo(this.x + this.width / 2 - 5, this.y + this.height - 5);
+        ctx.lineTo(this.x + this.width / 2 + 5, this.y + this.height - 5);
+        ctx.lineTo(this.x + this.width / 2, this.y + this.height + (Math.random() * 10 + 5));
+        ctx.closePath();
+        ctx.fill();
+    }
+}
+
+class Game {
+    constructor() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.audio = new AudioController();
+        
+        this.player = new Player(this.canvas.width, this.canvas.height);
+        this.bullets = [];
+        this.aliens = [];
+        this.particles = [];
+        this.stars = [];
+
+        this.score = 0;
+        this.lives = 3;
+        this.state = 'START'; // START, PLAYING, GAMEOVER
+        this.levelSpeed = 1.0;
+        
+        this.currentMission = null;
+        this.spawnTimer = 0;
+        this.waveActive = false;
+        
+        // Loop control
+        this.animationId = null;
+
+        // Inputs
+        this.keys = { ArrowLeft: false, ArrowRight: false, Space: false };
+        this.lastShotTime = 0;
+
+        this.initInput();
+        this.createStars();
+    }
+
+    createStars() {
+        for(let i=0; i<100; i++) {
+            this.stars.push({
+                x: Math.random() * this.canvas.width,
+                y: Math.random() * this.canvas.height,
+                size: Math.random() * 2,
+                speed: Math.random() * 0.5 + 0.1
+            });
+        }
+    }
+
+    initInput() {
+        window.addEventListener('keydown', e => {
+            if (e.code === 'ArrowLeft') this.keys.ArrowLeft = true;
+            if (e.code === 'ArrowRight') this.keys.ArrowRight = true;
+            if (e.code === 'Space') {
+                this.keys.Space = true;
+                if(this.state === 'PLAYING') e.preventDefault(); // Prevent scroll
+            }
+        });
+
+        window.addEventListener('keyup', e => {
+            if (e.code === 'ArrowLeft') this.keys.ArrowLeft = false;
+            if (e.code === 'ArrowRight') this.keys.ArrowRight = false;
+            if (e.code === 'Space') this.keys.Space = false;
+        });
+
+        document.getElementById('btn-start').addEventListener('click', () => this.startGame());
+        document.getElementById('btn-restart').addEventListener('click', () => this.startGame());
+        
+        // New Listener for End Game Button
+        document.getElementById('btn-end-game').addEventListener('click', () => {
+            if (this.state === 'PLAYING') this.endGame();
+        });
+    }
+
+    startGame() {
+        // Fix for Speed Bug: Cancel any existing loop
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
+
+        this.score = 0;
+        this.lives = 3;
+        this.levelSpeed = 1.0;
+        this.bullets = [];
+        this.aliens = [];
+        this.particles = [];
+        this.state = 'PLAYING';
+        
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('game-over-screen').classList.add('hidden');
+        
+        // Show the abort button
+        document.getElementById('btn-end-game').classList.remove('hidden');
+
+        this.updateHUD();
+        this.setNewMission();
+        
+        this.loop();
+    }
+
+    setNewMission() {
+        // Pick random verb
+        const verbObj = VERB_DB[Math.floor(Math.random() * VERB_DB.length)];
+        // Pick random pronoun index (0-4)
+        const index = Math.floor(Math.random() * 5);
+        
+        this.currentMission = {
+            verb: verbObj.infinitive,
+            pronoun: PRONOUNS[index],
+            correctForm: verbObj.forms[index],
+            allForms: verbObj.forms
+        };
+
+        // Update UI
+        document.getElementById('mission-target').innerText = 
+            `${this.currentMission.pronoun} (${this.currentMission.verb})`;
+        
+        this.spawnWave();
+    }
+
+    spawnWave() {
+        this.aliens = [];
+        const count = 4;
+        const spacing = this.canvas.width / count;
+        
+        // Determine which slot holds the correct answer
+        const correctSlot = Math.floor(Math.random() * count);
+        
+        for (let i = 0; i < count; i++) {
+            let text = "";
+            let isCorrect = false;
+
+            if (i === correctSlot) {
+                text = this.currentMission.correctForm;
+                isCorrect = true;
+            } else {
+                // Pick a wrong form that isn't the correct one
+                let wrongForm;
+                do {
+                    wrongForm = this.currentMission.allForms[Math.floor(Math.random() * 5)];
+                } while (wrongForm === this.currentMission.correctForm);
+                text = wrongForm;
+            }
+
+            const x = (i * spacing) + (spacing / 2) - 30;
+            this.aliens.push(new Alien(x, -60, text, isCorrect, this.levelSpeed));
+        }
+    }
+
+    createExplosion(x, y, color) {
+        for(let i=0; i<15; i++) {
+            this.particles.push(new Particle(x, y, color));
+        }
+    }
+
+    update() {
+        if (this.state !== 'PLAYING') return;
+
+        // Player Move
+        if (this.keys.ArrowLeft) this.player.moveLeft();
+        if (this.keys.ArrowRight) this.player.moveRight();
+
+        // Player Shoot
+        if (this.keys.Space) {
+            const now = Date.now();
+            if (now - this.lastShotTime > 400) { // Fire rate limit
+                this.bullets.push(new Bullet(this.player.x + this.player.width/2 - 2, this.player.y));
+                this.audio.play('laser');
+                this.lastShotTime = now;
+            }
+        }
+
+        // Updates
+        this.bullets.forEach(b => b.update());
+        this.aliens.forEach(a => a.update());
+        this.particles.forEach(p => p.update());
+
+        // Background stars
+        this.stars.forEach(s => {
+            s.y += s.speed;
+            if (s.y > this.canvas.height) s.y = 0;
+        });
+
+        // Cleanup Logic Modified for Bug Fix #1
+        this.bullets = this.bullets.filter(b => !b.markedForDeletion);
+        this.particles = this.particles.filter(p => p.life > 0);
+        
+        // Filter out aliens that have left the screen
+        this.aliens = this.aliens.filter(a => !a.markedForDeletion);
+
+        // If no aliens are left (either all shot or all passed bottom), spawn new wave
+        if (this.aliens.length === 0) {
+             this.spawnWave();
+        }
+
+        this.checkCollisions();
+    }
+
+    checkCollisions() {
+        this.bullets.forEach(bullet => {
+            this.aliens.forEach(alien => {
+                if (bullet.markedForDeletion || alien.markedForDeletion) return;
+
+                // Simple Box Collision
+                if (bullet.x < alien.x + alien.width &&
+                    bullet.x + bullet.width > alien.x &&
+                    bullet.y < alien.y + alien.height &&
+                    bullet.y + bullet.height > alien.y) {
+                    
+                    bullet.markedForDeletion = true;
+
+                    if (alien.isCorrect) {
+                        // CORRECT HIT
+                        this.score += 100;
+                        this.levelSpeed += 0.2; // Increase difficulty
+                        this.audio.play('hit');
+                        this.createExplosion(alien.x + 30, alien.y + 20, '#00ff41');
+                        
+                        // Clear wave and start new mission
+                        // Note: Setting length to 0 triggers spawnWave in next update()
+                        this.aliens = []; 
+                        setTimeout(() => this.setNewMission(), 500);
+
+                    } else {
+                        // WRONG HIT
+                        this.audio.play('wrong');
+                        alien.isAngry = true;
+                        alien.speedY *= 3; // Speed up the angry alien
+                        this.lives--;
+                        this.createExplosion(alien.x + 30, alien.y + 20, '#ff3333');
+                        
+                        // Check Game Over
+                        if (this.lives <= 0) {
+                            this.endGame();
+                        }
+                    }
+                    this.updateHUD();
+                }
+            });
+        });
+    }
+
+    updateHUD() {
+        document.getElementById('score-display').innerText = `SCORE: ${this.score}`;
+        document.getElementById('lives-display').innerText = `LIVES: ${this.lives}`;
+    }
+
+    endGame() {
+        this.state = 'GAMEOVER';
+        this.audio.play('gameover');
+        
+        // Hide the abort button
+        document.getElementById('btn-end-game').classList.add('hidden');
+
+        document.getElementById('final-score').innerText = this.score;
+        document.getElementById('game-over-screen').classList.remove('hidden');
+    }
+
+    draw() {
+        // Clear
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Draw Stars
+        this.ctx.fillStyle = '#ffffff';
+        this.stars.forEach(s => {
+            this.ctx.globalAlpha = Math.random() * 0.5 + 0.5;
+            this.ctx.fillRect(s.x, s.y, s.size, s.size);
+        });
+        this.ctx.globalAlpha = 1.0;
+
+        if (this.state === 'PLAYING') {
+            this.player.draw(this.ctx);
+            this.bullets.forEach(b => b.draw(this.ctx));
+            this.aliens.forEach(a => a.draw(this.ctx));
+            this.particles.forEach(p => p.draw(this.ctx));
+        }
+    }
+
+    loop() {
+        if (this.state !== 'START') {
+            this.update();
+            this.draw();
+            this.animationId = requestAnimationFrame(() => this.loop());
+        }
+    }
+}
+
+// Start Game Instance when window loads
+window.onload = () => {
+    const game = new Game();
+};
+
+</script>
+</body>
+</html>

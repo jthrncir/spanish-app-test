@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Ahorcado - Spanish Learning Game</title>
+    <style>
+        :root {
+            --primary: #FF6B6B;
+            --secondary: #4ECDC4;
+            --accent: #FFE66D;
+            --dark: #2C3E50;
+            --light: #F7F9FC;
+            --success: #6BCB77;
+            --error: #FF6B6B;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light);
+            color: var(--dark);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 0px var(--dark);
+            margin: 20px 0 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .game-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            padding: 20px;
+            max-width: 1000px;
+            width: 100%;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        /* Canvas Section */
+        .canvas-area {
+            background: white;
+            padding: 10px;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            border: 4px solid var(--dark);
+        }
+
+        canvas {
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            cursor: crosshair;
+        }
+
+        /* UI Section */
+        .ui-area {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .category-badge {
+            background-color: var(--secondary);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            text-align: center;
+            align-self: center;
+            box-shadow: 0 4px 0 #2A9D8F;
+            font-size: 1.2rem;
+        }
+
+        .word-display {
+            font-family: 'Courier New', monospace;
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-align: center;
+            letter-spacing: 10px;
+            min-height: 60px;
+            color: var(--dark);
+            word-break: break-all;
+        }
+
+        .keyboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
+            gap: 8px;
+            padding: 10px;
+            background: white;
+            border-radius: 15px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .key-btn {
+            background-color: white;
+            border: 2px solid var(--dark);
+            border-radius: 8px;
+            padding: 10px 0;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.1s;
+            box-shadow: 0 4px 0 var(--dark);
+            color: var(--dark);
+        }
+
+        .key-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 var(--dark);
+        }
+
+        .key-btn:disabled {
+            cursor: not-allowed;
+            transform: translateY(4px);
+            box-shadow: none;
+            color: white;
+            border-color: transparent;
+        }
+
+        .key-btn.correct {
+            background-color: var(--success);
+        }
+
+        .key-btn.wrong {
+            background-color: var(--error);
+        }
+
+        /* Modal / Overlay */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            border: 5px solid var(--accent);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-width: 90%;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-title {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .modal-msg {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: #666;
+        }
+
+        .reset-btn {
+            background-color: var(--accent);
+            color: var(--dark);
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 5px 0 #E6C840;
+            transition: transform 0.1s;
+        }
+
+        .reset-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .reset-btn:active {
+            transform: scale(0.95) translateY(5px);
+            box-shadow: none;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 600px) {
+            .game-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            canvas {
+                width: 100%;
+                max-width: 300px;
+                height: auto;
+            }
+
+            .word-display {
+                font-size: 1.8rem;
+                letter-spacing: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>El Ahorcado</h1>
+
+    <div class="game-container">
+        <!-- Left: Canvas -->
+        <div class="canvas-area">
+            <canvas id="gameCanvas" width="300" height="400"></canvas>
+        </div>
+
+        <!-- Right: UI -->
+        <div class="ui-area">
+            <div id="categoryDisplay" class="category-badge">
+                Categoría: ...
+            </div>
+            
+            <div id="wordDisplay" class="word-display">
+                _ _ _ _ _
+            </div>
+
+            <div id="keyboard" class="keyboard">
+                <!-- Keys generated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over / Win Modal -->
+    <div id="gameModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle" class="modal-title">¡Ganaste!</h2>
+            <p id="modalMessage" class="modal-msg">La palabra era: XXXX</p>
+            <button id="playAgainBtn" class="reset-btn">Jugar de Nuevo</button>
+        </div>
+    </div>
+
+<script>
+/**
+ * 1. DATA STRUCTURE
+ */
+const GAME_DATA = {
+    ANIMALES: ['PERRO', 'GATO', 'PAJARO', 'PEZ', 'CABALLO', 'VACA', 'CERDO', 'LEON', 'TIGRE', 'OSO', 'ELEFANTE', 'JIRAFA', 'MONO', 'CONEJO', 'RATON', 'PATO', 'POLLO', 'TORTUGA', 'SERPIENTE', 'MARIPOSA', 'DELFIN', 'BALLENA', 'LOBO', 'ZORRO', 'AGUILA'],
+    COMIDA: ['PAN', 'LECHE', 'AGUA', 'QUESO', 'HUEVO', 'CARNE', 'POLLO', 'ARROZ', 'SOPA', 'ENSALADA', 'PIZZA', 'HAMBURGUESA', 'PASTA', 'PESCADO', 'AZUCAR', 'SAL', 'PIMIENTA', 'MANTEQUILLA', 'HELADO', 'CHOCOLATE', 'GALLETA', 'JUEGO', 'FRUTA', 'CENA', 'ALMUERZO'],
+    FAMILIA: ['MADRE', 'PADRE', 'HERMANO', 'HERMANA', 'ABUELO', 'ABUELA', 'TIO', 'TIA', 'PRIMO', 'PRIMA', 'HIJO', 'HIJA', 'ESPOSO', 'ESPOSA', 'BEBE', 'FAMILIA', 'PADRES', 'NIÑO', 'NIÑA', 'HOMBRE', 'MUJER', 'AMIGO', 'AMIGA', 'GENTE', 'PERSONA'],
+    CASA: ['CASA', 'PUERTA', 'VENTANA', 'COCINA', 'BAÑO', 'SALA', 'DORMITORIO', 'JARDIN', 'TECHO', 'PARED', 'PISO', 'CAMA', 'SOFA', 'LAMPARA', 'ESPEJO', 'ARMARIO', 'LLAVE', 'GARAJE', 'COMEDOR', 'SILLON', 'TELEVISION', 'RADIO', 'RELOJ', 'MESA', 'SILLA'],
+    CUERPO: ['CABEZA', 'MANO', 'PIE', 'BRAZO', 'PIERNA', 'OJO', 'NARIZ', 'BOCA', 'OREJA', 'PELO', 'DEDO', 'ESTOMAGO', 'ESPALDA', 'DIENTE', 'LENGUA', 'CUELLO', 'HOMBRO', 'RODILLA', 'CORAZON', 'SANGRE', 'PIEL', 'HUESO', 'CARA', 'LABIO', 'CEREBRO'],
+    ROPA: ['CAMISA', 'PANTALON', 'VESTIDO', 'FALDA', 'ZAPATO', 'SOMBRERO', 'ABRIGO', 'CALCETIN', 'GUANTE', 'BUFANDA', 'ROPA', 'CAMISETA', 'SUETER', 'CHAQUETA', 'CINTURON', 'GORRA', 'PIYAMA', 'TRAJE', 'BLUSA', 'BOTAS', 'BOLSA', 'LENTES', 'JOYAS', 'ANILLO', 'RELOJ'],
+    NUMEROS: ['UNO', 'DOS', 'TRES', 'CUATRO', 'CINCO', 'SEIS', 'SIETE', 'OCHO', 'NUEVE', 'DIEZ', 'ONCE', 'DOCE', 'TRECE', 'CATORCE', 'QUINCE', 'VEINTE', 'TREINTA', 'CUARENTA', 'CINCUENTA', 'CIEN', 'MIL', 'PRIMERO', 'SEGUNDO', 'TERCERO', 'CERO'],
+    TIEMPO: ['DIA', 'NOCHE', 'SEMANA', 'MES', 'AÑO', 'HOY', 'MAÑANA', 'AYER', 'HORA', 'MINUTO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO', 'DOMINGO', 'ENERO', 'FEBRERO', 'TIEMPO', 'TARDE', 'MEDIODIA', 'RELOJ', 'FECHA', 'SIGLO'],
+    NATURALEZA: ['SOL', 'LUNA', 'ESTRELLA', 'CIELO', 'NUBE', 'LLUVIA', 'NIEVE', 'VIENTO', 'ARBOL', 'FLOR', 'BOSQUE', 'RIO', 'MAR', 'PLAYA', 'MONTAÑA', 'LAGO', 'PLANTA', 'TIERRA', 'FUEGO', 'AIRE', 'PIEDRA', 'ARENA', 'ISLA', 'MUNDO', 'CAMPO'],
+    CIUDAD: ['CIUDAD', 'CALLE', 'PARQUE', 'TIENDA', 'HOSPITAL', 'BANCO', 'CINE', 'HOTEL', 'MUSEO', 'MERCADO', 'PLAZA', 'BIBLIOTECA', 'RESTAURANTE', 'AEROPUERTO', 'ESTACION', 'IGLESIA', 'EDIFICIO', 'PUENTE', 'CAMINO', 'PUEBLO', 'ESCUELA', 'FARMACIA', 'CORREO', 'ZOO', 'CIRCO'],
+    PROFESIONES: ['MEDICO', 'POLICIA', 'BOMBERO', 'MAESTRO', 'ARTISTA', 'ACTOR', 'CANTANTE', 'COCINERO', 'PILOTO', 'JUEZ', 'ABOGADO', 'DENTISTA', 'ENFERMERO', 'INGENIERO', 'ESCRITOR', 'GRANJERO', 'SOLDADO', 'OBRERO', 'SECRETARIO', 'JEFE', 'ALUMNO', 'AUTOR', 'CHOFER', 'MECANICO', 'DOCTOR'],
+    ADJETIVOS: ['GRANDE', 'PEQUEÑO', 'BUENO', 'MALO', 'FELIZ', 'TRISTE', 'ALTO', 'BAJO', 'LARGO', 'CORTO', 'NUEVO', 'VIEJO', 'BONITO', 'FEO', 'RAPIDO', 'LENTO', 'CALIENTE', 'FRIO', 'RICO', 'POBRE', 'FACIL', 'DIFICIL', 'LIMPIO', 'SUCIO', 'FUERTE'],
+    FRUTAS: ['MANZANA', 'BANANA', 'NARANJA', 'UVA', 'FRESA', 'LIMON', 'MELON', 'SANDIA', 'PIÑA', 'PERA', 'CEREZA', 'DURAZNO', 'MANGO', 'COCO', 'KIWI', 'CIRUELA', 'HIGO', 'LIMA', 'PAPAYA', 'MORA', 'FRAMBUESA', 'AGUACATE', 'TORONJA', 'ARANDANO', 'FRUTA'],
+    VERDURAS: ['LECHUGA', 'TOMATE', 'ZANAHORIA', 'PAPA', 'CEBOLLA', 'MAIZ', 'PEPINO', 'AJO', 'BROCOLI', 'ESPINACA', 'CALABAZA', 'GUISANTE', 'APIO', 'COL', 'HONGO', 'PIMIENTO', 'RABANO', 'FRIJOL', 'BATATA', 'VEGETAL', 'SALSA', 'SOPA', 'COLIFLOR', 'BERENJENA', 'ESPARRAGO'],
+    TRANSPORTE: ['COCHE', 'BUS', 'TREN', 'AVION', 'BARCO', 'BICI', 'MOTO', 'TAXI', 'METRO', 'CAMION', 'VIAJE', 'RUEDA', 'MOTOR', 'ESTACION', 'AEROPUERTO', 'BOLETO', 'TRAFICO', 'CALLE', 'CARRETERA', 'VUELO', 'ASIENTO', 'MAPA', 'LLANTAS', 'GASOLINA', 'AUTO'],
+    DEPORTES: ['FUTBOL', 'TENIS', 'BALONCESTO', 'BEISBOL', 'GOLF', 'NATACION', 'CORRER', 'JUGAR', 'PELOTA', 'EQUIPO', 'GOL', 'PARTIDO', 'CAMPEON', 'ATLETA', 'ESTADIO', 'DEPORTE', 'VOLEIBOL', 'BOXEO', 'KARATE', 'ESQUI', 'JUGADOR', 'CARRERA', 'PREMIO', 'COPA', 'GIMNASIO'],
+    INSTRUMENTOS: ['GUITARRA', 'PIANO', 'VIOLIN', 'TAMBOR', 'FLAUTA', 'MUSICA', 'TROMPETA', 'BANDA', 'CANCION', 'SONIDO', 'ARPA', 'BAJO', 'CLARINETE', 'SAXOFONO', 'BATERIA', 'NOTA', 'RITMO', 'CONCIERTO', 'ORQUESTA', 'VOZ', 'CANTAR', 'BAILAR', 'RADIO', 'DISCO', 'OPERA'],
+    COLORES: ['ROJO', 'AZUL', 'VERDE', 'AMARILLO', 'BLANCO', 'NEGRO', 'MORADO', 'NARANJA', 'GRIS', 'ROSA', 'CAFE', 'VIOLETA', 'TURQUESA', 'DORADO', 'PLATEADO', 'CLARO', 'OSCURO', 'BRONCE', 'LILA', 'BEIGE', 'COLOR', 'PINTURA', 'ARCOIRIS', 'INDIGO', 'CREMA'],
+    VERBOS: ['HABLAR', 'COMER', 'VIVIR', 'CORRER', 'DORMIR', 'ESTUDIAR', 'JUGAR', 'BAILAR', 'CANTAR', 'LEER', 'ESCRIBIR', 'CAMINAR', 'BEBER', 'ABRIR', 'CERRAR', 'MIRAR', 'ESCUCHAR', 'COMPRAR', 'TRABAJAR', 'VIAJAR', 'QUERER', 'PODER', 'SABER', 'TENER', 'HACER'],
+    ESCUELA: ['LAPIZ', 'LIBRO', 'ESCUELA', 'MESA', 'SILLA', 'CLASE', 'PAPEL', 'REGLA', 'ALUMNO', 'MAPA', 'PIZARRA', 'MAESTRO', 'EXAMEN', 'MOCHILA', 'CUADERNO', 'BOLIGRAFO', 'COMPUTADORA', 'TAREA', 'ESTUDIANTE', 'DICCIONARIO', 'GOMA', 'TIJERA', 'PEGAMENTO', 'ARTE', 'CIENCIA']
+};
+
+/**
+ * 2. AUDIO MANAGER (Web Audio API Synthesizer)
+ * Creates funny sounds programmatically so no external files are needed.
+ */
+class AudioManager {
+    constructor() {
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.volume = 0.3;
+    }
+
+    playTone(freq, type, duration, startTime = 0) {
+        if(this.ctx.state === 'suspended') this.ctx.resume();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        
+        const now = this.ctx.currentTime + startTime;
+        gain.gain.setValueAtTime(this.volume, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+        
+        osc.start(now);
+        osc.stop(now + duration);
+    }
+
+    sfxClick() {
+        // Short high blip
+        this.playTone(800, 'sine', 0.1);
+    }
+
+    sfxCorrect() {
+        // "Ding!" - High chime
+        const now = this.ctx.currentTime;
+        this.playTone(1200, 'sine', 0.8, 0); // Primary chime
+        this.playTone(1800, 'sine', 0.8, 0.1); // Sparkle overtone
+    }
+
+    sfxWrong() {
+        // "Bonk" / Scribble - Low saw wave
+        if(this.ctx.state === 'suspended') this.ctx.resume();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        
+        // Pitch slide down
+        osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(50, this.ctx.currentTime + 0.3);
+        
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        
+        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.3);
+        
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.3);
+    }
+
+    sfxWin() {
+        // Major Arpeggio Fanfare
+        const now = this.ctx.currentTime;
+        this.playTone(523.25, 'square', 0.4, 0);   // C5
+        this.playTone(659.25, 'square', 0.4, 0.1); // E5
+        this.playTone(783.99, 'square', 0.4, 0.2); // G5
+        this.playTone(1046.50, 'square', 0.8, 0.3);// C6
+    }
+
+    sfxLose() {
+        // Sad Trombone - slide down
+        if(this.ctx.state === 'suspended') this.ctx.resume();
+        
+        const t = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        // Wah-wah-wah-waaaaaah
+        const playNote = (freq, time, dur) => {
+            osc.frequency.setValueAtTime(freq, time);
+            osc.frequency.linearRampToValueAtTime(freq - 10, time + dur);
+        };
+
+        playNote(392, t, 0.4); // G
+        playNote(369, t + 0.4, 0.4); // F#
+        playNote(349, t + 0.8, 0.4); // F
+        
+        // Final splat
+        osc.frequency.setValueAtTime(329, t + 1.2); // E
+        osc.frequency.linearRampToValueAtTime(100, t + 2.5); // Slide way down
+
+        gain.gain.setValueAtTime(0.3, t);
+        gain.gain.linearRampToValueAtTime(0, t + 2.5);
+
+        osc.start(t);
+        osc.stop(t + 2.5);
+    }
+}
+
+/**
+ * 3. CANVAS CONTROLLER
+ */
+class CanvasDrawer {
+    constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        this.ctx = this.canvas.getContext('2d');
+        this.width = this.canvas.width;
+        this.height = this.canvas.height;
+        this.ctx.lineWidth = 4;
+        this.ctx.lineCap = 'round';
+        this.ctx.strokeStyle = '#2C3E50';
+    }
+
+    clear() {
+        this.ctx.clearRect(0, 0, this.width, this.height);
+    }
+
+    // Helper to draw lines
+    line(x1, y1, x2, y2) {
+        this.ctx.beginPath();
+        this.ctx.moveTo(x1, y1);
+        this.ctx.lineTo(x2, y2);
+        this.ctx.stroke();
+    }
+
+    // Helper to draw circles
+    circle(x, y, r) {
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, r, 0, Math.PI * 2);
+        this.ctx.stroke();
+    }
+
+    drawGallows() {
+        this.ctx.strokeStyle = '#8B4513'; // Wood color
+        this.ctx.lineWidth = 6;
+        // Base
+        this.line(50, 350, 250, 350);
+        // Pole
+        this.line(100, 350, 100, 50);
+        // Top
+        this.line(100, 50, 200, 50);
+        // Rope
+        this.ctx.strokeStyle = '#D2691E';
+        this.ctx.lineWidth = 3;
+        this.line(200, 50, 200, 90);
+        
+        // Reset for body
+        this.ctx.strokeStyle = '#2C3E50';
+        this.ctx.lineWidth = 4;
+    }
+
+    drawMistake(count) {
+        switch(count) {
+            case 1: // Head
+                this.circle(200, 115, 25);
+                // Draw face
+                this.ctx.lineWidth = 2;
+                this.line(190, 110, 195, 115); // Eye L
+                this.line(195, 110, 190, 115);
+                this.line(205, 110, 210, 115); // Eye R
+                this.line(210, 110, 205, 115);
+                this.ctx.beginPath(); // Sad mouth
+                this.ctx.arc(200, 130, 8, Math.PI, 0); 
+                this.ctx.stroke();
+                this.ctx.lineWidth = 4;
+                break;
+            case 2: // Torso
+                this.line(200, 140, 200, 240);
+                break;
+            case 3: // Left Arm
+                this.line(200, 160, 170, 200);
+                break;
+            case 4: // Right Arm
+                this.line(200, 160, 230, 200);
+                break;
+            case 5: // Left Leg
+                this.line(200, 240, 170, 300);
+                break;
+            case 6: // Right Leg
+                this.line(200, 240, 230, 300);
+                break;
+        }
+    }
+}
+
+/**
+ * 4. GAME LOGIC
+ */
+class Game {
+    constructor() {
+        this.audio = new AudioManager();
+        this.drawer = new CanvasDrawer('gameCanvas');
+        this.word = '';
+        this.category = '';
+        this.guesses = new Set();
+        this.mistakes = 0;
+        this.maxMistakes = 6;
+        this.isGameOver = false;
+
+        this.els = {
+            category: document.getElementById('categoryDisplay'),
+            word: document.getElementById('wordDisplay'),
+            keyboard: document.getElementById('keyboard'),
+            modal: document.getElementById('gameModal'),
+            modalTitle: document.getElementById('modalTitle'),
+            modalMsg: document.getElementById('modalMessage'),
+            resetBtn: document.getElementById('playAgainBtn')
+        };
+
+        this.initKeyboard();
+        this.els.resetBtn.addEventListener('click', () => this.startNewGame());
+        
+        // Physical keyboard support
+        document.addEventListener('keydown', (e) => {
+            if(this.isGameOver) return;
+            const key = e.key.toUpperCase();
+            if(/^[A-ZÑ]$/.test(key)) {
+                this.handleGuess(key);
+            }
+        });
+
+        this.startNewGame();
+    }
+
+    initKeyboard() {
+        const letters = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ";
+        this.els.keyboard.innerHTML = '';
+        letters.split('').forEach(char => {
+            const btn = document.createElement('button');
+            btn.textContent = char;
+            btn.className = 'key-btn';
+            btn.id = `key-${char}`;
+            btn.addEventListener('click', () => this.handleGuess(char));
+            this.els.keyboard.appendChild(btn);
+        });
+    }
+
+    startNewGame() {
+        this.isGameOver = false;
+        this.mistakes = 0;
+        this.guesses.clear();
+        this.drawer.clear();
+        this.drawer.drawGallows();
+        this.els.modal.style.display = 'none';
+
+        // Enable buttons
+        const buttons = document.querySelectorAll('.key-btn');
+        buttons.forEach(btn => {
+            btn.disabled = false;
+            btn.classList.remove('correct', 'wrong');
+        });
+
+        // Pick word
+        const cats = Object.keys(GAME_DATA);
+        const randCat = cats[Math.floor(Math.random() * cats.length)];
+        const words = GAME_DATA[randCat];
+        this.category = randCat;
+        this.word = words[Math.floor(Math.random() * words.length)];
+
+        // Update UI
+        this.els.category.textContent = `Categoría: ${randCat}`;
+        this.updateWordDisplay();
+    }
+
+    updateWordDisplay() {
+        const display = this.word.split('').map(char => 
+            this.guesses.has(char) ? char : '_'
+        ).join(' ');
+        this.els.word.textContent = display;
+    }
+
+    handleGuess(char) {
+        if(this.guesses.has(char) || this.isGameOver) return;
+
+        this.guesses.add(char);
+        const btn = document.getElementById(`key-${char}`);
+        
+        // Initial feedback click
+        this.audio.sfxClick();
+
+        if (this.word.includes(char)) {
+            // Correct
+            btn.classList.add('correct');
+            btn.disabled = true;
+            this.audio.sfxCorrect();
+            this.updateWordDisplay();
+            this.checkWin();
+        } else {
+            // Incorrect
+            this.mistakes++;
+            btn.classList.add('wrong');
+            btn.disabled = true;
+            this.audio.sfxWrong();
+            this.drawer.drawMistake(this.mistakes);
+            this.checkLoss();
+        }
+    }
+
+    checkWin() {
+        const won = this.word.split('').every(c => this.guesses.has(c));
+        if (won) {
+            this.isGameOver = true;
+            setTimeout(() => {
+                this.audio.sfxWin();
+                this.showModal('¡Felicidades!', '¡Has completado la palabra!');
+            }, 500);
+        }
+    }
+
+    checkLoss() {
+        if (this.mistakes >= this.maxMistakes) {
+            this.isGameOver = true;
+            setTimeout(() => {
+                this.audio.sfxLose();
+                this.showModal('¡Oh no!', `La palabra era: <b>${this.word}</b>`);
+            }, 500);
+        }
+    }
+
+    showModal(title, msg) {
+        this.els.modalTitle.textContent = title;
+        this.els.modalMsg.innerHTML = msg;
+        this.els.modal.style.display = 'flex';
+    }
+}
+
+// Start Game on Load
+window.onload = () => {
+    const game = new Game();
+};
+
+</script>
+</body>
+</html>

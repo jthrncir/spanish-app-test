@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Asteroides de Adjetivos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #0f172a;
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Fredoka', sans-serif;
+            touch-action: none; /* Prevent scroll on mobile */
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        /* UI Overlays */
+        .ui-layer {
+            position: absolute;
+            pointer-events: none;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .hud-text {
+            font-family: 'Press Start 2P', cursive;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        /* Start/Game Over Screens */
+        .modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            pointer-events: auto;
+            backdrop-filter: blur(4px);
+        }
+
+        .btn {
+            background: linear-gradient(180deg, #4ade80 0%, #22c55e 100%);
+            border: 4px solid #14532d;
+            box-shadow: 0 6px 0 #14532d;
+            color: #fff;
+            font-family: 'Press Start 2P', cursive;
+            padding: 15px 20px; /* Reduced padding for grid */
+            font-size: 1rem; /* Adjusted for grid */
+            cursor: pointer;
+            transition: transform 0.1s;
+            text-transform: uppercase;
+            border-radius: 8px;
+            width: 100%; /* Full width in grid */
+        }
+
+        .btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #14532d;
+        }
+        
+        /* Difficulty Colors */
+        .btn-easy { background: linear-gradient(180deg, #86efac 0%, #22c55e 100%); border-color: #14532d; }
+        .btn-med { background: linear-gradient(180deg, #fde047 0%, #eab308 100%); border-color: #854d0e; box-shadow: 0 6px 0 #854d0e; }
+        .btn-med:active { box-shadow: 0 2px 0 #854d0e; }
+        .btn-hard { background: linear-gradient(180deg, #fb923c 0%, #ea580c 100%); border-color: #7c2d12; box-shadow: 0 6px 0 #7c2d12; }
+        .btn-hard:active { box-shadow: 0 2px 0 #7c2d12; }
+        .btn-insane { background: linear-gradient(180deg, #f87171 0%, #dc2626 100%); border-color: #7f1d1d; box-shadow: 0 6px 0 #7f1d1d; }
+        .btn-insane:active { box-shadow: 0 2px 0 #7f1d1d; }
+
+        /* Mobile Controls */
+        #mobile-controls {
+            display: none; /* Hidden on desktop by default */
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            height: 150px;
+            pointer-events: none;
+            z-index: 5;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            pointer-events: auto;
+            backdrop-filter: blur(4px);
+        }
+
+        .control-btn:active {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        @media (hover: none) and (pointer: coarse) {
+            #mobile-controls { display: flex; justify-content: space-between; }
+        }
+
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- HUD -->
+    <div class="ui-layer">
+        <div class="flex justify-between items-start w-full">
+            <div class="text-white">
+                <div class="text-yellow-400 text-sm mb-1 hud-text">SCORE</div>
+                <div id="scoreDisplay" class="text-2xl hud-text">0</div>
+            </div>
+            <div class="text-white text-right">
+                <div class="text-red-400 text-sm mb-1 hud-text">HEALTH</div>
+                <div id="healthDisplay" class="text-2xl hud-text">❤️❤️❤️</div>
+            </div>
+        </div>
+        
+        <!-- Current Noun Indicator (Bottom Center) -->
+        <div class="absolute bottom-8 left-0 w-full text-center pointer-events-none md:block hidden">
+            <p class="text-gray-400 text-sm mb-1 hud-text">CURRENT NOUN</p>
+            <h2 id="currentNounDisplay" class="text-4xl text-cyan-300 font-bold hud-text drop-shadow-md">EL GATO</h2>
+            <p id="currentNounMeta" class="text-cyan-500 text-xs mt-1 hud-text">(Masc / Sing)</p>
+        </div>
+    </div>
+
+    <!-- Mobile Controls -->
+    <div id="mobile-controls">
+        <div class="relative w-32 h-32">
+            <!-- D-Pad / Joystick simulation -->
+            <button id="btn-left" class="control-btn absolute left-0 top-1/3 w-12 h-12 text-white text-2xl">←</button>
+            <button id="btn-right" class="control-btn absolute right-0 top-1/3 w-12 h-12 text-white text-2xl">→</button>
+            <button id="btn-up" class="control-btn absolute left-1/3 top-0 w-12 h-12 text-white text-2xl">↑</button>
+        </div>
+        <button id="btn-fire" class="control-btn w-24 h-24 rounded-full bg-red-500/30 border-red-400 text-white font-bold tracking-widest text-xl">FIRE</button>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="startScreen" class="modal">
+        <h1 class="text-4xl md:text-6xl text-yellow-400 mb-4 text-center hud-text leading-tight">ASTEROIDES<br><span class="text-2xl md:text-4xl text-white">DE ADJETIVOS</span></h1>
+        
+        <!-- Mission Briefing / Instructions -->
+        <div class="bg-slate-800/90 p-6 rounded-lg border-2 border-cyan-500 max-w-lg mx-4 shadow-lg mb-6">
+            <h2 class="text-cyan-300 text-xl font-bold mb-4 text-center font-sans tracking-wide uppercase border-b border-cyan-500/30 pb-2">Mission Briefing</h2>
+            <ul class="text-gray-200 text-sm md:text-base space-y-3 font-sans list-disc pl-5">
+                <li>Your ship is a <strong class="text-yellow-400">Noun</strong> (e.g., "EL GATO").</li>
+                <li>Asteroids are <strong class="text-green-400">Adjectives</strong> (e.g., "ROJA", "ROJO").</li>
+                <li><strong>THE GOAL:</strong> Shoot the asteroid that matches your Noun in <span class="text-cyan-300">Gender</span> (M/F) and <span class="text-cyan-300">Number</span> (Singular/Plural).</li>
+                <li class="italic text-gray-400">Example: If you are "EL GATO" (Masc/Sing), shoot "ROJO".</li>
+                <li><span class="text-red-400 font-bold">WARNING:</span> Shooting wrong grammar damages your hull!</li>
+            </ul>
+        </div>
+
+        <div class="bg-gray-900/80 p-3 rounded border border-gray-700 mb-6 text-xs md:text-sm text-gray-400 font-mono text-center">
+            <span class="text-yellow-500 font-bold">CONTROLS</span><br>
+            Desktop: Arrows to Move, SPACE to Shoot<br>
+            Mobile: On-screen buttons
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4 w-full max-w-lg px-4">
+            <button class="btn btn-easy" onclick="startGame('EASY')">Easy</button>
+            <button class="btn btn-med" onclick="startGame('MEDIUM')">Medium</button>
+            <button class="btn btn-hard" onclick="startGame('HARD')">Hard</button>
+            <button class="btn btn-insane" onclick="startGame('INSANE')">INSANE</button>
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameOverScreen" class="modal hidden">
+        <h1 class="text-6xl text-red-500 mb-2 hud-text">GAME OVER</h1>
+        <p class="text-xl text-white mb-6 hud-text">Final Score: <span id="finalScore" class="text-yellow-400">0</span></p>
+        <div class="grid grid-cols-2 gap-4 w-full max-w-md px-4">
+            <button class="btn btn-easy" onclick="startGame('EASY')">Easy</button>
+            <button class="btn btn-med" onclick="startGame('MEDIUM')">Medium</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/**
+ * AUDIO SYSTEM (Synthesizer)
+ * Generates "funny" sounds procedurally using Web Audio API
+ * avoiding the need for external MP3 files.
+ */
+class FunnyAudio {
+    constructor() {
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.masterGain = this.ctx.createGain();
+        this.masterGain.gain.value = 0.3; // Prevent ear damage
+        this.masterGain.connect(this.ctx.destination);
+    }
+
+    resume() {
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+    }
+
+    // "Pew Pew" (Human-ish voice simulation)
+    playShoot() {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.15);
+        
+        gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.2);
+    }
+
+    // "Fart" / Sputtering Engine (Sawtooth with jitter)
+    playThrust() {
+        // Only play if not recently played to avoid overlapping mess
+        const now = this.ctx.currentTime;
+        
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(60, now);
+        osc.frequency.linearRampToValueAtTime(40, now + 0.1);
+        
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start();
+        osc.stop(now + 0.1);
+    }
+
+    // "Hallelujah" (Major Triad Sparkle)
+    playCorrect() {
+        const now = this.ctx.currentTime;
+        [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => { // C Major
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.value = freq;
+            
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.1, now + 0.05 + (i*0.05));
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+
+            osc.connect(gain);
+            gain.connect(this.masterGain);
+            osc.start();
+            osc.stop(now + 0.7);
+        });
+    }
+
+    // "Fog Horn" / Wrong Buzzer
+    playWrong() {
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const osc2 = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.linearRampToValueAtTime(100, now + 0.4);
+
+        osc2.type = 'square';
+        osc2.frequency.setValueAtTime(145, now); // Dissonance
+        osc2.frequency.linearRampToValueAtTime(95, now + 0.4);
+
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+
+        osc.connect(gain);
+        osc2.connect(gain);
+        gain.connect(this.masterGain);
+        
+        osc.start();
+        osc2.start();
+        osc.stop(now + 0.5);
+        osc2.stop(now + 0.5);
+    }
+
+    // Explosion (Noise buffer)
+    playExplode() {
+        const bufferSize = this.ctx.sampleRate * 0.5; // 0.5 sec
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+        
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
+        
+        noise.connect(gain);
+        gain.connect(this.masterGain);
+        noise.start();
+    }
+}
+
+/**
+ * DATA STRUCTURES
+ */
+const NOUNS = [
+    { text: 'EL GATO', gender: 'M', number: 'S' },
+    { text: 'LA CASA', gender: 'F', number: 'S' },
+    { text: 'LOS PERROS', gender: 'M', number: 'P' },
+    { text: 'LAS FLORES', gender: 'F', number: 'P' },
+    { text: 'EL CHICO', gender: 'M', number: 'S' },
+    { text: 'LA ABUELA', gender: 'F', number: 'S' },
+    { text: 'LOS LIBROS', gender: 'M', number: 'P' },
+    { text: 'LAS MANZANAS', gender: 'F', number: 'P' },
+    { text: 'EL COCHE', gender: 'M', number: 'S' },
+    { text: 'LAS PLAYAS', gender: 'F', number: 'P' }
+];
+
+const ADJECTIVES = [
+    { root: 'Red', MS: 'ROJO', FS: 'ROJA', MP: 'ROJOS', FP: 'ROJAS' },
+    { root: 'Tall', MS: 'ALTO', FS: 'ALTA', MP: 'ALTOS', FP: 'ALTAS' },
+    { root: 'Good', MS: 'BUENO', FS: 'BUENA', MP: 'BUENOS', FP: 'BUENAS' },
+    { root: 'Small', MS: 'PEQUEÑO', FS: 'PEQUEÑA', MP: 'PEQUEÑOS', FP: 'PEQUEÑAS' },
+    { root: 'New', MS: 'NUEVO', FS: 'NUEVA', MP: 'NUEVOS', FP: 'NUEVAS' },
+    { root: 'Beautiful', MS: 'BONITO', FS: 'BONITA', MP: 'BONITOS', FP: 'BONITAS' },
+    { root: 'Fast', MS: 'RÁPIDO', FS: 'RÁPIDA', MP: 'RÁPIDOS', FP: 'RÁPIDAS' }
+];
+
+const DIFFICULTY_SETTINGS = {
+    EASY: { label: 'EASY', maxAsteroids: 4, speedMulti: 0.5, spawnRate: 0.01 },
+    MEDIUM: { label: 'MEDIUM', maxAsteroids: 8, speedMulti: 1.0, spawnRate: 0.02 },
+    HARD: { label: 'HARD', maxAsteroids: 14, speedMulti: 1.6, spawnRate: 0.04 },
+    INSANE: { label: 'INSANE', maxAsteroids: 25, speedMulti: 2.4, spawnRate: 0.08 }
+};
+
+/**
+ * GAME ENGINE
+ */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const sfx = new FunnyAudio();
+
+let GAME_WIDTH, GAME_HEIGHT;
+let currentDifficulty = DIFFICULTY_SETTINGS.MEDIUM;
+
+function resize() {
+    GAME_WIDTH = window.innerWidth;
+    GAME_HEIGHT = window.innerHeight;
+    canvas.width = GAME_WIDTH;
+    canvas.height = GAME_HEIGHT;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// Input State
+const keys = {
+    ArrowUp: false,
+    ArrowLeft: false,
+    ArrowRight: false,
+    Space: false
+};
+
+// Game State
+let gameState = {
+    running: false,
+    score: 0,
+    health: 3,
+    currentNounIndex: 0,
+    nounHits: 0, // Hits on current noun level
+    ship: null,
+    asteroids: [],
+    bullets: [],
+    particles: [],
+    lastShot: 0
+};
+
+/**
+ * CLASSES
+ */
+
+class Ship {
+    constructor() {
+        this.x = GAME_WIDTH / 2;
+        this.y = GAME_HEIGHT / 2;
+        this.r = 15;
+        this.angle = -Math.PI / 2; // Point up
+        this.rotation = 0;
+        this.thrusting = false;
+        this.vel = { x: 0, y: 0 };
+        this.friction = 0.98; // Space isn't perfect vacuum in arcade games
+        this.acc = 0.2;
+    }
+
+    update() {
+        // Rotation
+        if (keys.ArrowLeft) this.rotation = -0.08;
+        else if (keys.ArrowRight) this.rotation = 0.08;
+        else this.rotation = 0;
+        this.angle += this.rotation;
+
+        // Thrust
+        if (keys.ArrowUp) {
+            this.thrusting = true;
+            this.vel.x += Math.cos(this.angle) * this.acc;
+            this.vel.y += Math.sin(this.angle) * this.acc;
+            
+            // Generate Exhaust particles
+            if (Math.random() < 0.5) {
+                const px = this.x - Math.cos(this.angle) * this.r;
+                const py = this.y - Math.sin(this.angle) * this.r;
+                gameState.particles.push(new Particle(px, py, '#FFA500', -this.vel.x, -this.vel.y));
+            }
+            // SFX
+            if(Math.random() < 0.1) sfx.playThrust();
+        } else {
+            this.thrusting = false;
+        }
+
+        // Physics
+        this.x += this.vel.x;
+        this.y += this.vel.y;
+        this.vel.x *= this.friction;
+        this.vel.y *= this.friction;
+
+        // Screen Wrap
+        if (this.x < 0 - this.r) this.x = GAME_WIDTH + this.r;
+        if (this.x > GAME_WIDTH + this.r) this.x = 0 - this.r;
+        if (this.y < 0 - this.r) this.y = GAME_HEIGHT + this.r;
+        if (this.y > GAME_HEIGHT + this.r) this.y = 0 - this.r;
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+
+        // Draw Ship Body
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(this.r, 0); // Nose
+        ctx.lineTo(-this.r, -this.r + 5);
+        ctx.lineTo(-this.r, this.r - 5);
+        ctx.closePath();
+        ctx.stroke();
+
+        // Thruster flame
+        if (this.thrusting) {
+            ctx.fillStyle = '#ff6600';
+            ctx.beginPath();
+            ctx.moveTo(-this.r, -5);
+            ctx.lineTo(-this.r - 15 - Math.random() * 10, 0);
+            ctx.lineTo(-this.r, 5);
+            ctx.fill();
+        }
+
+        ctx.restore();
+
+        // Draw Label (Current Noun) - Always upright
+        // We draw it slightly below the ship
+        const noun = NOUNS[gameState.currentNounIndex];
+        ctx.font = 'bold 16px "Fredoka"';
+        ctx.fillStyle = '#22d3ee'; // Cyan
+        ctx.textAlign = 'center';
+        ctx.shadowColor = 'black';
+        ctx.shadowBlur = 4;
+        ctx.fillText(noun.text, this.x, this.y + 40);
+        ctx.shadowBlur = 0;
+    }
+}
+
+class Asteroid {
+    constructor(isCorrect) {
+        // Random Position (away from ship)
+        do {
+            this.x = Math.random() * GAME_WIDTH;
+            this.y = Math.random() * GAME_HEIGHT;
+        } while (Math.hypot(this.x - gameState.ship.x, this.y - gameState.ship.y) < 200);
+
+        this.r = 35 + Math.random() * 20; // Radius
+        this.vertices = Math.floor(Math.random() * 5) + 7; // 7-12 vertices
+        this.offsets = [];
+        for(let i=0; i<this.vertices; i++) {
+            this.offsets.push(Math.random() * 0.4 + 0.8); // 0.8 to 1.2 radius multiplier
+        }
+
+        const angle = Math.random() * Math.PI * 2;
+        const speed = (Math.random() * 1.5 + 0.5) * currentDifficulty.speedMulti;
+        this.vel = {
+            x: Math.cos(angle) * speed,
+            y: Math.sin(angle) * speed
+        };
+        this.rotSpeed = (Math.random() - 0.5) * 0.05;
+        this.angle = 0;
+
+        // Content
+        this.adjective = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+        const targetNoun = NOUNS[gameState.currentNounIndex];
+        
+        // Determine text and correctness
+        const gender = targetNoun.gender; // 'M' or 'F'
+        const number = targetNoun.number; // 'S' or 'P'
+        const key = gender + number; // e.g. "MS"
+
+        if (isCorrect) {
+            this.text = this.adjective[key];
+            this.isTarget = true;
+            this.color = '#fff';
+        } else {
+            // Pick a distractor key
+            const keys = ['MS', 'FS', 'MP', 'FP'];
+            let wrongKey = keys[Math.floor(Math.random() * keys.length)];
+            // Ensure it's actually wrong (simple check) or use different adjective
+            // For simplicity, just pick a random form. If it accidentally matches (rare with small set), we mark it false anyway for game logic
+            // but to be fair to player, let's pick a different adjective if we are forced to be a distractor
+            if (wrongKey === key) {
+               // It's the right form, so we must pick a DIFFERENT adjective to be a distractor
+               let newAdj;
+               do {
+                 newAdj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+               } while (newAdj === this.adjective);
+               this.adjective = newAdj;
+               this.text = newAdj[wrongKey]; // Random form of different adj
+            } else {
+               this.text = this.adjective[wrongKey]; // Wrong form of same adj
+            }
+            this.isTarget = false;
+            this.color = '#aaa';
+        }
+    }
+
+    update() {
+        this.x += this.vel.x;
+        this.y += this.vel.y;
+        this.angle += this.rotSpeed;
+
+        if (this.x < 0 - this.r) this.x = GAME_WIDTH + this.r;
+        if (this.x > GAME_WIDTH + this.r) this.x = 0 - this.r;
+        if (this.y < 0 - this.r) this.y = GAME_HEIGHT + this.r;
+        if (this.y > GAME_HEIGHT + this.r) this.y = 0 - this.r;
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i < this.vertices; i++) {
+            const theta = (i / this.vertices) * Math.PI * 2;
+            const rad = this.r * this.offsets[i];
+            const x = Math.cos(theta) * rad;
+            const y = Math.sin(theta) * rad;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.stroke();
+
+        ctx.restore();
+
+        // Draw Text (Upright, not rotated with asteroid)
+        ctx.font = 'bold 14px "Press Start 2P"';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = this.color;
+        ctx.fillText(this.text, this.x, this.y);
+    }
+}
+
+class Bullet {
+    constructor(ship) {
+        this.x = ship.x + Math.cos(ship.angle) * ship.r;
+        this.y = ship.y + Math.sin(ship.angle) * ship.r;
+        this.vel = {
+            x: Math.cos(ship.angle) * 7,
+            y: Math.sin(ship.angle) * 7
+        };
+        this.life = 60; // Frames
+    }
+
+    update() {
+        this.x += this.vel.x;
+        this.y += this.vel.y;
+        this.life--;
+    }
+
+    draw() {
+        ctx.fillStyle = '#ffff00';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+class Particle {
+    constructor(x, y, color, vx, vy) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.vel = {
+            x: (Math.random() - 0.5) * 3 + (vx || 0),
+            y: (Math.random() - 0.5) * 3 + (vy || 0)
+        };
+        this.life = 1.0;
+        this.decay = Math.random() * 0.03 + 0.02;
+    }
+
+    update() {
+        this.x += this.vel.x;
+        this.y += this.vel.y;
+        this.life -= this.decay;
+    }
+
+    draw() {
+        ctx.globalAlpha = Math.max(0, this.life);
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, 3, 3);
+        ctx.globalAlpha = 1.0;
+    }
+}
+
+/**
+ * LOGIC HELPERS
+ */
+function updateHUD() {
+    document.getElementById('scoreDisplay').innerText = gameState.score;
+    document.getElementById('healthDisplay').innerText = '❤️'.repeat(Math.max(0, gameState.health));
+    
+    const noun = NOUNS[gameState.currentNounIndex];
+    document.getElementById('currentNounDisplay').innerText = noun.text;
+    document.getElementById('currentNounMeta').innerText = 
+        `(${noun.gender === 'M' ? 'Masc' : 'Fem'} / ${noun.number === 'S' ? 'Sing' : 'Plu'})`;
+}
+
+function spawnAsteroid() {
+    // Smart spawning: Ensure at least one correct target exists
+    const hasTarget = gameState.asteroids.some(a => a.isTarget);
+    
+    // If no target, force spawn correct one. Else, 50/50 chance
+    const spawnCorrect = !hasTarget || Math.random() > 0.5;
+    
+    gameState.asteroids.push(new Asteroid(spawnCorrect));
+}
+
+function createExplosion(x, y, color) {
+    for(let i=0; i<15; i++) {
+        gameState.particles.push(new Particle(x, y, color));
+    }
+}
+
+function gameOver() {
+    gameState.running = false;
+    document.getElementById('gameOverScreen').classList.remove('hidden');
+    document.getElementById('finalScore').innerText = gameState.score;
+    sfx.playWrong();
+}
+
+function nextLevel() {
+    gameState.nounHits = 0;
+    // Pick new random noun different from current
+    let newIndex;
+    do {
+        newIndex = Math.floor(Math.random() * NOUNS.length);
+    } while (newIndex === gameState.currentNounIndex && NOUNS.length > 1);
+    
+    gameState.currentNounIndex = newIndex;
+    
+    // Clear asteroids to prevent confusion
+    createExplosion(GAME_WIDTH/2, GAME_HEIGHT/2, '#fff'); // Flash
+    gameState.asteroids = [];
+    
+    // Spawn immediate target
+    gameState.asteroids.push(new Asteroid(true));
+    
+    updateHUD();
+    sfx.playCorrect();
+}
+
+/**
+ * MAIN LOOP
+ */
+function update() {
+    if (!gameState.running) return;
+
+    ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+    // Spawn Logic based on Difficulty
+    if (gameState.asteroids.length < currentDifficulty.maxAsteroids && Math.random() < currentDifficulty.spawnRate) {
+        spawnAsteroid();
+    }
+
+    // Ship
+    gameState.ship.update();
+    gameState.ship.draw();
+    
+    // Ship vs Asteroid Collision (New Logic)
+    for (let i = gameState.asteroids.length - 1; i >= 0; i--) {
+        const a = gameState.asteroids[i];
+        const dist = Math.hypot(gameState.ship.x - a.x, gameState.ship.y - a.y);
+        
+        // Check physical collision
+        if (dist < gameState.ship.r + a.r) {
+            if (a.isTarget) {
+                // Hitting the MATCHED asteroid damages ship
+                createExplosion(gameState.ship.x, gameState.ship.y, '#ff0000');
+                sfx.playExplode();
+                gameState.health--;
+                
+                // Shake
+                document.body.classList.remove('shake');
+                void document.body.offsetWidth; 
+                document.body.classList.add('shake');
+
+                // Destroy asteroid so it doesn't hit twice
+                gameState.asteroids.splice(i, 1);
+                continue; // Skip rest of loop for this asteroid
+            } else {
+                // Non-matched asteroid: NO DAMAGE (User req)
+                // We just let it pass through (Ghost mode)
+            }
+        }
+    }
+
+    // Bullets
+    for (let i = gameState.bullets.length - 1; i >= 0; i--) {
+        const b = gameState.bullets[i];
+        b.update();
+        b.draw();
+
+        // Check Collision with Asteroids
+        let hit = false;
+        for (let j = gameState.asteroids.length - 1; j >= 0; j--) {
+            const a = gameState.asteroids[j];
+            const dist = Math.hypot(b.x - a.x, b.y - a.y);
+            
+            if (dist < a.r) {
+                // COLLISION
+                createExplosion(a.x, a.y, a.isTarget ? '#00ff00' : '#ff0000');
+                
+                if (a.isTarget) {
+                    // CORRECT
+                    sfx.playCorrect();
+                    gameState.score += 100;
+                    gameState.nounHits++;
+                    if (gameState.nounHits >= 3) {
+                        nextLevel();
+                    }
+                } else {
+                    // WRONG
+                    sfx.playWrong(); // Fog Horn
+                    sfx.playExplode(); // Extra noise
+                    gameState.score -= 50;
+                    gameState.health--;
+                    // Shake Effect
+                    document.body.classList.remove('shake');
+                    void document.body.offsetWidth; // trigger reflow
+                    document.body.classList.add('shake');
+                }
+
+                gameState.asteroids.splice(j, 1);
+                hit = true;
+                break;
+            }
+        }
+
+        if (hit || b.life <= 0) {
+            gameState.bullets.splice(i, 1);
+        }
+    }
+
+    // Asteroids
+    gameState.asteroids.forEach(a => {
+        a.update();
+        a.draw();
+    });
+
+    // Particles
+    for (let i = gameState.particles.length - 1; i >= 0; i--) {
+        const p = gameState.particles[i];
+        p.update();
+        p.draw();
+        if (p.life <= 0) gameState.particles.splice(i, 1);
+    }
+
+    // Shoot Logic
+    if (keys.Space) {
+        const now = Date.now();
+        if (now - gameState.lastShot > 300) { // Rate limit
+            gameState.bullets.push(new Bullet(gameState.ship));
+            sfx.playShoot();
+            gameState.lastShot = now;
+        }
+    }
+
+    updateHUD();
+
+    if (gameState.health <= 0) {
+        gameOver();
+    } else {
+        requestAnimationFrame(update);
+    }
+}
+
+/**
+ * INITIALIZATION
+ */
+function startGame(difficultyKey = 'MEDIUM') {
+    sfx.resume(); // Ensure AudioContext is ready
+    document.getElementById('startScreen').classList.add('hidden');
+    document.getElementById('gameOverScreen').classList.add('hidden');
+    
+    currentDifficulty = DIFFICULTY_SETTINGS[difficultyKey];
+
+    gameState = {
+        running: true,
+        score: 0,
+        health: 3,
+        currentNounIndex: Math.floor(Math.random() * NOUNS.length),
+        nounHits: 0,
+        ship: new Ship(),
+        asteroids: [],
+        bullets: [],
+        particles: [],
+        lastShot: 0
+    };
+
+    // Initial Spawns
+    for(let i=0; i<4; i++) spawnAsteroid();
+
+    updateHUD();
+    update();
+}
+
+/**
+ * EVENT LISTENERS
+ */
+window.addEventListener('keydown', e => {
+    if (e.code === 'ArrowUp') keys.ArrowUp = true;
+    if (e.code === 'ArrowLeft') keys.ArrowLeft = true;
+    if (e.code === 'ArrowRight') keys.ArrowRight = true;
+    if (e.code === 'Space') keys.Space = true;
+});
+
+window.addEventListener('keyup', e => {
+    if (e.code === 'ArrowUp') keys.ArrowUp = false;
+    if (e.code === 'ArrowLeft') keys.ArrowLeft = false;
+    if (e.code === 'ArrowRight') keys.ArrowRight = false;
+    if (e.code === 'Space') keys.Space = false;
+});
+
+// Mobile Controls
+const setupMobileBtn = (id, key) => {
+    const btn = document.getElementById(id);
+    btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
+    btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
+    btn.addEventListener('mousedown', (e) => { e.preventDefault(); keys[key] = true; }); // For mouse testing on desktop
+    btn.addEventListener('mouseup', (e) => { e.preventDefault(); keys[key] = false; });
+};
+
+setupMobileBtn('btn-up', 'ArrowUp');
+setupMobileBtn('btn-left', 'ArrowLeft');
+setupMobileBtn('btn-right', 'ArrowRight');
+setupMobileBtn('btn-fire', 'Space');
+
+</script>
+</body>
+</html>

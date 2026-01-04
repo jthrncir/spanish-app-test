@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Búsqueda de la Tarea Perdida</title>
+    <style>
+        /* --- CSS STYLING --- */
+        :root {
+            --primary-color: #FFD700; /* School Bus Yellow */
+            --secondary-color: #4ECDC4; /* Goofy Cyan */
+            --text-color: #2C3E50;
+            --border-color: #000000;
+            --bg-color: #f0f4f8;
+            --font-main: 'Verdana', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            /* Cartoon pattern background */
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* Main Game Container - Retro Computer/Book Style */
+        #game-container {
+            background-color: white;
+            width: 100%;
+            max-width: 600px;
+            border: 4px solid var(--border-color);
+            border-radius: 15px;
+            box-shadow: 10px 10px 0px rgba(0,0,0,0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header Area */
+        header {
+            background-color: var(--secondary-color);
+            padding: 15px;
+            border-bottom: 4px solid var(--border-color);
+            text-align: center;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: white;
+            text-shadow: 2px 2px 0 #000;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Story Content Area */
+        #story-area {
+            padding: 30px;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        #visual-emoji {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+
+        #story-text {
+            font-size: 1.4rem;
+            line-height: 1.6;
+            color: var(--text-color);
+            margin-bottom: 20px;
+        }
+
+        /* Choices Area */
+        #choices-container {
+            background-color: #eee;
+            padding: 20px;
+            border-top: 4px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* Buttons */
+        button {
+            background-color: var(--primary-color);
+            border: 3px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 1.1rem;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+            text-align: left;
+            position: relative;
+        }
+
+        button:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 4px 4px 0 var(--border-color);
+            background-color: #ffe44d;
+        }
+
+        button:active {
+            transform: translate(0, 0);
+            box-shadow: 0 0 0;
+        }
+
+        /* Animations */
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Utility for bad/good endings */
+        .ending-bad { color: #c0392b; }
+        .ending-good { color: #27ae60; }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <header>
+            <h1>La Búsqueda de la Tarea Perdida</h1>
+        </header>
+
+        <div id="story-area">
+            <div id="visual-emoji">🎒</div>
+            <p id="story-text">Cargando la aventura...</p>
+        </div>
+
+        <div id="choices-container">
+            <!-- Buttons will be injected here by JS -->
+            <button onclick="startGame()">Comenzar (Click para habilitar Audio)</button>
+        </div>
+    </div>
+
+    <script>
+        /* * --- DATA STRUCTURE (THE STORY ENGINE) --- 
+         * All game logic is contained in this object. 
+         * Keys are node IDs.
+         */
+        const storyData = {
+            start: {
+                text: "¡Te despiertas! Es lunes. ¡Oh no! Tu tarea de español no está en tu mochila. ¿Dónde está?",
+                emoji: "😱",
+                soundOnEnter: 'sfx_alarm_clock_panic',
+                choices: [
+                    { text: "Mirar debajo de la cama", nextNode: 'under_bed' },
+                    { text: "Correr a la cocina", nextNode: 'kitchen' }
+                ]
+            },
+            under_bed: {
+                text: "Miras debajo de la cama. Está muy oscuro. Tocas algo peludo...",
+                emoji: "🛏️",
+                soundOnEnter: 'sfx_spooky',
+                choices: [
+                    { text: "Gritar y correr", nextNode: 'start' },
+                    { text: "Sacar la cosa peluda", nextNode: 'smell_sock_ending' }
+                ]
+            },
+            smell_sock_ending: {
+                text: "¡Es un calcetín sucio! Huele a queso podrido. Te desmayas. Fin del juego.",
+                emoji: "🧦",
+                soundOnEnter: 'sfx_sad_trombone',
+                choices: [
+                    { text: "Intentar otra vez", nextNode: 'start' }
+                ]
+            },
+            kitchen: {
+                text: "Tu mamá está en la cocina. Ella está cocinando panqueques azules. ¡Qué raro!",
+                emoji: "🥞",
+                soundOnEnter: 'sfx_slip',
+                choices: [
+                    { text: "Comer los panqueques", nextNode: 'eat_pancakes' },
+                    { text: "Preguntar a mamá por la tarea", nextNode: 'ask_mom' }
+                ]
+            },
+            eat_pancakes: {
+                text: "Comes los panqueques. Ahora tu cara es azul. ¡No puedes ir a la escuela así! Fin del juego.",
+                emoji: "🥶",
+                soundOnEnter: 'sfx_sad_trombone',
+                choices: [
+                    { text: "Intentar otra vez", nextNode: 'start' }
+                ]
+            },
+            ask_mom: {
+                text: "Mamá dice: 'Vi a Capitán Bigotes con un papel en la boca'. Capitán Bigotes es tu perro.",
+                emoji: "👩‍🍳",
+                soundOnEnter: 'sfx_animal_surprise',
+                choices: [
+                    { text: "Buscar al perro en el jardín", nextNode: 'garden' }
+                ]
+            },
+            garden: {
+                text: "En el jardín, el perro tiene tu tarea. Él te mira con ojos serios.",
+                emoji: "🐶",
+                soundOnEnter: 'sfx_spooky',
+                choices: [
+                    { text: "Luchar con el perro", nextNode: 'fight_dog' },
+                    { text: "Hablar con el perro", nextNode: 'talk_dog' }
+                ]
+            },
+            fight_dog: {
+                text: "El perro sabe Karate. Él gana. Tú pierdes. ¡Ay!",
+                emoji: "🥋",
+                soundOnEnter: 'sfx_fail',
+                choices: [
+                    { text: "Intentar otra vez", nextNode: 'start' }
+                ]
+            },
+            talk_dog: {
+                text: "Dices: 'Perro malo, dame la tarea'. El perro responde en español perfecto: 'Solo si me das una galleta'.",
+                emoji: "🗣️",
+                soundOnEnter: 'sfx_victory', // A surprising moment!
+                choices: [
+                    { text: "Dar una galleta", nextNode: 'victory' },
+                    { text: "No tengo galletas", nextNode: 'no_cookies' }
+                ]
+            },
+            no_cookies: {
+                text: "El perro come tu tarea. La profesora no va a creer esto.",
+                emoji: "🍽️",
+                soundOnEnter: 'sfx_sad_trombone',
+                choices: [
+                    { text: "Reiniciar", nextNode: 'start' }
+                ]
+            },
+            victory: {
+                text: "¡El perro te da la tarea! Corres a la escuela y sacas una A+. ¡Victoria!",
+                emoji: "🏆",
+                soundOnEnter: 'sfx_triumph',
+                choices: [
+                    { text: "Jugar de nuevo", nextNode: 'start' }
+                ]
+            }
+        };
+
+        /* * --- AUDIO ENGINE (Synthesizer) ---
+         * Since we cannot rely on external MP3 files in this environment,
+         * we use the Web Audio API to synthesize sounds (Beeps, Boops, Slides).
+         */
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSynthesizedSound(type) {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'sfx_alarm_clock_panic') {
+                // High pitched beeping
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.setValueAtTime(800, now + 0.1);
+                osc.frequency.setValueAtTime(0, now + 0.11);
+                osc.frequency.setValueAtTime(800, now + 0.2);
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                osc.start(now);
+                osc.stop(now + 0.4);
+
+            } else if (type === 'sfx_sad_trombone') {
+                // Descending slide
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.linearRampToValueAtTime(100, now + 1);
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.linearRampToValueAtTime(0.01, now + 1);
+                osc.start(now);
+                osc.stop(now + 1);
+
+            } else if (type === 'sfx_victory' || type === 'sfx_triumph') {
+                // Major arpeggio
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(440, now); // A4
+                osc.frequency.setValueAtTime(554, now + 0.1); // C#5
+                osc.frequency.setValueAtTime(659, now + 0.2); // E5
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+                osc.start(now);
+                osc.stop(now + 0.6);
+
+            } else if (type === 'sfx_spooky') {
+                // Theremin wobble
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.linearRampToValueAtTime(550, now + 0.2);
+                osc.frequency.linearRampToValueAtTime(650, now + 0.5);
+                gainNode.gain.setValueAtTime(0.1, now);
+                osc.start(now);
+                osc.stop(now + 1.5);
+            } else {
+                // Default "blip" for generic interactions
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, now);
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            }
+        }
+
+        /* * --- GAME LOGIC --- 
+         */
+        const textElement = document.getElementById('story-text');
+        const emojiElement = document.getElementById('visual-emoji');
+        const choicesContainer = document.getElementById('choices-container');
+
+        // Function called to start the game initially
+        function startGame() {
+            initAudio(); // Initialize audio context on first user interaction
+            showNode('start');
+        }
+
+        function showNode(nodeId) {
+            const node = storyData[nodeId];
+
+            if (!node) {
+                console.error("Node not found:", nodeId);
+                return;
+            }
+
+            // 1. Play Sound
+            if (node.soundOnEnter) {
+                playSynthesizedSound(node.soundOnEnter);
+            }
+
+            // 2. Update Text & visual with simple animation reset
+            textElement.classList.remove('fade-in');
+            emojiElement.classList.remove('fade-in');
+            
+            // Trigger reflow to restart animation
+            void textElement.offsetWidth; 
+            
+            textElement.textContent = node.text;
+            emojiElement.textContent = node.emoji || "❓"; // Fallback emoji
+            
+            textElement.classList.add('fade-in');
+            emojiElement.classList.add('fade-in');
+
+            // 3. Clear old buttons
+            choicesContainer.innerHTML = '';
+
+            // 4. Generate new buttons
+            node.choices.forEach(choice => {
+                const button = document.createElement('button');
+                button.textContent = choice.text;
+                
+                // Add accessible label
+                button.setAttribute('aria-label', choice.text);
+
+                button.addEventListener('click', () => {
+                    // Slight interaction sound for clicking
+                    playSynthesizedSound('click');
+                    showNode(choice.nextNode);
+                });
+
+                choicesContainer.appendChild(button);
+            });
+        }
+    </script>
+</body>
+</html>

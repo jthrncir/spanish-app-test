@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¿Quién es el Ladrón? 🔍</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Patrick+Hand&family=Creepster&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --mystery-purple: #2d1b4e;
+            --deep-purple: #1a0f2e;
+            --spooky-green: #4ade80;
+            --accent-orange: #ff6b35;
+            --accent-yellow: #ffd23f;
+            --card-bg: #f5f0e1;
+            --card-shadow: rgba(0, 0, 0, 0.4);
+            --text-dark: #1a1a2e;
+            --bubble-bg: #fffef0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Patrick Hand', cursive;
+            background: var(--deep-purple);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated background with mystery pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(74, 222, 128, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 107, 53, 0.1) 0%, transparent 50%),
+                repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 20px,
+                    rgba(255, 255, 255, 0.02) 20px,
+                    rgba(255, 255, 255, 0.02) 40px
+                );
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Floating question marks animation */
+        .floating-symbols {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .floating-symbols span {
+            position: absolute;
+            font-size: 2rem;
+            opacity: 0.1;
+            animation: float 15s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.1; }
+            90% { opacity: 0.1; }
+            100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 30px 20px;
+            position: relative;
+        }
+
+        h1 {
+            font-family: 'Creepster', cursive;
+            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            color: var(--accent-yellow);
+            text-shadow: 
+                4px 4px 0 var(--accent-orange),
+                8px 8px 0 rgba(0, 0, 0, 0.3);
+            letter-spacing: 3px;
+            animation: titlePulse 3s ease-in-out infinite;
+            margin-bottom: 10px;
+        }
+
+        @keyframes titlePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .subtitle {
+            font-family: 'Bangers', cursive;
+            font-size: 1.4rem;
+            color: var(--spooky-green);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .mascot-alert {
+            background: linear-gradient(135deg, #ff4757, #ff6b81);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 15px;
+            margin: 20px auto;
+            max-width: 500px;
+            font-size: 1.2rem;
+            box-shadow: 0 8px 25px rgba(255, 71, 87, 0.4);
+            animation: alertShake 0.5s ease-in-out;
+            border: 3px dashed rgba(255, 255, 255, 0.5);
+        }
+
+        @keyframes alertShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px) rotate(-1deg); }
+            75% { transform: translateX(5px) rotate(1deg); }
+        }
+
+        /* Section Titles */
+        .section-title {
+            font-family: 'Bangers', cursive;
+            font-size: 2rem;
+            color: var(--accent-yellow);
+            text-align: center;
+            margin: 30px 0 20px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .section-title::before,
+        .section-title::after {
+            content: '';
+            flex: 1;
+            max-width: 100px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--accent-orange), transparent);
+        }
+
+        /* Witnesses Section */
+        .witnesses-section {
+            background: linear-gradient(180deg, rgba(45, 27, 78, 0.8), rgba(26, 15, 46, 0.9));
+            border-radius: 25px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 3px solid var(--spooky-green);
+            box-shadow: 
+                0 0 30px rgba(74, 222, 128, 0.2),
+                inset 0 0 50px rgba(0, 0, 0, 0.3);
+        }
+
+        .witnesses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .witness-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 25px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            box-shadow: 
+                0 10px 30px var(--card-shadow),
+                inset 0 -5px 20px rgba(0, 0, 0, 0.1);
+            border: 3px solid transparent;
+        }
+
+        .witness-card:hover {
+            transform: translateY(-10px) scale(1.05);
+            border-color: var(--accent-orange);
+            box-shadow: 
+                0 20px 40px var(--card-shadow),
+                0 0 20px rgba(255, 107, 53, 0.3);
+        }
+
+        .witness-card.revealed {
+            border-color: var(--spooky-green);
+            background: linear-gradient(135deg, #e8f5e9, var(--card-bg));
+        }
+
+        .witness-emoji {
+            font-size: 4rem;
+            display: block;
+            margin-bottom: 10px;
+            filter: drop-shadow(3px 3px 5px rgba(0, 0, 0, 0.3));
+            transition: transform 0.3s ease;
+        }
+
+        .witness-card:hover .witness-emoji {
+            transform: scale(1.1) rotate(-5deg);
+            animation: wiggle 0.5s ease-in-out;
+        }
+
+        @keyframes wiggle {
+            0%, 100% { transform: scale(1.1) rotate(-5deg); }
+            25% { transform: scale(1.1) rotate(5deg); }
+            75% { transform: scale(1.1) rotate(-5deg); }
+        }
+
+        .witness-name {
+            font-family: 'Bangers', cursive;
+            font-size: 1.3rem;
+            color: var(--text-dark);
+            margin-bottom: 5px;
+        }
+
+        .witness-role {
+            font-size: 0.9rem;
+            color: #666;
+            font-style: italic;
+        }
+
+        .click-hint {
+            font-size: 0.85rem;
+            color: var(--accent-orange);
+            margin-top: 10px;
+            opacity: 0.8;
+        }
+
+        .witness-card.revealed .click-hint {
+            display: none;
+        }
+
+        /* Speech Bubble */
+        .speech-bubble {
+            position: absolute;
+            bottom: calc(100% + 15px);
+            left: 50%;
+            transform: translateX(-50%) scale(0);
+            background: var(--bubble-bg);
+            padding: 15px 20px;
+            border-radius: 20px;
+            min-width: 220px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            border: 3px solid var(--mystery-purple);
+        }
+
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 15px solid transparent;
+            border-top-color: var(--mystery-purple);
+            border-bottom: none;
+        }
+
+        .speech-bubble::before {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 12px solid transparent;
+            border-top-color: var(--bubble-bg);
+            border-bottom: none;
+            z-index: 1;
+        }
+
+        .speech-bubble.visible {
+            transform: translateX(-50%) scale(1);
+            opacity: 1;
+        }
+
+        .speech-bubble p {
+            font-size: 1.1rem;
+            color: var(--text-dark);
+            line-height: 1.4;
+        }
+
+        .speech-bubble .spanish-clue {
+            font-weight: bold;
+            color: var(--mystery-purple);
+            font-size: 1.2rem;
+            display: block;
+            margin-top: 8px;
+            padding: 8px;
+            background: rgba(45, 27, 78, 0.1);
+            border-radius: 10px;
+        }
+
+        /* Suspects Section */
+        .suspects-section {
+            background: linear-gradient(180deg, rgba(26, 15, 46, 0.9), rgba(45, 27, 78, 0.8));
+            border-radius: 25px;
+            padding: 30px;
+            border: 3px solid var(--accent-orange);
+            box-shadow: 
+                0 0 30px rgba(255, 107, 53, 0.2),
+                inset 0 0 50px rgba(0, 0, 0, 0.3);
+        }
+
+        .suspects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .suspect-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 25px 20px;
+            text-align: center;
+            position: relative;
+            box-shadow: 
+                0 10px 30px var(--card-shadow),
+                inset 0 -5px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 4px solid #ddd;
+            overflow: hidden;
+        }
+
+        .suspect-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 8px;
+            background: repeating-linear-gradient(
+                90deg,
+                #333 0px,
+                #333 10px,
+                #fff 10px,
+                #fff 20px
+            );
+        }
+
+        .suspect-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 
+                0 15px 40px var(--card-shadow),
+                0 0 20px rgba(255, 210, 63, 0.3);
+        }
+
+        .suspect-number {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: var(--mystery-purple);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Bangers', cursive;
+            font-size: 1.1rem;
+        }
+
+        .suspect-avatar {
+            font-size: 4rem;
+            margin: 15px 0;
+            filter: drop-shadow(3px 3px 5px rgba(0, 0, 0, 0.3));
+        }
+
+        .suspect-name {
+            font-family: 'Bangers', cursive;
+            font-size: 1.5rem;
+            color: var(--text-dark);
+            margin-bottom: 15px;
+        }
+
+        .suspect-attributes {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 20px;
+            font-size: 1rem;
+        }
+
+        .attribute {
+            background: rgba(45, 27, 78, 0.1);
+            padding: 6px 12px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .attribute-icon {
+            font-size: 1.2rem;
+        }
+
+        /* Accuse Button */
+        .accuse-btn {
+            background: linear-gradient(135deg, #ff4757, #c0392b);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-family: 'Bangers', cursive;
+            font-size: 1.3rem;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(255, 71, 87, 0.4);
+            letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .accuse-btn::before {
+            content: '👆';
+            position: absolute;
+            left: -30px;
+            transition: left 0.3s ease;
+        }
+
+        .accuse-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(255, 71, 87, 0.6);
+            padding-left: 45px;
+        }
+
+        .accuse-btn:hover::before {
+            left: 15px;
+        }
+
+        .accuse-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s ease;
+        }
+
+        .modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            padding: 50px;
+            border-radius: 30px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            transform: scale(0.5) rotate(-10deg);
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .modal-overlay.visible .modal-content {
+            transform: scale(1) rotate(0deg);
+        }
+
+        .modal-content.win {
+            border: 5px solid var(--spooky-green);
+        }
+
+        .modal-content.lose {
+            border: 5px solid #ff4757;
+        }
+
+        .modal-emoji {
+            font-size: 6rem;
+            display: block;
+            margin-bottom: 20px;
+            animation: bounce 0.6s ease infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .modal-title {
+            font-family: 'Creepster', cursive;
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .modal-content.win .modal-title {
+            color: var(--spooky-green);
+        }
+
+        .modal-content.lose .modal-title {
+            color: #ff4757;
+        }
+
+        .modal-message {
+            font-size: 1.3rem;
+            color: var(--text-dark);
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        .play-again-btn {
+            background: linear-gradient(135deg, var(--spooky-green), #22c55e);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-family: 'Bangers', cursive;
+            font-size: 1.5rem;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(74, 222, 128, 0.4);
+            letter-spacing: 2px;
+        }
+
+        .play-again-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 30px rgba(74, 222, 128, 0.6);
+        }
+
+        /* Confetti animation for win */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--accent-yellow);
+            animation: confetti-fall 3s ease-in-out infinite;
+        }
+
+        @keyframes confetti-fall {
+            0% { transform: translateY(-100px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(400px) rotate(720deg); opacity: 0; }
+        }
+
+        /* Instructions Footer */
+        .instructions {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+        }
+
+        .instructions h3 {
+            font-family: 'Bangers', cursive;
+            color: var(--accent-yellow);
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .instructions p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .instructions .step {
+            display: inline-block;
+            background: var(--mystery-purple);
+            color: var(--accent-yellow);
+            padding: 5px 12px;
+            border-radius: 20px;
+            margin: 5px;
+            font-family: 'Bangers', cursive;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .witness-card, .suspect-card {
+                padding: 20px 15px;
+            }
+
+            .witness-emoji, .suspect-avatar {
+                font-size: 3rem;
+            }
+
+            .speech-bubble {
+                min-width: 180px;
+                font-size: 0.95rem;
+            }
+
+            .modal-content {
+                padding: 30px;
+            }
+
+            .modal-emoji {
+                font-size: 4rem;
+            }
+        }
+
+        /* Sound toggle button */
+        .sound-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--mystery-purple);
+            border: 2px solid var(--accent-yellow);
+            color: var(--accent-yellow);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.5rem;
+            z-index: 500;
+            transition: all 0.3s ease;
+        }
+
+        .sound-toggle:hover {
+            transform: scale(1.1);
+            background: var(--accent-yellow);
+            color: var(--mystery-purple);
+        }
+
+        /* Loading spinner */
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 50px;
+            color: var(--accent-yellow);
+        }
+
+        .loading-spinner {
+            font-size: 4rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating background symbols -->
+    <div class="floating-symbols" id="floatingSymbols"></div>
+
+    <!-- Sound Toggle -->
+    <button class="sound-toggle" id="soundToggle" title="Toggle Sound">🔊</button>
+
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>¿Quién es el Ladrón?</h1>
+            <p class="subtitle">🔍 Un Misterio en Español 🔍</p>
+            <div class="mascot-alert">
+                🚨 ¡ALERTA! ¡Alguien robó la mascota de la clase! 🐹
+            </div>
+        </header>
+
+        <!-- Witnesses Section -->
+        <section class="witnesses-section">
+            <h2 class="section-title">👀 Los Testigos 👀</h2>
+            <div class="witnesses-grid" id="witnessesGrid">
+                <!-- Witnesses will be rendered here -->
+            </div>
+        </section>
+
+        <!-- Suspects Section -->
+        <section class="suspects-section">
+            <h2 class="section-title">🚔 Los Sospechosos 🚔</h2>
+            <div class="suspects-grid" id="suspectsGrid">
+                <!-- Suspects will be rendered here -->
+            </div>
+        </section>
+
+        <!-- Instructions -->
+        <div class="instructions">
+            <h3>📋 ¿Cómo Jugar?</h3>
+            <p>
+                <span class="step">1️⃣ Haz clic en los testigos</span>
+                <span class="step">2️⃣ Lee las pistas en español</span>
+                <span class="step">3️⃣ ¡Acusa al ladrón!</span>
+            </p>
+        </div>
+    </div>
+
+    <!-- Result Modal -->
+    <div class="modal-overlay" id="resultModal">
+        <div class="modal-content" id="modalContent">
+            <span class="modal-emoji" id="modalEmoji">🎉</span>
+            <h2 class="modal-title" id="modalTitle">¡Resultado!</h2>
+            <p class="modal-message" id="modalMessage">Mensaje aquí</p>
+            <button class="play-again-btn" id="playAgainBtn">🔄 Jugar de Nuevo</button>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // GAME CONFIGURATION & DATA
+        // ==========================================
+        
+        const HAIR_COLORS = ['rubio', 'negro', 'marrón'];
+        const ACCESSORIES = ['gafas', 'sombrero', 'nada'];
+        const SHIRT_COLORS = ['rojo', 'azul', 'verde'];
+        const GENDERS = ['M', 'F'];
+        
+        const NAMES_MALE = ['Carlos', 'Miguel', 'Pedro', 'Diego', 'Luis', 'Andrés', 'Pablo', 'Javier'];
+        const NAMES_FEMALE = ['María', 'Sofía', 'Ana', 'Lucía', 'Carmen', 'Elena', 'Rosa', 'Isabel'];
+
+        const WITNESSES = [
+            { id: 1, emoji: '👵', name: 'Abuela Rosa', role: 'La vecina curiosa', clueType: 'hair_or_gender' },
+            { id: 2, emoji: '👮', name: 'Oficial García', role: 'El policía observador', clueType: 'clothing' },
+            { id: 3, emoji: '👨‍🏫', name: 'Profesor Martínez', role: 'El maestro atento', clueType: 'accessory' }
+        ];
+
+        // ==========================================
+        // SOUND SYSTEM (with placeholders)
+        // ==========================================
+        
+        let soundEnabled = true;
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        // Simple synthesized sounds using Web Audio API
+        function playSound(type) {
+            if (!soundEnabled) return;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            switch(type) {
+                case 'click_witness':
+                    // Quick "ahem" sound
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.15);
+                    break;
+                    
+                case 'clue_reveal':
+                    // Typewriter-like click
+                    oscillator.type = 'square';
+                    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                    gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.05);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.05);
+                    
+                    // Second click
+                    setTimeout(() => {
+                        const osc2 = audioContext.createOscillator();
+                        const gain2 = audioContext.createGain();
+                        osc2.connect(gain2);
+                        gain2.connect(audioContext.destination);
+                        osc2.type = 'square';
+                        osc2.frequency.setValueAtTime(600, audioContext.currentTime);
+                        gain2.gain.setValueAtTime(0.15, audioContext.currentTime);
+                        gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.05);
+                        osc2.start(audioContext.currentTime);
+                        osc2.stop(audioContext.currentTime + 0.05);
+                    }, 80);
+                    break;
+                    
+                case 'dramatic_shock':
+                    // DUN DUN DUNNN
+                    playNote(150, 0, 0.2, 'sawtooth');
+                    playNote(120, 0.25, 0.2, 'sawtooth');
+                    playNote(80, 0.5, 0.5, 'sawtooth');
+                    break;
+                    
+                case 'win':
+                    // Happy ascending notes
+                    playNote(523, 0, 0.15, 'sine');      // C5
+                    playNote(659, 0.15, 0.15, 'sine');   // E5
+                    playNote(784, 0.3, 0.15, 'sine');    // G5
+                    playNote(1047, 0.45, 0.3, 'sine');   // C6
+                    break;
+                    
+                case 'lose':
+                    // Sad descending notes (sad trombone)
+                    playNote(392, 0, 0.3, 'sawtooth');     // G4
+                    playNote(370, 0.3, 0.3, 'sawtooth');   // F#4
+                    playNote(349, 0.6, 0.3, 'sawtooth');   // F4
+                    playNote(330, 0.9, 0.5, 'sawtooth');   // E4
+                    break;
+            }
+        }
+
+        function playNote(frequency, delay, duration, type = 'sine') {
+            if (!soundEnabled) return;
+            
+            setTimeout(() => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.type = type;
+                osc.frequency.setValueAtTime(frequency, audioContext.currentTime);
+                gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+                osc.start(audioContext.currentTime);
+                osc.stop(audioContext.currentTime + duration);
+            }, delay * 1000);
+        }
+
+        // ==========================================
+        // SUSPECT CLASS
+        // ==========================================
+        
+        class Suspect {
+            constructor(id, name, gender, hairColor, accessory, shirtColor) {
+                this.id = id;
+                this.name = name;
+                this.gender = gender;
+                this.hairColor = hairColor;
+                this.accessory = accessory;
+                this.shirtColor = shirtColor;
+            }
+            
+            getEmoji() {
+                // Base emoji based on gender and hair
+                let emoji = '';
+                
+                if (this.gender === 'M') {
+                    switch(this.hairColor) {
+                        case 'rubio': emoji = '👱‍♂️'; break;
+                        case 'negro': emoji = '👨‍🦱'; break;
+                        case 'marrón': emoji = '👨'; break;
+                    }
+                } else {
+                    switch(this.hairColor) {
+                        case 'rubio': emoji = '👱‍♀️'; break;
+                        case 'negro': emoji = '👩‍🦱'; break;
+                        case 'marrón': emoji = '👩'; break;
+                    }
+                }
+                
+                return emoji;
+            }
+            
+            getShirtEmoji() {
+                switch(this.shirtColor) {
+                    case 'rojo': return '🔴';
+                    case 'azul': return '🔵';
+                    case 'verde': return '🟢';
+                }
+            }
+            
+            getAccessoryEmoji() {
+                switch(this.accessory) {
+                    case 'gafas': return '👓';
+                    case 'sombrero': return '🎩';
+                    case 'nada': return '—';
+                }
+            }
+        }
+
+        // ==========================================
+        // GAME STATE
+        // ==========================================
+        
+        let gameState = {
+            suspects: [],
+            thief: null,
+            clues: [],
+            revealedClues: new Set()
+        };
+
+        // ==========================================
+        // HELPER FUNCTIONS
+        // ==========================================
+        
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        function getRandomElement(array) {
+            return array[Math.floor(Math.random() * array.length)];
+        }
+
+        function generateUniqueSuspects(count) {
+            const suspects = [];
+            const usedCombinations = new Set();
+            
+            // Ensure we have at least some variety
+            const shuffledGenders = shuffleArray([...GENDERS, ...GENDERS]);
+            
+            let id = 1;
+            let attempts = 0;
+            
+            while (suspects.length < count && attempts < 100) {
+                const gender = shuffledGenders[suspects.length % shuffledGenders.length];
+                const hairColor = getRandomElement(HAIR_COLORS);
+                const accessory = getRandomElement(ACCESSORIES);
+                const shirtColor = getRandomElement(SHIRT_COLORS);
+                
+                const combination = `${gender}-${hairColor}-${accessory}-${shirtColor}`;
+                
+                if (!usedCombinations.has(combination)) {
+                    usedCombinations.add(combination);
+                    
+                    const namePool = gender === 'M' ? NAMES_MALE : NAMES_FEMALE;
+                    const usedNames = suspects.map(s => s.name);
+                    const availableNames = namePool.filter(n => !usedNames.includes(n));
+                    const name = getRandomElement(availableNames);
+                    
+                    suspects.push(new Suspect(id++, name, gender, hairColor, accessory, shirtColor));
+                }
+                
+                attempts++;
+            }
+            
+            return suspects;
+        }
+
+        // ==========================================
+        // CLUE GENERATION (THE LOGIC ENGINE)
+        // ==========================================
+        
+        function generateClues(thief) {
+            const clues = [];
+            
+            // Witness 1: Hair Color or Gender
+            const useGender = Math.random() > 0.5;
+            if (useGender) {
+                if (thief.gender === 'M') {
+                    clues.push({
+                        intro: '¡Lo vi claramente!',
+                        spanish: 'Yo vi a un chico.',
+                        translation: '(I saw a boy.)'
+                    });
+                } else {
+                    clues.push({
+                        intro: '¡Lo vi claramente!',
+                        spanish: 'Yo vi a una chica.',
+                        translation: '(I saw a girl.)'
+                    });
+                }
+            } else {
+                const hairTranslations = {
+                    'rubio': 'blond',
+                    'negro': 'black',
+                    'marrón': 'brown'
+                };
+                clues.push({
+                    intro: '¡Recuerdo el pelo!',
+                    spanish: `El ladrón tiene el pelo ${thief.hairColor}.`,
+                    translation: `(The thief has ${hairTranslations[thief.hairColor]} hair.)`
+                });
+            }
+            
+            // Witness 2: Clothing (Shirt Color)
+            const shirtTranslations = {
+                'rojo': 'red',
+                'azul': 'blue',
+                'verde': 'green'
+            };
+            clues.push({
+                intro: '¡Vi la ropa!',
+                spanish: `La persona lleva una camisa ${thief.shirtColor}.`,
+                translation: `(The person is wearing a ${shirtTranslations[thief.shirtColor]} shirt.)`
+            });
+            
+            // Witness 3: Accessories
+            if (thief.accessory === 'nada') {
+                // Randomly choose what they DON'T have
+                const notHave = Math.random() > 0.5 ? 'gafas' : 'sombrero';
+                const accessoryTranslations = {
+                    'gafas': 'glasses',
+                    'sombrero': 'hat'
+                };
+                clues.push({
+                    intro: '¡Estoy seguro de esto!',
+                    spanish: `El ladrón no tiene ${notHave}.`,
+                    translation: `(The thief doesn't have ${accessoryTranslations[notHave]}.)`
+                });
+            } else if (thief.accessory === 'gafas') {
+                clues.push({
+                    intro: '¡Ojo con esto!',
+                    spanish: '¡El ladrón tiene gafas!',
+                    translation: '(The thief has glasses!)'
+                });
+            } else {
+                clues.push({
+                    intro: '¡Esto es importante!',
+                    spanish: '¡El ladrón lleva un sombrero!',
+                    translation: '(The thief is wearing a hat!)'
+                });
+            }
+            
+            return clues;
+        }
+
+        // ==========================================
+        // RENDERING FUNCTIONS
+        // ==========================================
+        
+        function renderWitnesses() {
+            const container = document.getElementById('witnessesGrid');
+            container.innerHTML = '';
+            
+            WITNESSES.forEach((witness, index) => {
+                const card = document.createElement('div');
+                card.className = 'witness-card';
+                card.dataset.witnessId = witness.id;
+                
+                const clue = gameState.clues[index];
+                
+                card.innerHTML = `
+                    <div class="speech-bubble" id="bubble-${witness.id}">
+                        <p>${clue.intro}</p>
+                        <span class="spanish-clue">"${clue.spanish}"</span>
+                        <p style="font-size: 0.9rem; color: #666; margin-top: 8px;">${clue.translation}</p>
+                    </div>
+                    <span class="witness-emoji">${witness.emoji}</span>
+                    <h3 class="witness-name">${witness.name}</h3>
+                    <p class="witness-role">${witness.role}</p>
+                    <p class="click-hint">👆 ¡Haz clic para escuchar!</p>
+                `;
+                
+                card.addEventListener('click', () => handleWitnessClick(witness.id));
+                container.appendChild(card);
+            });
+        }
+
+        function renderSuspects() {
+            const container = document.getElementById('suspectsGrid');
+            container.innerHTML = '';
+            
+            gameState.suspects.forEach((suspect, index) => {
+                const card = document.createElement('div');
+                card.className = 'suspect-card';
+                card.dataset.suspectId = suspect.id;
+                
+                const genderWord = suspect.gender === 'M' ? 'Chico' : 'Chica';
+                const hairTranslation = {
+                    'rubio': 'Rubio/a',
+                    'negro': 'Negro',
+                    'marrón': 'Marrón'
+                };
+                const shirtTranslation = {
+                    'rojo': 'Roja',
+                    'azul': 'Azul',
+                    'verde': 'Verde'
+                };
+                const accessoryTranslation = {
+                    'gafas': 'Gafas',
+                    'sombrero': 'Sombrero',
+                    'nada': 'Nada'
+                };
+                
+                card.innerHTML = `
+                    <span class="suspect-number">${index + 1}</span>
+                    <span class="suspect-avatar">${suspect.getEmoji()}</span>
+                    <h3 class="suspect-name">${suspect.name}</h3>
+                    <div class="suspect-attributes">
+                        <span class="attribute">
+                            <span class="attribute-icon">${suspect.gender === 'M' ? '👦' : '👧'}</span>
+                            ${genderWord}
+                        </span>
+                        <span class="attribute">
+                            <span class="attribute-icon">💇</span>
+                            Pelo ${hairTranslation[suspect.hairColor]}
+                        </span>
+                        <span class="attribute">
+                            <span class="attribute-icon">${suspect.getShirtEmoji()}</span>
+                            Camisa ${shirtTranslation[suspect.shirtColor]}
+                        </span>
+                        <span class="attribute">
+                            <span class="attribute-icon">${suspect.getAccessoryEmoji()}</span>
+                            ${accessoryTranslation[suspect.accessory]}
+                        </span>
+                    </div>
+                    <button class="accuse-btn" data-suspect-id="${suspect.id}">
+                        ¡ACUSAR!
+                    </button>
+                `;
+                
+                const accuseBtn = card.querySelector('.accuse-btn');
+                accuseBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    handleAccusation(suspect.id);
+                });
+                
+                container.appendChild(card);
+            });
+        }
+
+        function createFloatingSymbols() {
+            const container = document.getElementById('floatingSymbols');
+            const symbols = ['❓', '🔍', '👀', '🕵️', '💭', '❔'];
+            
+            for (let i = 0; i < 15; i++) {
+                const span = document.createElement('span');
+                span.textContent = getRandomElement(symbols);
+                span.style.left = `${Math.random() * 100}%`;
+                span.style.animationDelay = `${Math.random() * 15}s`;
+                span.style.animationDuration = `${15 + Math.random() * 10}s`;
+                container.appendChild(span);
+            }
+        }
+
+        // ==========================================
+        // EVENT HANDLERS
+        // ==========================================
+        
+        function handleWitnessClick(witnessId) {
+            playSound('click_witness');
+            
+            const card = document.querySelector(`[data-witness-id="${witnessId}"]`);
+            const bubble = document.getElementById(`bubble-${witnessId}`);
+            
+            // Hide all other bubbles first
+            document.querySelectorAll('.speech-bubble').forEach(b => {
+                if (b.id !== `bubble-${witnessId}`) {
+                    b.classList.remove('visible');
+                }
+            });
+            
+            // Toggle this bubble
+            const isVisible = bubble.classList.contains('visible');
+            
+            if (!isVisible) {
+                setTimeout(() => {
+                    playSound('clue_reveal');
+                }, 200);
+                
+                bubble.classList.add('visible');
+                card.classList.add('revealed');
+                gameState.revealedClues.add(witnessId);
+            } else {
+                bubble.classList.remove('visible');
+            }
+        }
+
+        function handleAccusation(suspectId) {
+            playSound('dramatic_shock');
+            
+            const isCorrect = suspectId === gameState.thief.id;
+            
+            setTimeout(() => {
+                showResultModal(isCorrect);
+            }, 800);
+        }
+
+        function showResultModal(isWin) {
+            const modal = document.getElementById('resultModal');
+            const content = document.getElementById('modalContent');
+            const emoji = document.getElementById('modalEmoji');
+            const title = document.getElementById('modalTitle');
+            const message = document.getElementById('modalMessage');
+            
+            if (isWin) {
+                playSound('win');
+                content.className = 'modal-content win';
+                emoji.textContent = '🎉';
+                title.textContent = '¡CORRECTO!';
+                message.innerHTML = `
+                    ¡Excelente trabajo, detective!<br>
+                    <strong>${gameState.thief.name}</strong> era el ladrón.<br>
+                    ¡La mascota está a salvo! 🐹
+                `;
+                createConfetti(content);
+            } else {
+                playSound('lose');
+                content.className = 'modal-content lose';
+                emoji.textContent = '😢';
+                title.textContent = '¡INCORRECTO!';
+                message.innerHTML = `
+                    ¡Oh no! Esa persona es inocente.<br>
+                    El verdadero ladrón era <strong>${gameState.thief.name}</strong>.<br>
+                    ¡Intenta de nuevo! 🔍
+                `;
+            }
+            
+            modal.classList.add('visible');
+        }
+
+        function createConfetti(container) {
+            const colors = ['#ff6b35', '#ffd23f', '#4ade80', '#ff4757', '#a855f7'];
+            
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = `${Math.random() * 100}%`;
+                confetti.style.top = `${Math.random() * -50}px`;
+                confetti.style.background = getRandomElement(colors);
+                confetti.style.animationDelay = `${Math.random() * 2}s`;
+                confetti.style.width = `${5 + Math.random() * 10}px`;
+                confetti.style.height = `${5 + Math.random() * 10}px`;
+                confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                container.appendChild(confetti);
+                
+                // Remove confetti after animation
+                setTimeout(() => confetti.remove(), 3000);
+            }
+        }
+
+        function hideResultModal() {
+            const modal = document.getElementById('resultModal');
+            modal.classList.remove('visible');
+        }
+
+        // ==========================================
+        // GAME INITIALIZATION
+        // ==========================================
+        
+        function initGame() {
+            // Generate 4 unique suspects
+            gameState.suspects = generateUniqueSuspects(4);
+            
+            // Randomly select the thief
+            gameState.thief = getRandomElement(gameState.suspects);
+            
+            // Generate clues based on the thief
+            gameState.clues = generateClues(gameState.thief);
+            
+            // Reset revealed clues
+            gameState.revealedClues = new Set();
+            
+            // Render the game
+            renderWitnesses();
+            renderSuspects();
+            
+            // Log for debugging (remove in production)
+            console.log('🔍 Game initialized!');
+            console.log('🦹 The thief is:', gameState.thief.name);
+            console.log('📝 Clues:', gameState.clues);
+        }
+
+        // ==========================================
+        // EVENT LISTENERS SETUP
+        // ==========================================
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // Create floating background symbols
+            createFloatingSymbols();
+            
+            // Initialize the game
+            initGame();
+            
+            // Play Again button
+            document.getElementById('playAgainBtn').addEventListener('click', () => {
+                hideResultModal();
+                setTimeout(initGame, 300);
+            });
+            
+            // Sound toggle
+            document.getElementById('soundToggle').addEventListener('click', () => {
+                soundEnabled = !soundEnabled;
+                document.getElementById('soundToggle').textContent = soundEnabled ? '🔊' : '🔇';
+                
+                // Resume audio context if it was suspended
+                if (soundEnabled && audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+            });
+            
+            // Click outside bubble to close
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.witness-card')) {
+                    document.querySelectorAll('.speech-bubble').forEach(b => {
+                        b.classList.remove('visible');
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Escritor Creativo</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&family=Fredoka+One&display=swap');
+
+        :root {
+            --primary: #FF6B6B;
+            --secondary: #4ECDC4;
+            --accent: #FFE66D;
+            --dark: #2C3E50;
+            --light: #F7F9FC;
+            --shadow: 0 4px 0 rgba(0,0,0,0.15);
+        }
+
+        body {
+            font-family: 'Comic Neue', cursive;
+            background-color: #f0f3f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: var(--dark);
+        }
+
+        /* --- Game Container --- */
+        #game-container {
+            background: white;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            overflow: hidden;
+            border: 4px solid var(--dark);
+            position: relative;
+        }
+
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            border-bottom: 4px solid var(--dark);
+        }
+
+        h1 {
+            font-family: 'Fredoka One', cursive;
+            margin: 0;
+            font-size: 1.8rem;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+        }
+
+        #level-indicator {
+            font-size: 1rem;
+            background: rgba(0,0,0,0.2);
+            padding: 2px 10px;
+            border-radius: 10px;
+            margin-top: 5px;
+            display: inline-block;
+        }
+
+        /* --- Scene Canvas --- */
+        #scene-canvas {
+            width: 100%;
+            height: 280px;
+            position: relative;
+            background-color: #eee;
+            overflow: hidden;
+            transition: background-color 0.5s ease;
+        }
+
+        .scene-emoji {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            user-select: none;
+            cursor: pointer;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            /* Subtle floating animation */
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .scene-emoji:hover {
+            transform: translate(-50%, -50%) scale(1.2) rotate(10deg);
+        }
+
+        @keyframes float {
+            0% { margin-top: 0px; }
+            50% { margin-top: -10px; }
+            100% { margin-top: 0px; }
+        }
+
+        /* --- Controls Area --- */
+        .controls-area {
+            padding: 20px;
+        }
+
+        /* Word Bank */
+        .label {
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: block;
+            font-size: 1.1rem;
+        }
+
+        #word-bank {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+            min-height: 40px;
+        }
+
+        .word-chip {
+            background: var(--secondary);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 3px 0 rgba(0,0,0,0.1);
+            transition: all 0.1s;
+            border: 2px solid transparent;
+        }
+
+        .word-chip:active {
+            transform: translateY(3px);
+            box-shadow: none;
+        }
+
+        .word-chip:hover {
+            background: #3dbdb4;
+        }
+
+        /* Input Area */
+        textarea {
+            width: 100%;
+            height: 80px;
+            border: 3px solid #ddd;
+            border-radius: 12px;
+            padding: 12px;
+            font-family: 'Comic Neue', cursive;
+            font-size: 1.2rem;
+            resize: none;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            border-color: var(--secondary);
+        }
+
+        textarea.shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+            border-color: var(--primary);
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-8px, 0, 0); }
+            40%, 60% { transform: translate3d(8px, 0, 0); }
+        }
+
+        /* Check Button */
+        #btn-check {
+            width: 100%;
+            padding: 15px;
+            background: var(--accent);
+            color: var(--dark);
+            border: none;
+            border-radius: 12px;
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.5rem;
+            cursor: pointer;
+            margin-top: 15px;
+            box-shadow: 0 5px 0 #e6cf62;
+            transition: all 0.1s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #btn-check:active {
+            transform: translateY(5px);
+            box-shadow: 0 0 0 #e6cf62;
+        }
+
+        #btn-check:disabled {
+            background: #ddd;
+            color: #999;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* --- Modals / Feedback --- */
+        #feedback-modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #feedback-modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-emoji {
+            font-size: 5rem;
+            margin-bottom: 10px;
+            animation: bounce 1s infinite;
+        }
+
+        .modal-title {
+            font-family: 'Fredoka One';
+            font-size: 2rem;
+            color: var(--secondary);
+            margin-bottom: 10px;
+        }
+
+        .modal-message {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+
+        #btn-next {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            font-family: 'Fredoka One';
+            cursor: pointer;
+            box-shadow: 0 4px 0 #3dbdb4;
+        }
+
+        #btn-next:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        /* Hint Text */
+        #hint-text {
+            color: var(--primary);
+            min-height: 20px;
+            margin-top: 5px;
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <header>
+        <h1>El Escritor Creativo ✏️</h1>
+        <div id="level-indicator">Nivel 1</div>
+    </header>
+
+    <!-- Visual Scene -->
+    <div id="scene-canvas">
+        <!-- Emojis injected here by JS -->
+    </div>
+
+    <div class="controls-area">
+        <!-- Word Bank -->
+        <span class="label">Banco de Palabras:</span>
+        <div id="word-bank">
+            <!-- Words injected here by JS -->
+        </div>
+
+        <!-- Input -->
+        <span class="label">Tu Frase:</span>
+        <textarea id="user-input" placeholder="Escribe una frase describiendo la escena..."></textarea>
+        <div id="hint-text"></div>
+
+        <button id="btn-check">¡Verificar!</button>
+    </div>
+
+    <!-- Feedback Modal -->
+    <div id="feedback-modal">
+        <div class="modal-emoji">🎉</div>
+        <div class="modal-title">¡Fantástico!</div>
+        <p class="modal-message" id="modal-msg-text">Example success text.</p>
+        <button id="btn-next">Siguiente Nivel ➡️</button>
+    </div>
+</div>
+
+<script>
+/**
+ * ------------------------------------------------------------------
+ * DATA STRUCTURES (The Scenes)
+ * ------------------------------------------------------------------
+ */
+const scenes = [
+    {
+        id: 1,
+        background: '#87CEEB', // Sky Blue
+        emojis: [
+            { char: '🐕', x: '50%', y: '65%', size: '90px' }, // Dog
+            { char: '🎩', x: '52%', y: '48%', size: '45px' }, // Hat
+            { char: '🌳', x: '15%', y: '60%', size: '100px' }, // Tree
+            { char: '☀️', x: '85%', y: '15%', size: '60px' }  // Sun
+        ],
+        wordBank: ['El perro', 'tiene', 'un sombrero', 'negro', 'está', 'feliz', 'parque'],
+        requiredKeywords: ['perro', 'sombrero'],
+        successMessage: "¡Excelente! El perro se ve muy elegante con su sombrero."
+    },
+    {
+        id: 2,
+        background: '#001e42', // Deep Space Blue
+        emojis: [
+            { char: '👽', x: '50%', y: '60%', size: '80px' }, // Alien
+            { char: '🌕', x: '80%', y: '20%', size: '70px' }, // Moon
+            { char: '🚀', x: '20%', y: '40%', size: '60px' }, // Rocket
+            { char: '⭐', x: '10%', y: '10%', size: '20px' },
+            { char: '⭐', x: '90%', y: '80%', size: '25px' }
+        ],
+        wordBank: ['El extraterrestre', 'la luna', 'viaja', 'cohete', 'verde', 'espacio'],
+        requiredKeywords: ['extraterrestre', 'luna'],
+        successMessage: "¡Guau! Un viaje intergaláctico muy interesante."
+    },
+    {
+        id: 3,
+        background: '#FFE4E1', // Misty Rose
+        emojis: [
+            { char: '🐈', x: '50%', y: '60%', size: '80px' }, // Cat
+            { char: '🛏️', x: '50%', y: '75%', size: '120px' }, // Bed
+            { char: '😴', x: '65%', y: '40%', size: '40px' }  // Zzz
+        ],
+        wordBank: ['El gato', 'duerme', 'en la cama', 'pequeño', 'cansado', 'naranja'],
+        requiredKeywords: ['gato', 'cama'],
+        successMessage: "¡Shhh! No despertemos al gato dormilón."
+    },
+    {
+        id: 4,
+        background: '#20B2AA', // Light Sea Green
+        emojis: [
+            { char: '🐠', x: '40%', y: '50%', size: '70px' }, // Fish
+            { char: '👓', x: '42%', y: '50%', size: '30px' }, // Glasses
+            { char: '📚', x: '70%', y: '80%', size: '50px' }, // Books
+            { char: '🫧', x: '45%', y: '30%', size: '20px' }  // Bubble
+        ],
+        wordBank: ['El pez', 'gafas', 'lee', 'libro', 'inteligente', 'agua', 'azul'],
+        requiredKeywords: ['pez', 'gafas'], // Can also accept 'lentes' via logic check if we wanted
+        successMessage: "¡Increíble! Es el pez más estudioso del océano."
+    },
+    {
+        id: 5,
+        background: '#FFD700', // Gold
+        emojis: [
+            { char: '👦', x: '30%', y: '60%', size: '90px' }, // Boy
+            { char: '🍕', x: '60%', y: '50%', size: '100px' }, // Pizza
+            { char: '😋', x: '35%', y: '40%', size: '40px' }  // Yum
+        ],
+        wordBank: ['El niño', 'come', 'pizza', 'gigante', 'deliciosa', 'grande'],
+        requiredKeywords: ['niño', 'pizza'],
+        successMessage: "¡Qué rico! Ahora tengo hambre."
+    }
+];
+
+/**
+ * ------------------------------------------------------------------
+ * AUDIO MANAGER (Procedural / Synthesized)
+ * ------------------------------------------------------------------
+ * Note: To ensure this code runs anywhere without external assets,
+ * I am using the Web Audio API to synthesize sounds.
+ */
+class AudioManager {
+    constructor() {
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.enabled = true;
+    }
+
+    playTone(freq, type, duration, vol = 0.1) {
+        if (!this.enabled) return;
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        
+        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + duration);
+    }
+
+    playSqueak() {
+        // High pitched sine wave, very short
+        // Variation to make it sound "goofy"
+        const freq = 600 + Math.random() * 200;
+        this.playTone(freq, 'sine', 0.1, 0.05);
+    }
+
+    playPop() {
+        // Quick slide
+        if (!this.enabled) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.frequency.setValueAtTime(200, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(600, this.ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.1);
+        
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.1);
+    }
+
+    playThinking() {
+        // A ticking clock sound
+        let count = 0;
+        const interval = setInterval(() => {
+            this.playTone(800, 'square', 0.05, 0.05);
+            count++;
+            if(count > 3) clearInterval(interval);
+        }, 250);
+    }
+
+    playWin() {
+        // Major Arpeggio (Opera-ish)
+        const now = this.ctx.currentTime;
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C Major
+        notes.forEach((freq, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.value = freq;
+            
+            gain.gain.setValueAtTime(0, now + (i*0.1));
+            gain.gain.linearRampToValueAtTime(0.2, now + (i*0.1) + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + (i*0.1) + 0.6);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now + (i*0.1));
+            osc.stop(now + (i*0.1) + 0.6);
+        });
+    }
+
+    playFail() {
+        // Low saw wave slide (Chicken/Duck sound)
+        if (!this.enabled) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        
+        osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(80, this.ctx.currentTime + 0.4);
+        
+        // Tremolo effect
+        const lfo = this.ctx.createOscillator();
+        lfo.frequency.value = 10;
+        const lfoGain = this.ctx.createGain();
+        lfoGain.gain.value = 500;
+        lfo.connect(lfoGain);
+        lfoGain.connect(osc.frequency);
+        lfo.start();
+
+        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.4);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.4);
+    }
+}
+
+const audio = new AudioManager();
+
+/**
+ * ------------------------------------------------------------------
+ * GAME ENGINE & LOGIC
+ * ------------------------------------------------------------------
+ */
+
+// DOM Elements
+const container = document.getElementById('game-container');
+const sceneCanvas = document.getElementById('scene-canvas');
+const wordBank = document.getElementById('word-bank');
+const inputArea = document.getElementById('user-input');
+const btnCheck = document.getElementById('btn-check');
+const hintText = document.getElementById('hint-text');
+const levelIndicator = document.getElementById('level-indicator');
+
+// Modal Elements
+const modal = document.getElementById('feedback-modal');
+const modalMsg = document.getElementById('modal-msg-text');
+const btnNext = document.getElementById('btn-next');
+const modalEmoji = document.querySelector('.modal-emoji');
+
+// State
+let currentLevelIndex = 0;
+let isThinking = false;
+
+// 1. Render Scene
+function loadScene(index) {
+    if (index >= scenes.length) {
+        // Game Over / Restart Loop
+        currentLevelIndex = 0;
+        index = 0;
+    }
+
+    const scene = scenes[index];
+    levelIndicator.innerText = `Nivel ${index + 1}`;
+    
+    // Clear previous
+    sceneCanvas.innerHTML = '';
+    wordBank.innerHTML = '';
+    inputArea.value = '';
+    hintText.innerText = '';
+    
+    // Set Background
+    sceneCanvas.style.backgroundColor = scene.background;
+
+    // Build Emojis
+    scene.emojis.forEach(item => {
+        const el = document.createElement('div');
+        el.innerText = item.char;
+        el.className = 'scene-emoji';
+        el.style.left = item.x;
+        el.style.top = item.y;
+        el.style.fontSize = item.size;
+        sceneCanvas.appendChild(el);
+    });
+
+    // Build Word Bank
+    scene.wordBank.forEach(word => {
+        const chip = document.createElement('button');
+        chip.className = 'word-chip';
+        chip.innerText = word;
+        chip.onclick = () => addWordToInput(word);
+        wordBank.appendChild(chip);
+    });
+}
+
+// 2. Input Logic
+function addWordToInput(word) {
+    audio.playPop();
+    const currentVal = inputArea.value;
+    // Add space if needed
+    if (currentVal.length > 0 && currentVal.slice(-1) !== ' ') {
+        inputArea.value += ' ' + word;
+    } else {
+        inputArea.value += word;
+    }
+    inputArea.focus();
+}
+
+// Typing Sound Logic (Throttled so it doesn't sound like a machine gun)
+let lastTypedTime = 0;
+inputArea.addEventListener('input', () => {
+    const now = Date.now();
+    if (now - lastTypedTime > 100) { // Play every 100ms max
+        audio.playSqueak();
+        lastTypedTime = now;
+    }
+    // Clear hints if user starts typing again
+    hintText.innerText = '';
+    inputArea.classList.remove('shake');
+});
+
+// 3. Validation Logic
+btnCheck.addEventListener('click', () => {
+    if (isThinking) return;
+
+    // Initialize audio context on first user interaction if needed
+    if (audio.ctx.state === 'suspended') audio.ctx.resume();
+
+    // Start "Thinking"
+    isThinking = true;
+    btnCheck.disabled = true;
+    btnCheck.innerText = "Pensando... 🤔";
+    audio.playThinking();
+
+    // Artificial Delay for effect (1 second)
+    setTimeout(() => {
+        validateAnswer();
+        isThinking = false;
+        btnCheck.disabled = false;
+        btnCheck.innerText = "¡Verificar!";
+    }, 1000);
+});
+
+function validateAnswer() {
+    const scene = scenes[currentLevelIndex];
+    const userInput = inputArea.value.toLowerCase();
+    
+    // Check keywords
+    const missingWords = scene.requiredKeywords.filter(keyword => !userInput.includes(keyword));
+
+    if (missingWords.length === 0) {
+        // WIN
+        handleWin(scene);
+    } else {
+        // FAIL
+        handleFail(missingWords);
+    }
+}
+
+function handleWin(scene) {
+    audio.playWin();
+    modalMsg.innerText = scene.successMessage;
+    modalEmoji.innerText = "🎉";
+    modal.classList.add('active');
+}
+
+function handleFail(missingWords) {
+    audio.playFail();
+    inputArea.classList.add('shake');
+    
+    // Remove shake class after animation so it can be triggered again
+    setTimeout(() => inputArea.classList.remove('shake'), 500);
+
+    // Show Hint
+    const missingList = missingWords.map(w => `'${w}'`).join(' y ');
+    hintText.innerText = `😬 Uh oh! Te falta usar: ${missingList}`;
+}
+
+// 4. Next Level Logic
+btnNext.addEventListener('click', () => {
+    modal.classList.remove('active');
+    currentLevelIndex++;
+    loadScene(currentLevelIndex);
+});
+
+// Initialize
+loadScene(0);
+
+</script>
+</body>
+</html>

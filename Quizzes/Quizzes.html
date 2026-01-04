@@ -1,0 +1,3227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academia de Español: Mega Quiz Center 📚🇪🇸</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* ========================================
+           CSS VARIABLES & RESET
+           ======================================== */
+        :root {
+            /* Main Colors */
+            --primary: #FF6B6B;
+            --primary-dark: #ee5a5a;
+            --secondary: #4ECDC4;
+            --secondary-dark: #3dbdb5;
+            --accent: #FFE66D;
+            --accent-dark: #f5d84d;
+            
+            /* Level Colors */
+            --beginner: #2ECC71;
+            --beginner-light: #a9f5c8;
+            --easy: #3498DB;
+            --easy-light: #a9d4f5;
+            --medium: #F39C12;
+            --medium-light: #fad7a0;
+            --hard: #E74C3C;
+            --hard-light: #f5a9a2;
+            
+            /* UI Colors */
+            --bg-gradient-1: #667eea;
+            --bg-gradient-2: #764ba2;
+            --bg-gradient-3: #f093fb;
+            --card-bg: #ffffff;
+            --text-dark: #2d3436;
+            --text-light: #636e72;
+            --text-white: #ffffff;
+            --success: #00b894;
+            --error: #d63031;
+            --warning: #fdcb6e;
+            
+            /* Shadows */
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.15);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.2);
+            --shadow-glow: 0 0 30px rgba(78, 205, 196, 0.4);
+            
+            /* Spacing */
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            --radius-xl: 32px;
+            
+            /* Fonts */
+            --font-display: 'Fredoka', sans-serif;
+            --font-body: 'Nunito', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 50%, var(--bg-gradient-3) 100%);
+            min-height: 100vh;
+            color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* Background Animation */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(255,107,107,0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(78,205,196,0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(255,230,109,0.2) 0%, transparent 40%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ========================================
+           HEADER
+           ======================================== */
+        .header {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: var(--shadow-md);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            font-size: 2.5rem;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .logo-text {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-stats {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .stat-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, var(--secondary), var(--bg-gradient-1));
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-xl);
+            font-weight: 600;
+            font-size: 0.9rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .sound-toggle {
+            background: var(--accent);
+            border: none;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .sound-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: var(--shadow-md);
+        }
+
+        .sound-toggle.muted {
+            background: #dfe6e9;
+        }
+
+        /* ========================================
+           MAIN CONTAINER
+           ======================================== */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ========================================
+           FILTER SECTION
+           ======================================== */
+        .filters-section {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .filters-title {
+            font-family: var(--font-display);
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-select {
+            padding: 0.75rem 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: var(--radius-md);
+            font-family: var(--font-body);
+            font-size: 1rem;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-select:hover, .filter-select:focus {
+            border-color: var(--secondary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(78,205,196,0.2);
+        }
+
+        .filter-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .filter-pill {
+            padding: 0.5rem 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: var(--radius-xl);
+            background: white;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .filter-pill:hover {
+            border-color: var(--secondary);
+            transform: translateY(-2px);
+        }
+
+        .filter-pill.active {
+            background: var(--secondary);
+            border-color: var(--secondary);
+            color: white;
+        }
+
+        .filter-pill.level-beginner.active { background: var(--beginner); border-color: var(--beginner); }
+        .filter-pill.level-easy.active { background: var(--easy); border-color: var(--easy); }
+        .filter-pill.level-medium.active { background: var(--medium); border-color: var(--medium); }
+        .filter-pill.level-hard.active { background: var(--hard); border-color: var(--hard); }
+
+        /* ========================================
+           QUIZ GRID
+           ======================================== */
+        .quiz-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .quiz-card {
+            background: rgba(255,255,255,0.95);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-md);
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quiz-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: var(--secondary);
+        }
+
+        .quiz-card.level-beginner::before { background: var(--beginner); }
+        .quiz-card.level-easy::before { background: var(--easy); }
+        .quiz-card.level-medium::before { background: var(--medium); }
+        .quiz-card.level-hard::before { background: var(--hard); }
+
+        .quiz-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .quiz-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .quiz-title {
+            font-family: var(--font-display);
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            line-height: 1.3;
+        }
+
+        .quiz-level {
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--radius-xl);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .quiz-level.beginner { background: var(--beginner-light); color: var(--beginner); }
+        .quiz-level.easy { background: var(--easy-light); color: var(--easy); }
+        .quiz-level.medium { background: var(--medium-light); color: var(--medium); }
+        .quiz-level.hard { background: var(--hard-light); color: var(--hard); }
+
+        .quiz-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .quiz-tag {
+            padding: 0.25rem 0.6rem;
+            background: #f0f0f0;
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
+
+        .quiz-tag.topic {
+            background: rgba(78,205,196,0.15);
+            color: var(--secondary-dark);
+        }
+
+        .quiz-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .quiz-questions-count {
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        .quiz-best-score {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-weight: 600;
+            color: var(--success);
+        }
+
+        .quiz-start-btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: var(--radius-md);
+            font-family: var(--font-body);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quiz-start-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(255,107,107,0.4);
+        }
+
+        /* ========================================
+           QUIZ PLAYER
+           ======================================== */
+        .quiz-player {
+            display: none;
+            background: rgba(255,255,255,0.98);
+            border-radius: var(--radius-xl);
+            padding: 2rem;
+            box-shadow: var(--shadow-lg);
+            max-width: 800px;
+            margin: 0 auto;
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .quiz-player.active {
+            display: block;
+        }
+
+        .quiz-player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .quiz-player-title {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .quiz-close-btn {
+            background: #f0f0f0;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .quiz-close-btn:hover {
+            background: var(--error);
+            color: white;
+        }
+
+        .progress-container {
+            margin-bottom: 2rem;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-light);
+        }
+
+        .progress-bar {
+            height: 12px;
+            background: #e0e0e0;
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--secondary), var(--bg-gradient-1));
+            border-radius: var(--radius-xl);
+            transition: width 0.5s ease;
+        }
+
+        .question-container {
+            min-height: 300px;
+        }
+
+        .reading-passage {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-left: 4px solid var(--secondary);
+            padding: 1.5rem;
+            border-radius: var(--radius-md);
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+
+        .question-prompt {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .question-prompt .spanish {
+            color: var(--primary);
+            font-style: italic;
+        }
+
+        .question-prompt .blank {
+            display: inline-block;
+            min-width: 100px;
+            border-bottom: 3px solid var(--secondary);
+            margin: 0 0.25rem;
+        }
+
+        /* MCQ Options */
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .option-btn {
+            padding: 1rem 1.5rem;
+            background: white;
+            border: 3px solid #e0e0e0;
+            border-radius: var(--radius-md);
+            font-family: var(--font-body);
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .option-btn:hover:not(.disabled) {
+            border-color: var(--secondary);
+            background: rgba(78,205,196,0.1);
+            transform: translateX(8px);
+        }
+
+        .option-btn.selected {
+            border-color: var(--secondary);
+            background: rgba(78,205,196,0.2);
+        }
+
+        .option-btn.correct {
+            border-color: var(--success);
+            background: rgba(0,184,148,0.2);
+            animation: pulse 0.5s ease;
+        }
+
+        .option-btn.incorrect {
+            border-color: var(--error);
+            background: rgba(214,48,49,0.1);
+            animation: shake 0.5s ease;
+        }
+
+        .option-btn.disabled {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        /* True/False Buttons */
+        .tf-container {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .tf-btn {
+            flex: 1;
+            max-width: 200px;
+            padding: 1.5rem 2rem;
+            border: 3px solid #e0e0e0;
+            border-radius: var(--radius-lg);
+            background: white;
+            font-family: var(--font-display);
+            font-size: 1.25rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tf-btn:hover {
+            transform: translateY(-4px);
+        }
+
+        .tf-btn.verdadero:hover { border-color: var(--success); background: rgba(0,184,148,0.1); }
+        .tf-btn.falso:hover { border-color: var(--error); background: rgba(214,48,49,0.1); }
+
+        .tf-btn.correct { border-color: var(--success); background: rgba(0,184,148,0.2); }
+        .tf-btn.incorrect { border-color: var(--error); background: rgba(214,48,49,0.2); }
+
+        /* Fill-in / Type-in Input */
+        .text-input-container {
+            margin-bottom: 1rem;
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            border: 3px solid #e0e0e0;
+            border-radius: var(--radius-md);
+            font-family: var(--font-body);
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 4px rgba(78,205,196,0.2);
+        }
+
+        .text-input.correct {
+            border-color: var(--success);
+            background: rgba(0,184,148,0.1);
+        }
+
+        .text-input.incorrect {
+            border-color: var(--error);
+            background: rgba(214,48,49,0.1);
+        }
+
+        /* Matching Question */
+        .matching-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .matching-column {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .matching-column-title {
+            font-weight: 700;
+            text-align: center;
+            padding: 0.5rem;
+            background: linear-gradient(135deg, var(--secondary), var(--bg-gradient-1));
+            color: white;
+            border-radius: var(--radius-sm);
+        }
+
+        .matching-item {
+            padding: 1rem;
+            background: white;
+            border: 3px solid #e0e0e0;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .matching-item:hover:not(.matched):not(.disabled) {
+            border-color: var(--secondary);
+            transform: scale(1.02);
+        }
+
+        .matching-item.selected {
+            border-color: var(--accent);
+            background: rgba(255,230,109,0.3);
+            transform: scale(1.05);
+        }
+
+        .matching-item.matched {
+            border-color: var(--success);
+            background: rgba(0,184,148,0.2);
+            pointer-events: none;
+        }
+
+        .matching-item.incorrect {
+            border-color: var(--error);
+            animation: shake 0.5s ease;
+        }
+
+        /* Order Words */
+        .word-bank {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-radius: var(--radius-md);
+            margin-bottom: 1rem;
+            min-height: 80px;
+            justify-content: center;
+        }
+
+        .word-chip {
+            padding: 0.75rem 1.25rem;
+            background: white;
+            border: 2px solid var(--secondary);
+            border-radius: var(--radius-xl);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .word-chip:hover {
+            background: var(--secondary);
+            color: white;
+            transform: translateY(-4px);
+        }
+
+        .word-chip.used {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .sentence-builder {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 1.5rem;
+            background: white;
+            border: 3px dashed #e0e0e0;
+            border-radius: var(--radius-md);
+            min-height: 80px;
+            align-items: center;
+        }
+
+        .sentence-builder.correct {
+            border-color: var(--success);
+            background: rgba(0,184,148,0.1);
+        }
+
+        .sentence-builder.incorrect {
+            border-color: var(--error);
+            background: rgba(214,48,49,0.1);
+        }
+
+        .placed-word {
+            padding: 0.5rem 1rem;
+            background: var(--secondary);
+            color: white;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .placed-word:hover {
+            background: var(--error);
+            transform: scale(0.95);
+        }
+
+        /* Feedback Area */
+        .feedback-container {
+            margin-top: 1.5rem;
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius-md);
+            display: none;
+            animation: slideUp 0.3s ease;
+        }
+
+        .feedback-container.show {
+            display: block;
+        }
+
+        .feedback-container.correct {
+            background: linear-gradient(135deg, rgba(0,184,148,0.2), rgba(0,184,148,0.1));
+            border-left: 4px solid var(--success);
+        }
+
+        .feedback-container.incorrect {
+            background: linear-gradient(135deg, rgba(214,48,49,0.2), rgba(214,48,49,0.1));
+            border-left: 4px solid var(--error);
+        }
+
+        .feedback-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .feedback-container.correct .feedback-title { color: var(--success); }
+        .feedback-container.incorrect .feedback-title { color: var(--error); }
+
+        .feedback-explanation {
+            color: var(--text-light);
+            line-height: 1.5;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: var(--radius-md);
+            font-family: var(--font-body);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, var(--secondary), var(--bg-gradient-1));
+            color: white;
+        }
+
+        .action-btn.primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(78,205,196,0.4);
+        }
+
+        .action-btn.secondary {
+            background: #f0f0f0;
+            color: var(--text-dark);
+        }
+
+        .action-btn.secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* ========================================
+           RESULTS SCREEN
+           ======================================== */
+        .results-screen {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            animation: slideUp 0.5s ease;
+        }
+
+        .results-screen.active {
+            display: block;
+        }
+
+        .results-emoji {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            animation: bounce 1s ease infinite;
+        }
+
+        .results-title {
+            font-family: var(--font-display);
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-dark);
+        }
+
+        .results-message {
+            font-size: 1.25rem;
+            color: var(--text-light);
+            margin-bottom: 2rem;
+        }
+
+        .results-score-display {
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            background: linear-gradient(135deg, var(--secondary), var(--bg-gradient-1));
+            color: white;
+            padding: 1.5rem 3rem;
+            border-radius: var(--radius-xl);
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .results-percentage {
+            font-size: 1.5rem;
+            opacity: 0.9;
+        }
+
+        .results-stats {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .result-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .result-stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .result-stat-value.correct { color: var(--success); }
+        .result-stat-value.incorrect { color: var(--error); }
+
+        .result-stat-label {
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        .results-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Confetti */
+        .confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            overflow: hidden;
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            animation: confetti-fall 3s ease-out forwards;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100px) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        /* ========================================
+           NO RESULTS MESSAGE
+           ======================================== */
+        .no-results {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: white;
+        }
+
+        .no-results-emoji {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .no-results-text {
+            font-size: 1.25rem;
+            opacity: 0.9;
+        }
+
+        /* ========================================
+           RESPONSIVE DESIGN
+           ======================================== */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .logo-text {
+                font-size: 1.25rem;
+            }
+
+            .main-container {
+                padding: 1rem;
+            }
+
+            .quiz-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .quiz-player {
+                padding: 1.5rem;
+            }
+
+            .question-prompt {
+                font-size: 1.1rem;
+            }
+
+            .matching-container {
+                grid-template-columns: 1fr;
+            }
+
+            .results-score-display {
+                font-size: 2rem;
+                padding: 1rem 2rem;
+            }
+
+            .tf-container {
+                flex-direction: column;
+            }
+
+            .tf-btn {
+                max-width: 100%;
+            }
+        }
+
+        /* ========================================
+           LOADING SPINNER
+           ======================================== */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 4rem;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Hidden class */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Streak indicator */
+        .streak-indicator {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: linear-gradient(135deg, var(--accent), #f39c12);
+            color: var(--text-dark);
+            padding: 0.75rem 1.25rem;
+            border-radius: var(--radius-xl);
+            font-weight: 700;
+            box-shadow: var(--shadow-md);
+            transform: translateX(200px);
+            transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 1000;
+        }
+
+        .streak-indicator.show {
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <span class="logo-icon">📚🇪🇸</span>
+                <h1 class="logo-text">Academia de Español: Mega Quiz Center</h1>
+            </div>
+            <div class="header-stats">
+                <div class="stat-badge" id="progressBadge">
+                    <span>🏆</span>
+                    <span id="completedCount">0</span>/<span id="totalQuizzes">100</span> Completed
+                </div>
+                <button class="sound-toggle" id="soundToggle" title="Toggle Sound">
+                    🔊
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-container">
+        <!-- Filters Section -->
+        <section class="filters-section" id="filtersSection">
+            <h2 class="filters-title">🔍 Find Your Quiz</h2>
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label class="filter-label">Level</label>
+                    <div class="filter-pills" id="levelFilters">
+                        <button class="filter-pill level-all active" data-level="all">All</button>
+                        <button class="filter-pill level-beginner" data-level="Beginner">🌱 Beginner</button>
+                        <button class="filter-pill level-easy" data-level="Easy">⭐ Easy</button>
+                        <button class="filter-pill level-medium" data-level="Medium">🔥 Medium</button>
+                        <button class="filter-pill level-hard" data-level="Hard">💀 Hard</button>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Topic</label>
+                    <select class="filter-select" id="topicFilter">
+                        <option value="all">All Topics</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Focus</label>
+                    <select class="filter-select" id="focusFilter">
+                        <option value="all">All Skills</option>
+                        <option value="Vocabulary">📝 Vocabulary</option>
+                        <option value="Grammar">📖 Grammar</option>
+                        <option value="Reading">📚 Reading</option>
+                        <option value="Writing">✏️ Writing</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quiz Grid -->
+        <section class="quiz-grid" id="quizGrid">
+            <!-- Quiz cards will be rendered here -->
+        </section>
+
+        <!-- Quiz Player -->
+        <section class="quiz-player" id="quizPlayer">
+            <div class="quiz-player-header">
+                <h2 class="quiz-player-title" id="playerTitle">Quiz Title</h2>
+                <button class="quiz-close-btn" id="closeQuiz" title="Exit Quiz">✕</button>
+            </div>
+            <div class="progress-container">
+                <div class="progress-info">
+                    <span id="progressText">Question 1/10</span>
+                    <span id="scoreText">Score: 0</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="question-container" id="questionContainer">
+                <!-- Question will be rendered here -->
+            </div>
+            <div class="feedback-container" id="feedbackContainer">
+                <div class="feedback-title" id="feedbackTitle"></div>
+                <div class="feedback-explanation" id="feedbackExplanation"></div>
+            </div>
+            <div class="action-buttons" id="actionButtons">
+                <button class="action-btn primary" id="checkAnswerBtn">Check Answer</button>
+                <button class="action-btn primary hidden" id="nextQuestionBtn">Next Question →</button>
+            </div>
+        </section>
+
+        <!-- Results Screen -->
+        <section class="results-screen" id="resultsScreen">
+            <div class="results-emoji" id="resultsEmoji">🌟</div>
+            <h2 class="results-title" id="resultsTitle">Quiz Complete!</h2>
+            <p class="results-message" id="resultsMessage">Great job!</p>
+            <div class="results-score-display">
+                <span id="finalScore">0/0</span>
+                <span class="results-percentage" id="finalPercentage">(0%)</span>
+            </div>
+            <div class="results-stats">
+                <div class="result-stat">
+                    <span class="result-stat-value correct" id="correctCount">0</span>
+                    <span class="result-stat-label">Correct ✓</span>
+                </div>
+                <div class="result-stat">
+                    <span class="result-stat-value incorrect" id="incorrectCount">0</span>
+                    <span class="result-stat-label">Incorrect ✗</span>
+                </div>
+            </div>
+            <div class="results-actions">
+                <button class="action-btn primary" id="retryQuizBtn">🔄 Retry Quiz</button>
+                <button class="action-btn secondary" id="backToQuizzesBtn">📚 Choose Another Quiz</button>
+            </div>
+        </section>
+
+        <!-- No Results Message -->
+        <div class="no-results hidden" id="noResults">
+            <div class="no-results-emoji">🔍</div>
+            <p class="no-results-text">No quizzes match your filters. Try different options!</p>
+        </div>
+    </main>
+
+    <!-- Streak Indicator -->
+    <div class="streak-indicator" id="streakIndicator">
+        🔥 <span id="streakCount">0</span> in a row!
+    </div>
+
+    <!-- Confetti Container -->
+    <div class="confetti-container" id="confettiContainer"></div>
+
+    <script>
+        // ========================================
+        // SOUND SYSTEM
+        // ========================================
+        /*
+         * Sound System Configuration
+         * To add real sounds, replace the placeholder paths with actual audio files.
+         * Recommended formats: MP3 or OGG for best browser compatibility.
+         * Place audio files in a "sounds" folder.
+         */
+        const SOUNDS = {
+            // Navigation sounds
+            navClick: { src: 'sounds/nav-click.mp3', volume: 0.3 },
+            buttonClick: { src: 'sounds/button-click.mp3', volume: 0.4 },
+            
+            // Quiz sounds
+            quizStart: { src: 'sounds/quiz-start.mp3', volume: 0.5 },
+            quizCompleteHigh: { src: 'sounds/quiz-complete-high.mp3', volume: 0.6 },
+            quizCompleteMid: { src: 'sounds/quiz-complete-mid.mp3', volume: 0.5 },
+            quizCompleteLow: { src: 'sounds/quiz-complete-low.mp3', volume: 0.4 },
+            
+            // Answer feedback
+            correct: { src: 'sounds/correct.mp3', volume: 0.5 },
+            incorrect: { src: 'sounds/incorrect.mp3', volume: 0.4 },
+            partialCorrect: { src: 'sounds/partial-correct.mp3', volume: 0.4 },
+            
+            // Special events
+            streak: { src: 'sounds/streak.mp3', volume: 0.6 },
+            newHighScore: { src: 'sounds/new-high-score.mp3', volume: 0.7 },
+            nextQuestion: { src: 'sounds/next-question.mp3', volume: 0.3 }
+        };
+
+        // Audio context for generating sounds programmatically
+        let audioContext = null;
+
+        function initAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            return audioContext;
+        }
+
+        function playSound(soundName) {
+            if (!state.soundEnabled) return;
+            
+            try {
+                const ctx = initAudioContext();
+                if (ctx.state === 'suspended') {
+                    ctx.resume();
+                }
+                
+                const soundMap = {
+                    'correct': 'correct',
+                    'incorrect': 'incorrect',
+                    'streak': 'streak',
+                    'quizStart': 'quizStart',
+                    'quizCompleteHigh': 'streak',
+                    'quizCompleteMid': 'correct',
+                    'quizCompleteLow': 'click',
+                    'navClick': 'click',
+                    'buttonClick': 'click',
+                    'nextQuestion': 'click',
+                    'newHighScore': 'streak'
+                };
+                
+                const type = soundMap[soundName] || 'click';
+                const now = ctx.currentTime;
+                
+                switch(type) {
+                    case 'correct': {
+                        // Happy ascending arpeggio
+                        const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+                        notes.forEach((freq, i) => {
+                            const osc = ctx.createOscillator();
+                            const gain = ctx.createGain();
+                            osc.connect(gain);
+                            gain.connect(ctx.destination);
+                            osc.frequency.setValueAtTime(freq, now + i * 0.08);
+                            osc.type = 'sine';
+                            gain.gain.setValueAtTime(0.25, now + i * 0.08);
+                            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.3);
+                            osc.start(now + i * 0.08);
+                            osc.stop(now + i * 0.08 + 0.3);
+                        });
+                        break;
+                    }
+                    case 'incorrect': {
+                        // Descending "wrong" sound
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(300, now);
+                        osc.frequency.exponentialRampToValueAtTime(150, now + 0.25);
+                        gain.gain.setValueAtTime(0.15, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                        osc.start(now);
+                        osc.stop(now + 0.3);
+                        break;
+                    }
+                    case 'streak': {
+                        // Celebratory fanfare
+                        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                        notes.forEach((freq, i) => {
+                            const osc = ctx.createOscillator();
+                            const gain = ctx.createGain();
+                            osc.connect(gain);
+                            gain.connect(ctx.destination);
+                            osc.frequency.setValueAtTime(freq, now + i * 0.1);
+                            osc.type = 'sine';
+                            gain.gain.setValueAtTime(0.2, now + i * 0.1);
+                            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.4);
+                            osc.start(now + i * 0.1);
+                            osc.stop(now + i * 0.1 + 0.4);
+                        });
+                        break;
+                    }
+                    case 'quizStart': {
+                        // "Ready go" ascending sound
+                        const notes = [440, 554.37, 659.25]; // A4, C#5, E5
+                        notes.forEach((freq, i) => {
+                            const osc = ctx.createOscillator();
+                            const gain = ctx.createGain();
+                            osc.connect(gain);
+                            gain.connect(ctx.destination);
+                            osc.frequency.setValueAtTime(freq, now + i * 0.12);
+                            osc.type = 'sine';
+                            gain.gain.setValueAtTime(0.2, now + i * 0.12);
+                            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.25);
+                            osc.start(now + i * 0.12);
+                            osc.stop(now + i * 0.12 + 0.25);
+                        });
+                        break;
+                    }
+                    case 'click':
+                    default: {
+                        // Simple click
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.frequency.setValueAtTime(600, now);
+                        osc.type = 'sine';
+                        gain.gain.setValueAtTime(0.1, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                        osc.start(now);
+                        osc.stop(now + 0.05);
+                        break;
+                    }
+                }
+            } catch (e) {
+                console.log('Sound generation failed:', e);
+            }
+        }
+
+        // ========================================
+        // TOPICS & VOCABULARY DATA
+        // ========================================
+        const TOPICS = [
+            "Greetings",
+            "Numbers",
+            "Colors",
+            "Classroom Objects",
+            "Family",
+            "Food & Drinks",
+            "Days & Months",
+            "Weather & Seasons",
+            "Clothing",
+            "Animals",
+            "Body Parts",
+            "Ser vs Estar",
+            "Present Tense AR Verbs",
+            "Present Tense ER/IR Verbs",
+            "Gustar",
+            "Adjective Agreement",
+            "Question Words",
+            "Tener & Tener Expressions",
+            "Simple Past (intro)",
+            "Daily Routine"
+        ];
+
+        const LEVELS = ["Beginner", "Easy", "Medium", "Hard"];
+
+        // Vocabulary data organized by topic
+        const VOCAB_DATA = {
+            "Greetings": {
+                words: [
+                    { en: "hello", es: "hola" },
+                    { en: "goodbye", es: "adiós" },
+                    { en: "good morning", es: "buenos días" },
+                    { en: "good afternoon", es: "buenas tardes" },
+                    { en: "good night", es: "buenas noches" },
+                    { en: "How are you?", es: "¿Cómo estás?" },
+                    { en: "I'm fine", es: "Estoy bien" },
+                    { en: "thank you", es: "gracias" },
+                    { en: "please", es: "por favor" },
+                    { en: "you're welcome", es: "de nada" },
+                    { en: "nice to meet you", es: "mucho gusto" },
+                    { en: "What's your name?", es: "¿Cómo te llamas?" },
+                    { en: "My name is...", es: "Me llamo..." },
+                    { en: "see you later", es: "hasta luego" },
+                    { en: "see you tomorrow", es: "hasta mañana" }
+                ],
+                passages: [
+                    {
+                        text: "— ¡Hola! ¿Cómo te llamas?\n— Me llamo María. ¿Y tú?\n— Me llamo Juan. Mucho gusto.\n— Igualmente. ¿Cómo estás?\n— Estoy muy bien, gracias.",
+                        questions: [
+                            { q: "¿Cómo se llama la chica?", a: "María", options: ["Juan", "María", "Pedro", "Ana"] },
+                            { q: "¿Cómo está Juan?", a: "Muy bien", options: ["Mal", "Regular", "Muy bien", "Así así"] }
+                        ]
+                    }
+                ]
+            },
+            "Numbers": {
+                words: [
+                    { en: "one", es: "uno" },
+                    { en: "two", es: "dos" },
+                    { en: "three", es: "tres" },
+                    { en: "four", es: "cuatro" },
+                    { en: "five", es: "cinco" },
+                    { en: "six", es: "seis" },
+                    { en: "seven", es: "siete" },
+                    { en: "eight", es: "ocho" },
+                    { en: "nine", es: "nueve" },
+                    { en: "ten", es: "diez" },
+                    { en: "eleven", es: "once" },
+                    { en: "twelve", es: "doce" },
+                    { en: "twenty", es: "veinte" },
+                    { en: "thirty", es: "treinta" },
+                    { en: "one hundred", es: "cien" }
+                ]
+            },
+            "Colors": {
+                words: [
+                    { en: "red", es: "rojo" },
+                    { en: "blue", es: "azul" },
+                    { en: "green", es: "verde" },
+                    { en: "yellow", es: "amarillo" },
+                    { en: "orange", es: "naranja" },
+                    { en: "purple", es: "morado" },
+                    { en: "pink", es: "rosa" },
+                    { en: "black", es: "negro" },
+                    { en: "white", es: "blanco" },
+                    { en: "brown", es: "marrón" },
+                    { en: "gray", es: "gris" },
+                    { en: "light blue", es: "celeste" }
+                ]
+            },
+            "Classroom Objects": {
+                words: [
+                    { en: "book", es: "libro" },
+                    { en: "pen", es: "bolígrafo" },
+                    { en: "pencil", es: "lápiz" },
+                    { en: "notebook", es: "cuaderno" },
+                    { en: "desk", es: "escritorio" },
+                    { en: "chair", es: "silla" },
+                    { en: "board", es: "pizarra" },
+                    { en: "eraser", es: "borrador" },
+                    { en: "backpack", es: "mochila" },
+                    { en: "ruler", es: "regla" },
+                    { en: "scissors", es: "tijeras" },
+                    { en: "paper", es: "papel" },
+                    { en: "computer", es: "computadora" },
+                    { en: "teacher", es: "profesor" },
+                    { en: "student", es: "estudiante" }
+                ],
+                passages: [
+                    {
+                        text: "En mi mochila tengo tres libros, dos cuadernos y muchos lápices. Mi cuaderno favorito es el azul. También tengo una regla y unas tijeras.",
+                        questions: [
+                            { q: "¿Cuántos libros hay en la mochila?", a: "Tres", options: ["Dos", "Tres", "Cuatro", "Cinco"] },
+                            { q: "¿De qué color es el cuaderno favorito?", a: "Azul", options: ["Rojo", "Verde", "Azul", "Amarillo"] }
+                        ]
+                    }
+                ]
+            },
+            "Family": {
+                words: [
+                    { en: "mother", es: "madre" },
+                    { en: "father", es: "padre" },
+                    { en: "sister", es: "hermana" },
+                    { en: "brother", es: "hermano" },
+                    { en: "grandmother", es: "abuela" },
+                    { en: "grandfather", es: "abuelo" },
+                    { en: "aunt", es: "tía" },
+                    { en: "uncle", es: "tío" },
+                    { en: "cousin (m)", es: "primo" },
+                    { en: "cousin (f)", es: "prima" },
+                    { en: "son", es: "hijo" },
+                    { en: "daughter", es: "hija" },
+                    { en: "parents", es: "padres" },
+                    { en: "family", es: "familia" },
+                    { en: "pet", es: "mascota" }
+                ],
+                passages: [
+                    {
+                        text: "Mi familia es grande. Tengo dos hermanos y una hermana. Mi hermano mayor se llama Carlos y tiene veinte años. Mi hermana pequeña se llama Lucía y tiene diez años. Mis padres se llaman Ana y Miguel.",
+                        questions: [
+                            { q: "¿Cuántos hermanos tiene en total?", a: "Tres", options: ["Uno", "Dos", "Tres", "Cuatro"] },
+                            { q: "¿Cómo se llama el hermano mayor?", a: "Carlos", options: ["Miguel", "Carlos", "Lucía", "Ana"] },
+                            { q: "¿Cuántos años tiene Lucía?", a: "Diez", options: ["Ocho", "Diez", "Doce", "Veinte"] }
+                        ]
+                    }
+                ]
+            },
+            "Food & Drinks": {
+                words: [
+                    { en: "apple", es: "manzana" },
+                    { en: "banana", es: "plátano" },
+                    { en: "orange (fruit)", es: "naranja" },
+                    { en: "bread", es: "pan" },
+                    { en: "cheese", es: "queso" },
+                    { en: "chicken", es: "pollo" },
+                    { en: "rice", es: "arroz" },
+                    { en: "water", es: "agua" },
+                    { en: "milk", es: "leche" },
+                    { en: "juice", es: "jugo" },
+                    { en: "coffee", es: "café" },
+                    { en: "egg", es: "huevo" },
+                    { en: "fish", es: "pescado" },
+                    { en: "meat", es: "carne" },
+                    { en: "vegetables", es: "verduras" },
+                    { en: "pizza", es: "pizza" },
+                    { en: "ice cream", es: "helado" },
+                    { en: "breakfast", es: "desayuno" },
+                    { en: "lunch", es: "almuerzo" },
+                    { en: "dinner", es: "cena" }
+                ],
+                passages: [
+                    {
+                        text: "Para el desayuno, como pan con queso y bebo jugo de naranja. Me gusta mucho el café pero mi madre dice que soy muy joven. Para el almuerzo, prefiero pollo con arroz.",
+                        questions: [
+                            { q: "¿Qué come para el desayuno?", a: "Pan con queso", options: ["Huevos", "Pan con queso", "Pizza", "Pollo"] },
+                            { q: "¿Qué bebe por la mañana?", a: "Jugo de naranja", options: ["Café", "Leche", "Jugo de naranja", "Agua"] }
+                        ]
+                    }
+                ]
+            },
+            "Days & Months": {
+                words: [
+                    { en: "Monday", es: "lunes" },
+                    { en: "Tuesday", es: "martes" },
+                    { en: "Wednesday", es: "miércoles" },
+                    { en: "Thursday", es: "jueves" },
+                    { en: "Friday", es: "viernes" },
+                    { en: "Saturday", es: "sábado" },
+                    { en: "Sunday", es: "domingo" },
+                    { en: "January", es: "enero" },
+                    { en: "February", es: "febrero" },
+                    { en: "March", es: "marzo" },
+                    { en: "April", es: "abril" },
+                    { en: "May", es: "mayo" },
+                    { en: "June", es: "junio" },
+                    { en: "July", es: "julio" },
+                    { en: "August", es: "agosto" },
+                    { en: "September", es: "septiembre" },
+                    { en: "October", es: "octubre" },
+                    { en: "November", es: "noviembre" },
+                    { en: "December", es: "diciembre" },
+                    { en: "week", es: "semana" },
+                    { en: "month", es: "mes" },
+                    { en: "year", es: "año" }
+                ]
+            },
+            "Weather & Seasons": {
+                words: [
+                    { en: "spring", es: "primavera" },
+                    { en: "summer", es: "verano" },
+                    { en: "fall/autumn", es: "otoño" },
+                    { en: "winter", es: "invierno" },
+                    { en: "It's sunny", es: "Hace sol" },
+                    { en: "It's hot", es: "Hace calor" },
+                    { en: "It's cold", es: "Hace frío" },
+                    { en: "It's windy", es: "Hace viento" },
+                    { en: "It's raining", es: "Llueve" },
+                    { en: "It's snowing", es: "Nieva" },
+                    { en: "It's cloudy", es: "Está nublado" },
+                    { en: "weather", es: "tiempo" },
+                    { en: "rain", es: "lluvia" },
+                    { en: "snow", es: "nieve" },
+                    { en: "sun", es: "sol" }
+                ],
+                passages: [
+                    {
+                        text: "En verano hace mucho calor y sol. Me gusta ir a la playa. En invierno hace frío y a veces nieva. Prefiero el otoño porque no hace ni frío ni calor.",
+                        questions: [
+                            { q: "¿Qué tiempo hace en verano?", a: "Hace calor", options: ["Hace frío", "Hace calor", "Llueve", "Nieva"] },
+                            { q: "¿Cuál es la estación favorita del autor?", a: "Otoño", options: ["Verano", "Invierno", "Otoño", "Primavera"] }
+                        ]
+                    }
+                ]
+            },
+            "Clothing": {
+                words: [
+                    { en: "shirt", es: "camisa" },
+                    { en: "t-shirt", es: "camiseta" },
+                    { en: "pants", es: "pantalones" },
+                    { en: "dress", es: "vestido" },
+                    { en: "skirt", es: "falda" },
+                    { en: "shoes", es: "zapatos" },
+                    { en: "socks", es: "calcetines" },
+                    { en: "jacket", es: "chaqueta" },
+                    { en: "coat", es: "abrigo" },
+                    { en: "hat", es: "sombrero" },
+                    { en: "cap", es: "gorra" },
+                    { en: "sweater", es: "suéter" },
+                    { en: "jeans", es: "vaqueros" },
+                    { en: "boots", es: "botas" },
+                    { en: "shorts", es: "pantalones cortos" }
+                ]
+            },
+            "Animals": {
+                words: [
+                    { en: "dog", es: "perro" },
+                    { en: "cat", es: "gato" },
+                    { en: "bird", es: "pájaro" },
+                    { en: "fish", es: "pez" },
+                    { en: "horse", es: "caballo" },
+                    { en: "cow", es: "vaca" },
+                    { en: "pig", es: "cerdo" },
+                    { en: "chicken", es: "gallina" },
+                    { en: "rabbit", es: "conejo" },
+                    { en: "mouse", es: "ratón" },
+                    { en: "elephant", es: "elefante" },
+                    { en: "lion", es: "león" },
+                    { en: "bear", es: "oso" },
+                    { en: "monkey", es: "mono" },
+                    { en: "snake", es: "serpiente" },
+                    { en: "turtle", es: "tortuga" }
+                ],
+                passages: [
+                    {
+                        text: "Tengo dos mascotas: un perro y un gato. Mi perro se llama Max y es grande y marrón. Mi gato se llama Luna y es pequeña y negra. Max come mucho pero Luna prefiere dormir todo el día.",
+                        questions: [
+                            { q: "¿Cuántas mascotas tiene?", a: "Dos", options: ["Una", "Dos", "Tres", "Cuatro"] },
+                            { q: "¿De qué color es el gato?", a: "Negro", options: ["Marrón", "Blanco", "Negro", "Gris"] },
+                            { q: "¿Qué prefiere hacer Luna?", a: "Dormir", options: ["Comer", "Correr", "Dormir", "Jugar"] }
+                        ]
+                    }
+                ]
+            },
+            "Body Parts": {
+                words: [
+                    { en: "head", es: "cabeza" },
+                    { en: "eye", es: "ojo" },
+                    { en: "ear", es: "oreja" },
+                    { en: "nose", es: "nariz" },
+                    { en: "mouth", es: "boca" },
+                    { en: "hand", es: "mano" },
+                    { en: "arm", es: "brazo" },
+                    { en: "leg", es: "pierna" },
+                    { en: "foot", es: "pie" },
+                    { en: "hair", es: "pelo" },
+                    { en: "face", es: "cara" },
+                    { en: "finger", es: "dedo" },
+                    { en: "knee", es: "rodilla" },
+                    { en: "shoulder", es: "hombro" },
+                    { en: "stomach", es: "estómago" }
+                ]
+            },
+            "Ser vs Estar": {
+                grammar: {
+                    concept: "Ser is used for permanent characteristics, origin, time, and identity. Estar is used for location, temporary states, and emotions.",
+                    examples: [
+                        { sentence: "Yo soy estudiante.", translation: "I am a student.", verb: "ser" },
+                        { sentence: "Ella es de México.", translation: "She is from Mexico.", verb: "ser" },
+                        { sentence: "El libro está en la mesa.", translation: "The book is on the table.", verb: "estar" },
+                        { sentence: "Estoy cansado.", translation: "I am tired.", verb: "estar" },
+                        { sentence: "María es alta.", translation: "María is tall.", verb: "ser" },
+                        { sentence: "La comida está caliente.", translation: "The food is hot.", verb: "estar" }
+                    ]
+                },
+                sentences: [
+                    { incomplete: "Yo ___ estudiante.", correct: "soy", options: ["soy", "estoy"] },
+                    { incomplete: "El café ___ caliente.", correct: "está", options: ["es", "está"] },
+                    { incomplete: "Ella ___ de España.", correct: "es", options: ["es", "está"] },
+                    { incomplete: "Nosotros ___ en la escuela.", correct: "estamos", options: ["somos", "estamos"] },
+                    { incomplete: "Tú ___ muy inteligente.", correct: "eres", options: ["eres", "estás"] },
+                    { incomplete: "Los niños ___ cansados.", correct: "están", options: ["son", "están"] },
+                    { incomplete: "Mi madre ___ doctora.", correct: "es", options: ["es", "está"] },
+                    { incomplete: "El gato ___ debajo de la mesa.", correct: "está", options: ["es", "está"] },
+                    { incomplete: "Hoy ___ lunes.", correct: "es", options: ["es", "está"] },
+                    { incomplete: "Yo ___ feliz hoy.", correct: "estoy", options: ["soy", "estoy"] }
+                ]
+            },
+            "Present Tense AR Verbs": {
+                grammar: {
+                    concept: "Regular -AR verbs follow: yo -o, tú -as, él/ella -a, nosotros -amos, ellos -an",
+                    verbs: ["hablar", "caminar", "estudiar", "trabajar", "cocinar", "bailar", "cantar", "comprar", "llegar", "tomar"]
+                },
+                sentences: [
+                    { incomplete: "Yo habl___ español.", correct: "o", fullWord: "hablo" },
+                    { incomplete: "Tú estudi___ mucho.", correct: "as", fullWord: "estudias" },
+                    { incomplete: "Ella bail___ bien.", correct: "a", fullWord: "baila" },
+                    { incomplete: "Nosotros trabaj___ aquí.", correct: "amos", fullWord: "trabajamos" },
+                    { incomplete: "Ellos camin___ al parque.", correct: "an", fullWord: "caminan" },
+                    { incomplete: "Yo cocin___ la cena.", correct: "o", fullWord: "cocino" },
+                    { incomplete: "Tú cant___ muy bien.", correct: "as", fullWord: "cantas" },
+                    { incomplete: "María compr___ frutas.", correct: "a", fullWord: "compra" }
+                ]
+            },
+            "Present Tense ER/IR Verbs": {
+                grammar: {
+                    concept: "-ER verbs: yo -o, tú -es, él -e, nosotros -emos, ellos -en. -IR verbs: yo -o, tú -es, él -e, nosotros -imos, ellos -en",
+                    verbs: ["comer", "beber", "leer", "correr", "vivir", "escribir", "abrir", "recibir"]
+                },
+                sentences: [
+                    { incomplete: "Yo com___ pizza.", correct: "o", fullWord: "como" },
+                    { incomplete: "Tú beb___ agua.", correct: "es", fullWord: "bebes" },
+                    { incomplete: "Él le___ un libro.", correct: "e", fullWord: "lee" },
+                    { incomplete: "Nosotros corr___ rápido.", correct: "emos", fullWord: "corremos" },
+                    { incomplete: "Ellos viv___ en Madrid.", correct: "en", fullWord: "viven" },
+                    { incomplete: "Yo escrib___ cartas.", correct: "o", fullWord: "escribo" },
+                    { incomplete: "Tú abr___ la puerta.", correct: "es", fullWord: "abres" },
+                    { incomplete: "María recib___ regalos.", correct: "e", fullWord: "recibe" }
+                ]
+            },
+            "Gustar": {
+                grammar: {
+                    concept: "Gustar means 'to please' and uses indirect object pronouns: me gusta, te gusta, le gusta, nos gusta, les gusta. Use gusta for singular/infinitive, gustan for plural.",
+                    examples: [
+                        { sentence: "Me gusta el chocolate.", translation: "I like chocolate." },
+                        { sentence: "Te gustan los perros.", translation: "You like dogs." },
+                        { sentence: "Nos gusta bailar.", translation: "We like to dance." },
+                        { sentence: "Les gustan las películas.", translation: "They like movies." }
+                    ]
+                },
+                sentences: [
+                    { incomplete: "Me ___ la pizza.", correct: "gusta", options: ["gusta", "gustan"] },
+                    { incomplete: "Te ___ los videojuegos.", correct: "gustan", options: ["gusta", "gustan"] },
+                    { incomplete: "Le ___ leer.", correct: "gusta", options: ["gusta", "gustan"] },
+                    { incomplete: "Nos ___ las vacaciones.", correct: "gustan", options: ["gusta", "gustan"] },
+                    { incomplete: "Me ___ nadar.", correct: "gusta", options: ["gusta", "gustan"] },
+                    { incomplete: "¿Te ___ los gatos?", correct: "gustan", options: ["gusta", "gustan"] }
+                ]
+            },
+            "Adjective Agreement": {
+                grammar: {
+                    concept: "Spanish adjectives must agree in gender (masculine/feminine) and number (singular/plural) with the noun they modify.",
+                    examples: [
+                        { sentence: "El chico alto", translation: "The tall boy" },
+                        { sentence: "La chica alta", translation: "The tall girl" },
+                        { sentence: "Los chicos altos", translation: "The tall boys" },
+                        { sentence: "Las chicas altas", translation: "The tall girls" }
+                    ]
+                },
+                sentences: [
+                    { incomplete: "La casa es blanc___.", correct: "a", noun: "casa", gender: "f", number: "s" },
+                    { incomplete: "Los libros son interesant___.", correct: "es", noun: "libros", gender: "m", number: "p" },
+                    { incomplete: "Mi hermana es alt___.", correct: "a", noun: "hermana", gender: "f", number: "s" },
+                    { incomplete: "Las flores son bonit___.", correct: "as", noun: "flores", gender: "f", number: "p" },
+                    { incomplete: "El perro es pequeñ___.", correct: "o", noun: "perro", gender: "m", number: "s" },
+                    { incomplete: "Los estudiantes son inteligent___.", correct: "es", noun: "estudiantes", gender: "m", number: "p" }
+                ]
+            },
+            "Question Words": {
+                words: [
+                    { en: "What?", es: "¿Qué?" },
+                    { en: "Who?", es: "¿Quién?" },
+                    { en: "Where?", es: "¿Dónde?" },
+                    { en: "When?", es: "¿Cuándo?" },
+                    { en: "Why?", es: "¿Por qué?" },
+                    { en: "How?", es: "¿Cómo?" },
+                    { en: "How much?", es: "¿Cuánto?" },
+                    { en: "How many?", es: "¿Cuántos?" },
+                    { en: "Which?", es: "¿Cuál?" },
+                    { en: "Whose?", es: "¿De quién?" }
+                ],
+                sentences: [
+                    { incomplete: "¿___ te llamas?", correct: "Cómo", translation: "What's your name?" },
+                    { incomplete: "¿___ vives?", correct: "Dónde", translation: "Where do you live?" },
+                    { incomplete: "¿___ es tu cumpleaños?", correct: "Cuándo", translation: "When is your birthday?" },
+                    { incomplete: "¿___ estudias español?", correct: "Por qué", translation: "Why do you study Spanish?" },
+                    { incomplete: "¿___ es tu profesor?", correct: "Quién", translation: "Who is your teacher?" }
+                ]
+            },
+            "Tener & Tener Expressions": {
+                grammar: {
+                    concept: "Tener means 'to have' and is used in many expressions: tener hambre (to be hungry), tener sed (to be thirsty), tener frío (to be cold), tener calor (to be hot), tener sueño (to be sleepy), tener años (to be ... years old).",
+                    conjugation: ["tengo", "tienes", "tiene", "tenemos", "tienen"]
+                },
+                sentences: [
+                    { incomplete: "Yo ___ quince años.", correct: "tengo", translation: "I am fifteen years old." },
+                    { incomplete: "¿Tú ___ hambre?", correct: "tienes", translation: "Are you hungry?" },
+                    { incomplete: "Ella ___ mucho sueño.", correct: "tiene", translation: "She is very sleepy." },
+                    { incomplete: "Nosotros ___ frío.", correct: "tenemos", translation: "We are cold." },
+                    { incomplete: "Ellos ___ sed.", correct: "tienen", translation: "They are thirsty." },
+                    { incomplete: "Mi hermano ___ miedo.", correct: "tiene", translation: "My brother is afraid." }
+                ]
+            },
+            "Simple Past (intro)": {
+                grammar: {
+                    concept: "The preterite (simple past) is used for completed actions. Regular -AR verbs: -é, -aste, -ó, -amos, -aron",
+                    examples: [
+                        { sentence: "Yo hablé con María.", translation: "I talked with María." },
+                        { sentence: "Ella estudió mucho.", translation: "She studied a lot." },
+                        { sentence: "Nosotros bailamos ayer.", translation: "We danced yesterday." }
+                    ]
+                },
+                sentences: [
+                    { incomplete: "Ayer yo habl___ con mi amigo.", correct: "é", fullWord: "hablé" },
+                    { incomplete: "Tú estudi___ mucho anoche.", correct: "aste", fullWord: "estudiaste" },
+                    { incomplete: "Ella bail___ en la fiesta.", correct: "ó", fullWord: "bailó" },
+                    { incomplete: "Nosotros camin___ al parque.", correct: "amos", fullWord: "caminamos" },
+                    { incomplete: "Ellos trabaj___ todo el día.", correct: "aron", fullWord: "trabajaron" }
+                ]
+            },
+            "Daily Routine": {
+                words: [
+                    { en: "to wake up", es: "despertarse" },
+                    { en: "to get up", es: "levantarse" },
+                    { en: "to shower", es: "ducharse" },
+                    { en: "to brush teeth", es: "cepillarse los dientes" },
+                    { en: "to get dressed", es: "vestirse" },
+                    { en: "to eat breakfast", es: "desayunar" },
+                    { en: "to go to school", es: "ir a la escuela" },
+                    { en: "to study", es: "estudiar" },
+                    { en: "to eat lunch", es: "almorzar" },
+                    { en: "to return home", es: "volver a casa" },
+                    { en: "to do homework", es: "hacer la tarea" },
+                    { en: "to eat dinner", es: "cenar" },
+                    { en: "to go to bed", es: "acostarse" },
+                    { en: "to sleep", es: "dormir" }
+                ],
+                passages: [
+                    {
+                        text: "Todos los días me despierto a las siete de la mañana. Primero me ducho y luego desayuno con mi familia. A las ocho voy a la escuela. Después de las clases, hago la tarea y ceno a las siete. Me acuesto a las diez.",
+                        questions: [
+                            { q: "¿A qué hora se despierta?", a: "A las siete", options: ["A las seis", "A las siete", "A las ocho", "A las nueve"] },
+                            { q: "¿Qué hace primero después de despertarse?", a: "Se ducha", options: ["Desayuna", "Se ducha", "Va a la escuela", "Hace la tarea"] },
+                            { q: "¿A qué hora se acuesta?", a: "A las diez", options: ["A las ocho", "A las nueve", "A las diez", "A las once"] }
+                        ]
+                    }
+                ]
+            }
+        };
+
+        // ========================================
+        // QUESTION BANK GENERATOR
+        // ========================================
+        let QUESTION_BANK = [];
+        let questionIdCounter = 0;
+
+        function generateQuestionId() {
+            return `q_${++questionIdCounter}`;
+        }
+
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function getRandomItems(array, count) {
+            return shuffleArray(array).slice(0, count);
+        }
+
+        function generateVocabQuestions(topic, level) {
+            const questions = [];
+            const data = VOCAB_DATA[topic];
+            if (!data || !data.words) return questions;
+
+            const words = data.words;
+
+            // MCQ: English to Spanish
+            words.forEach(word => {
+                const distractors = words
+                    .filter(w => w.es !== word.es)
+                    .map(w => w.es);
+                const options = shuffleArray([word.es, ...getRandomItems(distractors, 3)]);
+                
+                questions.push({
+                    id: generateQuestionId(),
+                    type: "multiple_choice",
+                    level: level,
+                    topic: topic,
+                    focus: ["Vocabulary"],
+                    prompt: `What is the Spanish word for "${word.en}"?`,
+                    options: options,
+                    correctAnswer: word.es,
+                    explanation: `"${word.en}" in Spanish is "${word.es}".`
+                });
+            });
+
+            // MCQ: Spanish to English
+            words.forEach(word => {
+                const distractors = words
+                    .filter(w => w.en !== word.en)
+                    .map(w => w.en);
+                const options = shuffleArray([word.en, ...getRandomItems(distractors, 3)]);
+                
+                questions.push({
+                    id: generateQuestionId(),
+                    type: "multiple_choice",
+                    level: level,
+                    topic: topic,
+                    focus: ["Vocabulary"],
+                    prompt: `What does "${word.es}" mean in English?`,
+                    options: options,
+                    correctAnswer: word.en,
+                    explanation: `"${word.es}" means "${word.en}" in English.`
+                });
+            });
+
+            // Fill in blank (for Easy/Medium)
+            if (level !== "Beginner") {
+                words.slice(0, 8).forEach(word => {
+                    questions.push({
+                        id: generateQuestionId(),
+                        type: "fill_in_blank",
+                        level: level,
+                        topic: topic,
+                        focus: ["Vocabulary", "Writing"],
+                        prompt: `Write the Spanish word for "${word.en}":`,
+                        correctAnswer: word.es,
+                        acceptedAnswers: [word.es, word.es.toLowerCase(), word.es.charAt(0).toUpperCase() + word.es.slice(1)],
+                        explanation: `The Spanish word for "${word.en}" is "${word.es}".`
+                    });
+                });
+            }
+
+            return questions;
+        }
+
+        function generateGrammarQuestions(topic, level) {
+            const questions = [];
+            const data = VOCAB_DATA[topic];
+            if (!data) return questions;
+
+            if (data.sentences) {
+                data.sentences.forEach(sentence => {
+                    if (sentence.options) {
+                        // MCQ style
+                        questions.push({
+                            id: generateQuestionId(),
+                            type: "multiple_choice",
+                            level: level,
+                            topic: topic,
+                            focus: ["Grammar"],
+                            prompt: `Complete the sentence: ${sentence.incomplete}`,
+                            options: shuffleArray(sentence.options),
+                            correctAnswer: sentence.correct,
+                            explanation: sentence.translation || `The correct answer is "${sentence.correct}".`
+                        });
+                    } else if (sentence.fullWord) {
+                        // Fill in conjugation ending
+                        questions.push({
+                            id: generateQuestionId(),
+                            type: "fill_in_blank",
+                            level: level,
+                            topic: topic,
+                            focus: ["Grammar", "Writing"],
+                            prompt: `Complete the verb: ${sentence.incomplete}`,
+                            correctAnswer: sentence.correct,
+                            acceptedAnswers: [sentence.correct, sentence.correct.toLowerCase()],
+                            explanation: `The complete conjugation is "${sentence.fullWord}".`
+                        });
+                    } else {
+                        // Fill in type
+                        questions.push({
+                            id: generateQuestionId(),
+                            type: "fill_in_blank",
+                            level: level,
+                            topic: topic,
+                            focus: ["Grammar", "Writing"],
+                            prompt: `Complete the adjective: ${sentence.incomplete}`,
+                            correctAnswer: sentence.correct,
+                            acceptedAnswers: [sentence.correct, sentence.correct.toLowerCase()],
+                            explanation: `The correct ending is "${sentence.correct}" to agree with "${sentence.noun}".`
+                        });
+                    }
+                });
+            }
+
+            return questions;
+        }
+
+        function generateReadingQuestions(topic, level) {
+            const questions = [];
+            const data = VOCAB_DATA[topic];
+            if (!data || !data.passages) return questions;
+
+            data.passages.forEach(passage => {
+                passage.questions.forEach(q => {
+                    questions.push({
+                        id: generateQuestionId(),
+                        type: "reading_mcq",
+                        level: level,
+                        topic: topic,
+                        focus: ["Reading"],
+                        passage: passage.text,
+                        prompt: q.q,
+                        options: shuffleArray(q.options),
+                        correctAnswer: q.a,
+                        explanation: `According to the passage, the answer is "${q.a}".`
+                    });
+                });
+            });
+
+            return questions;
+        }
+
+        function generateMatchingQuestions(topic, level) {
+            const questions = [];
+            const data = VOCAB_DATA[topic];
+            if (!data || !data.words) return questions;
+
+            // Create matching questions with 4-5 pairs
+            const words = data.words;
+            for (let i = 0; i < Math.floor(words.length / 4); i++) {
+                const pairs = words.slice(i * 4, i * 4 + 4);
+                if (pairs.length >= 4) {
+                    questions.push({
+                        id: generateQuestionId(),
+                        type: "matching",
+                        level: level,
+                        topic: topic,
+                        focus: ["Vocabulary"],
+                        prompt: "Match the English words with their Spanish translations:",
+                        leftItems: pairs.map(p => p.en),
+                        rightItems: shuffleArray(pairs.map(p => p.es)),
+                        correctPairs: pairs.reduce((acc, p) => { acc[p.en] = p.es; return acc; }, {}),
+                        explanation: "Match each English word with its Spanish equivalent."
+                    });
+                }
+            }
+
+            return questions;
+        }
+
+        function generateOrderWordsQuestions(topic, level) {
+            const questions = [];
+            
+            const sentenceTemplates = {
+                "Greetings": [
+                    { words: ["Hola", "cómo", "estás"], correct: ["Hola", "cómo", "estás"] },
+                    { words: ["Me", "llamo", "Juan"], correct: ["Me", "llamo", "Juan"] },
+                    { words: ["Mucho", "gusto", "en", "conocerte"], correct: ["Mucho", "gusto", "en", "conocerte"] }
+                ],
+                "Family": [
+                    { words: ["Mi", "madre", "es", "doctora"], correct: ["Mi", "madre", "es", "doctora"] },
+                    { words: ["Tengo", "dos", "hermanos"], correct: ["Tengo", "dos", "hermanos"] },
+                    { words: ["Mi", "familia", "es", "grande"], correct: ["Mi", "familia", "es", "grande"] }
+                ],
+                "Food & Drinks": [
+                    { words: ["Me", "gusta", "la", "pizza"], correct: ["Me", "gusta", "la", "pizza"] },
+                    { words: ["Quiero", "beber", "agua"], correct: ["Quiero", "beber", "agua"] },
+                    { words: ["Como", "arroz", "con", "pollo"], correct: ["Como", "arroz", "con", "pollo"] }
+                ],
+                "Daily Routine": [
+                    { words: ["Me", "despierto", "a", "las", "siete"], correct: ["Me", "despierto", "a", "las", "siete"] },
+                    { words: ["Voy", "a", "la", "escuela"], correct: ["Voy", "a", "la", "escuela"] },
+                    { words: ["Hago", "la", "tarea", "después"], correct: ["Hago", "la", "tarea", "después"] }
+                ]
+            };
+
+            const templates = sentenceTemplates[topic] || sentenceTemplates["Greetings"];
+            
+            templates.forEach(template => {
+                questions.push({
+                    id: generateQuestionId(),
+                    type: "order_words",
+                    level: level,
+                    topic: topic,
+                    focus: ["Grammar", "Writing"],
+                    prompt: "Arrange the words to form a correct Spanish sentence:",
+                    wordBank: shuffleArray([...template.words]),
+                    correctOrder: template.correct,
+                    explanation: `The correct sentence is: "${template.correct.join(' ')}"`
+                });
+            });
+
+            return questions;
+        }
+
+        function generateTrueFalseQuestions(topic, level) {
+            const questions = [];
+            const data = VOCAB_DATA[topic];
+            if (!data || !data.words) return questions;
+
+            const words = data.words;
+            
+            // True statements
+            words.slice(0, 5).forEach(word => {
+                questions.push({
+                    id: generateQuestionId(),
+                    type: "true_false",
+                    level: level,
+                    topic: topic,
+                    focus: ["Vocabulary"],
+                    prompt: `"${word.es}" means "${word.en}" in English.`,
+                    correctAnswer: true,
+                    explanation: `Correct! "${word.es}" does mean "${word.en}".`
+                });
+            });
+
+            // False statements
+            for (let i = 0; i < Math.min(5, words.length - 1); i++) {
+                const word = words[i];
+                const wrongMeaning = words[(i + 1) % words.length].en;
+                questions.push({
+                    id: generateQuestionId(),
+                    type: "true_false",
+                    level: level,
+                    topic: topic,
+                    focus: ["Vocabulary"],
+                    prompt: `"${word.es}" means "${wrongMeaning}" in English.`,
+                    correctAnswer: false,
+                    explanation: `False! "${word.es}" means "${word.en}", not "${wrongMeaning}".`
+                });
+            }
+
+            return questions;
+        }
+
+        function generateAllQuestions() {
+            QUESTION_BANK = [];
+            questionIdCounter = 0;
+
+            const vocabTopics = ["Greetings", "Numbers", "Colors", "Classroom Objects", "Family", 
+                               "Food & Drinks", "Days & Months", "Weather & Seasons", "Clothing", 
+                               "Animals", "Body Parts", "Question Words", "Daily Routine"];
+            
+            const grammarTopics = ["Ser vs Estar", "Present Tense AR Verbs", "Present Tense ER/IR Verbs", 
+                                  "Gustar", "Adjective Agreement", "Tener & Tener Expressions", "Simple Past (intro)"];
+
+            // Generate vocabulary questions for each topic and level
+            vocabTopics.forEach(topic => {
+                LEVELS.forEach(level => {
+                    QUESTION_BANK.push(...generateVocabQuestions(topic, level));
+                    QUESTION_BANK.push(...generateMatchingQuestions(topic, level));
+                    QUESTION_BANK.push(...generateTrueFalseQuestions(topic, level));
+                    QUESTION_BANK.push(...generateReadingQuestions(topic, level));
+                    QUESTION_BANK.push(...generateOrderWordsQuestions(topic, level));
+                });
+            });
+
+            // Generate grammar questions
+            grammarTopics.forEach(topic => {
+                LEVELS.forEach(level => {
+                    QUESTION_BANK.push(...generateGrammarQuestions(topic, level));
+                });
+            });
+
+            console.log(`Generated ${QUESTION_BANK.length} questions`);
+        }
+
+        // ========================================
+        // QUIZ GENERATOR
+        // ========================================
+        let QUIZZES = [];
+
+        function generateQuizzes() {
+            QUIZZES = [];
+            let quizId = 0;
+
+            // Topic-focused quizzes (vocabulary)
+            const vocabTopics = ["Greetings", "Numbers", "Colors", "Classroom Objects", "Family", 
+                               "Food & Drinks", "Days & Months", "Weather & Seasons", "Clothing", 
+                               "Animals", "Body Parts", "Question Words", "Daily Routine"];
+
+            vocabTopics.forEach(topic => {
+                LEVELS.forEach(level => {
+                    const questions = QUESTION_BANK.filter(q => 
+                        q.topic === topic && 
+                        (q.level === level || level === "Beginner") &&
+                        q.focus.includes("Vocabulary")
+                    );
+
+                    if (questions.length >= 10) {
+                        QUIZZES.push({
+                            id: `quiz_${++quizId}`,
+                            title: `${topic} (${level})`,
+                            level: level,
+                            focus: ["Vocabulary"],
+                            topic: topic,
+                            numQuestions: Math.min(15, questions.length),
+                            questions: getRandomItems(questions, Math.min(15, questions.length))
+                        });
+                    }
+                });
+            });
+
+            // Grammar-focused quizzes
+            const grammarTopics = ["Ser vs Estar", "Present Tense AR Verbs", "Present Tense ER/IR Verbs", 
+                                  "Gustar", "Adjective Agreement", "Tener & Tener Expressions", "Simple Past (intro)"];
+
+            grammarTopics.forEach(topic => {
+                LEVELS.slice(1).forEach(level => { // Skip Beginner for grammar
+                    const questions = QUESTION_BANK.filter(q => 
+                        q.topic === topic && 
+                        q.focus.includes("Grammar")
+                    );
+
+                    if (questions.length >= 8) {
+                        QUIZZES.push({
+                            id: `quiz_${++quizId}`,
+                            title: `${topic} (${level})`,
+                            level: level,
+                            focus: ["Grammar"],
+                            topic: topic,
+                            numQuestions: Math.min(12, questions.length),
+                            questions: getRandomItems(questions, Math.min(12, questions.length))
+                        });
+                    }
+                });
+            });
+
+            // Reading comprehension quizzes
+            const readingTopics = ["Greetings", "Classroom Objects", "Family", "Food & Drinks", 
+                                  "Weather & Seasons", "Animals", "Daily Routine"];
+            
+            readingTopics.forEach(topic => {
+                const questions = QUESTION_BANK.filter(q => 
+                    q.topic === topic && 
+                    q.focus.includes("Reading")
+                );
+
+                if (questions.length >= 3) {
+                    // Add some vocab questions to make it 10+
+                    const vocabQuestions = QUESTION_BANK.filter(q => 
+                        q.topic === topic && 
+                        q.focus.includes("Vocabulary") &&
+                        q.type === "multiple_choice"
+                    );
+
+                    QUIZZES.push({
+                        id: `quiz_${++quizId}`,
+                        title: `${topic}: Reading & Vocab`,
+                        level: "Easy",
+                        focus: ["Reading", "Vocabulary"],
+                        topic: topic,
+                        numQuestions: 10,
+                        questions: [...questions, ...getRandomItems(vocabQuestions, 10 - questions.length)]
+                    });
+                }
+            });
+
+            // Mixed topic review quizzes
+            LEVELS.forEach(level => {
+                for (let i = 0; i < 5; i++) {
+                    const allQuestionsForLevel = QUESTION_BANK.filter(q => 
+                        q.level === level || level === "Beginner"
+                    );
+
+                    if (allQuestionsForLevel.length >= 15) {
+                        QUIZZES.push({
+                            id: `quiz_${++quizId}`,
+                            title: `Mixed Review ${i + 1} (${level})`,
+                            level: level,
+                            focus: ["Vocabulary", "Grammar"],
+                            topic: "Mixed",
+                            numQuestions: 15,
+                            questions: getRandomItems(allQuestionsForLevel, 15)
+                        });
+                    }
+                }
+            });
+
+            // Challenge quizzes
+            for (let i = 0; i < 10; i++) {
+                const hardQuestions = QUESTION_BANK.filter(q => 
+                    q.level === "Hard" || q.level === "Medium"
+                );
+
+                if (hardQuestions.length >= 20) {
+                    QUIZZES.push({
+                        id: `quiz_${++quizId}`,
+                        title: `Super Challenge ${i + 1}`,
+                        level: "Hard",
+                        focus: ["Vocabulary", "Grammar", "Reading", "Writing"],
+                        topic: "Mixed",
+                        numQuestions: 20,
+                        questions: getRandomItems(hardQuestions, 20)
+                    });
+                }
+            }
+
+            // Writing-focused quizzes
+            vocabTopics.slice(0, 8).forEach(topic => {
+                const writingQuestions = QUESTION_BANK.filter(q => 
+                    q.topic === topic && 
+                    (q.type === "fill_in_blank" || q.type === "order_words")
+                );
+
+                if (writingQuestions.length >= 8) {
+                    QUIZZES.push({
+                        id: `quiz_${++quizId}`,
+                        title: `${topic}: Writing Practice`,
+                        level: "Medium",
+                        focus: ["Writing"],
+                        topic: topic,
+                        numQuestions: Math.min(12, writingQuestions.length),
+                        questions: getRandomItems(writingQuestions, Math.min(12, writingQuestions.length))
+                    });
+                }
+            });
+
+            // Ensure we have at least 100 quizzes by adding more mixed quizzes
+            while (QUIZZES.length < 100) {
+                const level = LEVELS[Math.floor(Math.random() * LEVELS.length)];
+                const topic = TOPICS[Math.floor(Math.random() * TOPICS.length)];
+                const questions = QUESTION_BANK.filter(q => 
+                    (q.topic === topic || topic === "Mixed") && 
+                    (q.level === level || level === "Beginner")
+                );
+
+                if (questions.length >= 10) {
+                    QUIZZES.push({
+                        id: `quiz_${++quizId}`,
+                        title: `${topic} Practice ${QUIZZES.length + 1}`,
+                        level: level,
+                        focus: ["Vocabulary", "Grammar"],
+                        topic: topic,
+                        numQuestions: Math.min(12, questions.length),
+                        questions: getRandomItems(questions, Math.min(12, questions.length))
+                    });
+                }
+            }
+
+            console.log(`Generated ${QUIZZES.length} quizzes`);
+        }
+
+        // ========================================
+        // APP STATE
+        // ========================================
+        const state = {
+            currentQuizId: null,
+            currentQuiz: null,
+            currentQuestionIndex: 0,
+            currentScore: 0,
+            answersGiven: [],
+            soundEnabled: true,
+            progressData: {},
+            streak: 0,
+            filters: {
+                level: "all",
+                topic: "all",
+                focus: "all"
+            },
+            // For matching questions
+            matchingState: {
+                selectedLeft: null,
+                selectedRight: null,
+                matched: {}
+            },
+            // For order words
+            orderWordsState: {
+                placedWords: [],
+                availableWords: []
+            },
+            answerSubmitted: false
+        };
+
+        // ========================================
+        // DOM ELEMENTS
+        // ========================================
+        const elements = {
+            // Header
+            soundToggle: document.getElementById('soundToggle'),
+            completedCount: document.getElementById('completedCount'),
+            totalQuizzes: document.getElementById('totalQuizzes'),
+            
+            // Filters
+            filtersSection: document.getElementById('filtersSection'),
+            levelFilters: document.getElementById('levelFilters'),
+            topicFilter: document.getElementById('topicFilter'),
+            focusFilter: document.getElementById('focusFilter'),
+            
+            // Quiz Grid
+            quizGrid: document.getElementById('quizGrid'),
+            noResults: document.getElementById('noResults'),
+            
+            // Quiz Player
+            quizPlayer: document.getElementById('quizPlayer'),
+            playerTitle: document.getElementById('playerTitle'),
+            closeQuiz: document.getElementById('closeQuiz'),
+            progressText: document.getElementById('progressText'),
+            scoreText: document.getElementById('scoreText'),
+            progressFill: document.getElementById('progressFill'),
+            questionContainer: document.getElementById('questionContainer'),
+            feedbackContainer: document.getElementById('feedbackContainer'),
+            feedbackTitle: document.getElementById('feedbackTitle'),
+            feedbackExplanation: document.getElementById('feedbackExplanation'),
+            actionButtons: document.getElementById('actionButtons'),
+            checkAnswerBtn: document.getElementById('checkAnswerBtn'),
+            nextQuestionBtn: document.getElementById('nextQuestionBtn'),
+            
+            // Results
+            resultsScreen: document.getElementById('resultsScreen'),
+            resultsEmoji: document.getElementById('resultsEmoji'),
+            resultsTitle: document.getElementById('resultsTitle'),
+            resultsMessage: document.getElementById('resultsMessage'),
+            finalScore: document.getElementById('finalScore'),
+            finalPercentage: document.getElementById('finalPercentage'),
+            correctCount: document.getElementById('correctCount'),
+            incorrectCount: document.getElementById('incorrectCount'),
+            retryQuizBtn: document.getElementById('retryQuizBtn'),
+            backToQuizzesBtn: document.getElementById('backToQuizzesBtn'),
+            
+            // Special
+            streakIndicator: document.getElementById('streakIndicator'),
+            streakCount: document.getElementById('streakCount'),
+            confettiContainer: document.getElementById('confettiContainer')
+        };
+
+        // ========================================
+        // INITIALIZATION
+        // ========================================
+        function initApp() {
+            // Generate questions and quizzes
+            generateAllQuestions();
+            generateQuizzes();
+            
+            // Load progress from localStorage
+            loadProgress();
+            
+            // Populate topic filter
+            populateTopicFilter();
+            
+            // Render quiz grid
+            renderQuizGrid();
+            
+            // Update stats
+            updateStats();
+            
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Load sound preference
+            loadSoundPreference();
+        }
+
+        function loadProgress() {
+            try {
+                const saved = localStorage.getItem('spanishQuizProgress');
+                if (saved) {
+                    state.progressData = JSON.parse(saved);
+                }
+            } catch (e) {
+                console.error('Error loading progress:', e);
+                state.progressData = {};
+            }
+        }
+
+        function saveProgress() {
+            try {
+                localStorage.setItem('spanishQuizProgress', JSON.stringify(state.progressData));
+            } catch (e) {
+                console.error('Error saving progress:', e);
+            }
+        }
+
+        function loadSoundPreference() {
+            try {
+                const saved = localStorage.getItem('spanishQuizSound');
+                if (saved !== null) {
+                    state.soundEnabled = saved === 'true';
+                    updateSoundButton();
+                }
+            } catch (e) {
+                console.error('Error loading sound preference:', e);
+            }
+        }
+
+        function saveSoundPreference() {
+            try {
+                localStorage.setItem('spanishQuizSound', state.soundEnabled.toString());
+            } catch (e) {
+                console.error('Error saving sound preference:', e);
+            }
+        }
+
+        function populateTopicFilter() {
+            const uniqueTopics = [...new Set(QUIZZES.map(q => q.topic))].sort();
+            uniqueTopics.forEach(topic => {
+                const option = document.createElement('option');
+                option.value = topic;
+                option.textContent = topic;
+                elements.topicFilter.appendChild(option);
+            });
+        }
+
+        // ========================================
+        // EVENT LISTENERS
+        // ========================================
+        function setupEventListeners() {
+            // Sound toggle
+            elements.soundToggle.addEventListener('click', toggleSound);
+            
+            // Level filters
+            elements.levelFilters.addEventListener('click', (e) => {
+                if (e.target.classList.contains('filter-pill')) {
+                    playSound('navClick');
+                    document.querySelectorAll('#levelFilters .filter-pill').forEach(p => p.classList.remove('active'));
+                    e.target.classList.add('active');
+                    state.filters.level = e.target.dataset.level;
+                    renderQuizGrid();
+                }
+            });
+            
+            // Topic filter
+            elements.topicFilter.addEventListener('change', (e) => {
+                playSound('navClick');
+                state.filters.topic = e.target.value;
+                renderQuizGrid();
+            });
+            
+            // Focus filter
+            elements.focusFilter.addEventListener('change', (e) => {
+                playSound('navClick');
+                state.filters.focus = e.target.value;
+                renderQuizGrid();
+            });
+            
+            // Close quiz
+            elements.closeQuiz.addEventListener('click', () => {
+                playSound('buttonClick');
+                exitQuiz();
+            });
+            
+            // Check answer
+            elements.checkAnswerBtn.addEventListener('click', () => {
+                playSound('buttonClick');
+                handleAnswerSubmit();
+            });
+            
+            // Next question
+            elements.nextQuestionBtn.addEventListener('click', () => {
+                playSound('nextQuestion');
+                goToNextQuestion();
+            });
+            
+            // Results buttons
+            elements.retryQuizBtn.addEventListener('click', () => {
+                playSound('buttonClick');
+                retryQuiz();
+            });
+            
+            elements.backToQuizzesBtn.addEventListener('click', () => {
+                playSound('buttonClick');
+                exitQuiz();
+            });
+        }
+
+        // ========================================
+        // RENDERING FUNCTIONS
+        // ========================================
+        function renderQuizGrid() {
+            const filteredQuizzes = filterQuizzes();
+            
+            if (filteredQuizzes.length === 0) {
+                elements.quizGrid.innerHTML = '';
+                elements.noResults.classList.remove('hidden');
+                return;
+            }
+            
+            elements.noResults.classList.add('hidden');
+            elements.quizGrid.innerHTML = filteredQuizzes.map(quiz => createQuizCard(quiz)).join('');
+            
+            // Add click handlers to quiz cards
+            document.querySelectorAll('.quiz-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    playSound('navClick');
+                    startQuiz(card.dataset.quizId);
+                });
+            });
+        }
+
+        function filterQuizzes() {
+            return QUIZZES.filter(quiz => {
+                const levelMatch = state.filters.level === "all" || quiz.level === state.filters.level;
+                const topicMatch = state.filters.topic === "all" || quiz.topic === state.filters.topic;
+                const focusMatch = state.filters.focus === "all" || quiz.focus.includes(state.filters.focus);
+                return levelMatch && topicMatch && focusMatch;
+            });
+        }
+
+        function createQuizCard(quiz) {
+            const progress = state.progressData[quiz.id];
+            const levelClass = quiz.level.toLowerCase();
+            const focusTags = quiz.focus.map(f => {
+                const icons = { Vocabulary: '📝', Grammar: '📖', Reading: '📚', Writing: '✏️' };
+                return `<span class="quiz-tag">${icons[f] || ''} ${f}</span>`;
+            }).join('');
+            
+            const bestScoreHtml = progress ? 
+                `<span class="quiz-best-score">⭐ Best: ${progress.bestScore}/${quiz.numQuestions} (${progress.bestPercentage}%)</span>` : 
+                '';
+            
+            return `
+                <div class="quiz-card level-${levelClass}" data-quiz-id="${quiz.id}">
+                    <div class="quiz-card-header">
+                        <h3 class="quiz-title">${quiz.title}</h3>
+                        <span class="quiz-level ${levelClass}">${quiz.level}</span>
+                    </div>
+                    <div class="quiz-meta">
+                        <span class="quiz-tag topic">📌 ${quiz.topic}</span>
+                        ${focusTags}
+                    </div>
+                    <div class="quiz-footer">
+                        <span class="quiz-questions-count">📋 ${quiz.numQuestions} questions</span>
+                        ${bestScoreHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateStats() {
+            const completedQuizzes = Object.keys(state.progressData).length;
+            elements.completedCount.textContent = completedQuizzes;
+            elements.totalQuizzes.textContent = QUIZZES.length;
+        }
+
+        function updateSoundButton() {
+            elements.soundToggle.textContent = state.soundEnabled ? '🔊' : '🔇';
+            elements.soundToggle.classList.toggle('muted', !state.soundEnabled);
+        }
+
+        function toggleSound() {
+            state.soundEnabled = !state.soundEnabled;
+            updateSoundButton();
+            saveSoundPreference();
+            if (state.soundEnabled) {
+                playSound('buttonClick');
+            }
+        }
+
+        // ========================================
+        // QUIZ FLOW
+        // ========================================
+        function startQuiz(quizId) {
+            const quiz = QUIZZES.find(q => q.id === quizId);
+            if (!quiz) return;
+            
+            state.currentQuizId = quizId;
+            state.currentQuiz = quiz;
+            state.currentQuestionIndex = 0;
+            state.currentScore = 0;
+            state.answersGiven = [];
+            state.streak = 0;
+            state.answerSubmitted = false;
+            
+            // Shuffle questions for variety
+            state.currentQuiz.questions = shuffleArray([...quiz.questions]);
+            
+            // Show quiz player, hide grid
+            elements.filtersSection.classList.add('hidden');
+            elements.quizGrid.classList.add('hidden');
+            elements.resultsScreen.classList.remove('active');
+            elements.quizPlayer.classList.add('active');
+            
+            elements.playerTitle.textContent = quiz.title;
+            
+            playSound('quizStart');
+            
+            renderCurrentQuestion();
+        }
+
+        function renderCurrentQuestion() {
+            const question = state.currentQuiz.questions[state.currentQuestionIndex];
+            const total = state.currentQuiz.numQuestions;
+            const current = state.currentQuestionIndex + 1;
+            
+            // Update progress
+            elements.progressText.textContent = `Question ${current}/${total}`;
+            elements.scoreText.textContent = `Score: ${state.currentScore}`;
+            elements.progressFill.style.width = `${(current / total) * 100}%`;
+            
+            // Reset feedback
+            elements.feedbackContainer.classList.remove('show', 'correct', 'incorrect');
+            
+            // Reset buttons
+            elements.checkAnswerBtn.classList.remove('hidden');
+            elements.checkAnswerBtn.disabled = false;
+            elements.nextQuestionBtn.classList.add('hidden');
+            
+            state.answerSubmitted = false;
+            
+            // Render question based on type
+            switch (question.type) {
+                case 'multiple_choice':
+                    renderMultipleChoiceQuestion(question);
+                    break;
+                case 'true_false':
+                    renderTrueFalseQuestion(question);
+                    break;
+                case 'fill_in_blank':
+                    renderFillInBlankQuestion(question);
+                    break;
+                case 'matching':
+                    renderMatchingQuestion(question);
+                    break;
+                case 'order_words':
+                    renderOrderWordsQuestion(question);
+                    break;
+                case 'reading_mcq':
+                    renderReadingQuestion(question);
+                    break;
+                default:
+                    renderMultipleChoiceQuestion(question);
+            }
+        }
+
+        function renderMultipleChoiceQuestion(question) {
+            const optionsHtml = question.options.map((option, index) => `
+                <button class="option-btn" data-option="${option}" data-index="${index}">
+                    ${option}
+                </button>
+            `).join('');
+            
+            elements.questionContainer.innerHTML = `
+                <div class="question-prompt">${question.prompt}</div>
+                <div class="options-container">
+                    ${optionsHtml}
+                </div>
+            `;
+            
+            // Add click handlers
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (state.answerSubmitted) return;
+                    document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    playSound('buttonClick');
+                });
+            });
+        }
+
+        function renderTrueFalseQuestion(question) {
+            elements.questionContainer.innerHTML = `
+                <div class="question-prompt">${question.prompt}</div>
+                <div class="tf-container">
+                    <button class="tf-btn verdadero" data-answer="true">✓ VERDADERO</button>
+                    <button class="tf-btn falso" data-answer="false">✗ FALSO</button>
+                </div>
+            `;
+            
+            document.querySelectorAll('.tf-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (state.answerSubmitted) return;
+                    document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    playSound('buttonClick');
+                });
+            });
+        }
+
+        function renderFillInBlankQuestion(question) {
+            elements.questionContainer.innerHTML = `
+                <div class="question-prompt">${question.prompt}</div>
+                <div class="text-input-container">
+                    <input type="text" class="text-input" id="answerInput" placeholder="Type your answer here..." autocomplete="off" autocapitalize="off">
+                </div>
+            `;
+            
+            const input = document.getElementById('answerInput');
+            input.focus();
+            
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !state.answerSubmitted) {
+                    handleAnswerSubmit();
+                }
+            });
+        }
+
+        function renderMatchingQuestion(question) {
+            state.matchingState = {
+                selectedLeft: null,
+                selectedRight: null,
+                matched: {}
+            };
+            
+            const leftHtml = question.leftItems.map((item, i) => `
+                <div class="matching-item left-item" data-item="${item}" data-index="${i}">${item}</div>
+            `).join('');
+            
+            const rightHtml = question.rightItems.map((item, i) => `
+                <div class="matching-item right-item" data-item="${item}" data-index="${i}">${item}</div>
+            `).join('');
+            
+            elements.questionContainer.innerHTML = `
+                <div class="question-prompt">${question.prompt}</div>
+                <div class="matching-container">
+                    <div class="matching-column">
+                        <div class="matching-column-title">English</div>
+                        ${leftHtml}
+                    </div>
+                    <div class="matching-column">
+                        <div class="matching-column-title">Spanish</div>
+                        ${rightHtml}
+                    </div>
+                </div>
+            `;
+            
+            // Left items click
+            document.querySelectorAll('.left-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    if (state.answerSubmitted || item.classList.contains('matched')) return;
+                    document.querySelectorAll('.left-item').forEach(i => i.classList.remove('selected'));
+                    item.classList.add('selected');
+                    state.matchingState.selectedLeft = item.dataset.item;
+                    playSound('buttonClick');
+                    checkMatchingPair(question);
+                });
+            });
+            
+            // Right items click
+            document.querySelectorAll('.right-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    if (state.answerSubmitted || item.classList.contains('matched')) return;
+                    document.querySelectorAll('.right-item').forEach(i => i.classList.remove('selected'));
+                    item.classList.add('selected');
+                    state.matchingState.selectedRight = item.dataset.item;
+                    playSound('buttonClick');
+                    checkMatchingPair(question);
+                });
+            });
+        }
+
+        function checkMatchingPair(question) {
+            const { selectedLeft, selectedRight, matched } = state.matchingState;
+            
+            if (selectedLeft && selectedRight) {
+                const isCorrect = question.correctPairs[selectedLeft] === selectedRight;
+                
+                const leftEl = document.querySelector(`.left-item[data-item="${selectedLeft}"]`);
+                const rightEl = document.querySelector(`.right-item[data-item="${selectedRight}"]`);
+                
+                if (isCorrect) {
+                    leftEl.classList.remove('selected');
+                    rightEl.classList.remove('selected');
+                    leftEl.classList.add('matched');
+                    rightEl.classList.add('matched');
+                    matched[selectedLeft] = selectedRight;
+                    playSound('correct');
+                } else {
+                    leftEl.classList.add('incorrect');
+                    rightEl.classList.add('incorrect');
+                    playSound('incorrect');
+                    setTimeout(() => {
+                        leftEl.classList.remove('selected', 'incorrect');
+                        rightEl.classList.remove('selected', 'incorrect');
+                    }, 500);
+                }
+                
+                state.matchingState.selectedLeft = null;
+                state.matchingState.selectedRight = null;
+                
+                // Check if all matched
+                if (Object.keys(matched).length === question.leftItems.length) {
+                    setTimeout(() => {
+                        state.answerSubmitted = true;
+                        showFeedback(true, question.explanation);
+                        state.currentScore++;
+                        state.streak++;
+                        checkStreak();
+                        elements.checkAnswerBtn.classList.add('hidden');
+                        elements.nextQuestionBtn.classList.remove('hidden');
+                    }, 300);
+                }
+            }
+        }
+
+        function renderOrderWordsQuestion(question) {
+            state.orderWordsState = {
+                placedWords: [],
+                availableWords: [...question.wordBank]
+            };
+            
+            updateOrderWordsDisplay(question);
+        }
+
+        function updateOrderWordsDisplay(question) {
+            const wordBankHtml = state.orderWordsState.availableWords.map((word, i) => `
+                <span class="word-chip" data-word="${word}" data-index="${i}">${word}</span>
+            `).join('');
+            
+            const placedWordsHtml = state.orderWordsState.placedWords.map((word, i) => `
+                <span class="placed-word" data-word="${word}" data-index="${i}">${word}</span>
+            `).join('');
+            
+            elements.questionContainer.innerHTML = `
+                <div class="question-prompt">${question.prompt}</div>
+                <div class="sentence-builder" id="sentenceBuilder">
+                    ${placedWordsHtml || '<span style="color: #999;">Click words below to build the sentence...</span>'}
+                </div>
+                <div class="word-bank" id="wordBank">
+                    ${wordBankHtml || '<span style="color: #999;">All words placed!</span>'}
+                </div>
+            `;
+            
+            // Add word to sentence
+            document.querySelectorAll('.word-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    if (state.answerSubmitted) return;
+                    const word = chip.dataset.word;
+                    state.orderWordsState.placedWords.push(word);
+                    state.orderWordsState.availableWords = state.orderWordsState.availableWords.filter(w => w !== word);
+                    playSound('buttonClick');
+                    updateOrderWordsDisplay(question);
+                });
+            });
+            
+            // Remove word from sentence
+            document.querySelectorAll('.placed-word').forEach(word => {
+                word.addEventListener('click', () => {
+                    if (state.answerSubmitted) return;
+                    const w = word.dataset.word;
+                    state.orderWordsState.availableWords.push(w);
+                    const idx = state.orderWordsState.placedWords.indexOf(w);
+                    if (idx > -1) {
+                        state.orderWordsState.placedWords.splice(idx, 1);
+                    }
+                    playSound('buttonClick');
+                    updateOrderWordsDisplay(question);
+                });
+            });
+        }
+
+        function renderReadingQuestion(question) {
+            const optionsHtml = question.options.map((option, index) => `
+                <button class="option-btn" data-option="${option}" data-index="${index}">
+                    ${option}
+                </button>
+            `).join('');
+            
+            elements.questionContainer.innerHTML = `
+                <div class="reading-passage">${question.passage.replace(/\n/g, '<br>')}</div>
+                <div class="question-prompt">${question.prompt}</div>
+                <div class="options-container">
+                    ${optionsHtml}
+                </div>
+            `;
+            
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (state.answerSubmitted) return;
+                    document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    playSound('buttonClick');
+                });
+            });
+        }
+
+        // ========================================
+        // ANSWER HANDLING
+        // ========================================
+        function handleAnswerSubmit() {
+            if (state.answerSubmitted) return;
+            
+            const question = state.currentQuiz.questions[state.currentQuestionIndex];
+            let userAnswer = null;
+            let isCorrect = false;
+            
+            switch (question.type) {
+                case 'multiple_choice':
+                case 'reading_mcq':
+                    const selectedOption = document.querySelector('.option-btn.selected');
+                    if (!selectedOption) {
+                        alert('Please select an answer!');
+                        return;
+                    }
+                    userAnswer = selectedOption.dataset.option;
+                    isCorrect = userAnswer === question.correctAnswer;
+                    
+                    // Show correct/incorrect on options
+                    document.querySelectorAll('.option-btn').forEach(btn => {
+                        btn.classList.add('disabled');
+                        if (btn.dataset.option === question.correctAnswer) {
+                            btn.classList.add('correct');
+                        } else if (btn.dataset.option === userAnswer && !isCorrect) {
+                            btn.classList.add('incorrect');
+                        }
+                    });
+                    break;
+                    
+                case 'true_false':
+                    const selectedTF = document.querySelector('.tf-btn.selected');
+                    if (!selectedTF) {
+                        alert('Please select VERDADERO or FALSO!');
+                        return;
+                    }
+                    userAnswer = selectedTF.dataset.answer === 'true';
+                    isCorrect = userAnswer === question.correctAnswer;
+                    
+                    document.querySelectorAll('.tf-btn').forEach(btn => {
+                        const btnAnswer = btn.dataset.answer === 'true';
+                        if (btnAnswer === question.correctAnswer) {
+                            btn.classList.add('correct');
+                        } else if (btn.classList.contains('selected') && !isCorrect) {
+                            btn.classList.add('incorrect');
+                        }
+                    });
+                    break;
+                    
+                case 'fill_in_blank':
+                    const input = document.getElementById('answerInput');
+                    userAnswer = input.value.trim();
+                    if (!userAnswer) {
+                        alert('Please type your answer!');
+                        return;
+                    }
+                    
+                    // Check against accepted answers (case-insensitive)
+                    const acceptedAnswers = question.acceptedAnswers || [question.correctAnswer];
+                    isCorrect = acceptedAnswers.some(ans => 
+                        ans.toLowerCase() === userAnswer.toLowerCase()
+                    );
+                    
+                    input.classList.add(isCorrect ? 'correct' : 'incorrect');
+                    input.disabled = true;
+                    break;
+                    
+                case 'matching':
+                    // Matching is handled separately in checkMatchingPair
+                    return;
+                    
+                case 'order_words':
+                    if (state.orderWordsState.placedWords.length !== question.correctOrder.length) {
+                        alert('Please use all the words!');
+                        return;
+                    }
+                    
+                    isCorrect = state.orderWordsState.placedWords.every((word, i) => 
+                        word.toLowerCase() === question.correctOrder[i].toLowerCase()
+                    );
+                    
+                    const builder = document.getElementById('sentenceBuilder');
+                    builder.classList.add(isCorrect ? 'correct' : 'incorrect');
+                    break;
+            }
+            
+            state.answerSubmitted = true;
+            state.answersGiven.push({ question: question.id, answer: userAnswer, correct: isCorrect });
+            
+            if (isCorrect) {
+                state.currentScore++;
+                state.streak++;
+                checkStreak();
+                playSound('correct');
+            } else {
+                state.streak = 0;
+                hideStreak();
+                playSound('incorrect');
+            }
+            
+            showFeedback(isCorrect, question.explanation);
+            
+            elements.checkAnswerBtn.classList.add('hidden');
+            elements.nextQuestionBtn.classList.remove('hidden');
+        }
+
+        function showFeedback(isCorrect, explanation) {
+            elements.feedbackContainer.classList.remove('correct', 'incorrect');
+            elements.feedbackContainer.classList.add('show', isCorrect ? 'correct' : 'incorrect');
+            elements.feedbackTitle.textContent = isCorrect ? '✓ ¡Correcto!' : '✗ Incorrecto';
+            elements.feedbackExplanation.textContent = explanation || '';
+        }
+
+        function checkStreak() {
+            if (state.streak >= 3) {
+                elements.streakCount.textContent = state.streak;
+                elements.streakIndicator.classList.add('show');
+                if (state.streak === 5) {
+                    playSound('streak');
+                }
+            }
+        }
+
+        function hideStreak() {
+            elements.streakIndicator.classList.remove('show');
+        }
+
+        function goToNextQuestion() {
+            state.currentQuestionIndex++;
+            
+            if (state.currentQuestionIndex >= state.currentQuiz.numQuestions) {
+                endQuiz();
+            } else {
+                renderCurrentQuestion();
+            }
+        }
+
+        // ========================================
+        // QUIZ COMPLETION
+        // ========================================
+        function endQuiz() {
+            hideStreak();
+            
+            const score = state.currentScore;
+            const total = state.currentQuiz.numQuestions;
+            const percentage = Math.round((score / total) * 100);
+            
+            // Update progress
+            const quizId = state.currentQuizId;
+            const prevProgress = state.progressData[quizId];
+            const isNewHighScore = !prevProgress || score > prevProgress.bestScore;
+            
+            if (!prevProgress || score > prevProgress.bestScore) {
+                state.progressData[quizId] = {
+                    bestScore: score,
+                    bestPercentage: percentage,
+                    timesCompleted: (prevProgress?.timesCompleted || 0) + 1
+                };
+            } else {
+                state.progressData[quizId].timesCompleted++;
+            }
+            
+            saveProgress();
+            updateStats();
+            
+            // Show results
+            elements.quizPlayer.classList.remove('active');
+            elements.resultsScreen.classList.add('active');
+            
+            elements.finalScore.textContent = `${score}/${total}`;
+            elements.finalPercentage.textContent = `(${percentage}%)`;
+            elements.correctCount.textContent = score;
+            elements.incorrectCount.textContent = total - score;
+            
+            if (percentage >= 90) {
+                elements.resultsEmoji.textContent = '🌟';
+                elements.resultsTitle.textContent = '¡Increíble!';
+                elements.resultsMessage.textContent = '¡Eres una estrella del español! Amazing work!';
+                playSound('quizCompleteHigh');
+                createConfetti();
+            } else if (percentage >= 70) {
+                elements.resultsEmoji.textContent = '💪';
+                elements.resultsTitle.textContent = '¡Buen trabajo!';
+                elements.resultsMessage.textContent = 'Great job! Keep practicing to improve even more!';
+                playSound('quizCompleteMid');
+            } else {
+                elements.resultsEmoji.textContent = '🚀';
+                elements.resultsTitle.textContent = '¡Buen esfuerzo!';
+                elements.resultsMessage.textContent = 'Nice try! Practice makes perfect. ¡Vamos otra vez!';
+                playSound('quizCompleteLow');
+            }
+            
+            if (isNewHighScore && prevProgress) {
+                elements.resultsMessage.textContent += ' 🎉 New High Score!';
+                playSound('newHighScore');
+            }
+        }
+
+        function retryQuiz() {
+            startQuiz(state.currentQuizId);
+        }
+
+        function exitQuiz() {
+            state.currentQuizId = null;
+            state.currentQuiz = null;
+            hideStreak();
+            
+            elements.quizPlayer.classList.remove('active');
+            elements.resultsScreen.classList.remove('active');
+            elements.filtersSection.classList.remove('hidden');
+            elements.quizGrid.classList.remove('hidden');
+            
+            renderQuizGrid();
+        }
+
+        // ========================================
+        // CONFETTI
+        // ========================================
+        function createConfetti() {
+            const colors = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3', '#F38181', '#AA96DA', '#FCBAD3'];
+            const container = elements.confettiContainer;
+            container.innerHTML = '';
+            
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                confetti.style.width = (Math.random() * 10 + 5) + 'px';
+                confetti.style.height = confetti.style.width;
+                confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                container.appendChild(confetti);
+            }
+            
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 3000);
+        }
+
+        // ========================================
+        // INITIALIZE APP
+        // ========================================
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>

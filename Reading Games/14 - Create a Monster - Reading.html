@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Crea un Monstruo - Laboratorio del Dr. Locura</title>
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Fredoka:wght@400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --lab-dark: #0d0d1a;
+            --lab-wall: #1a1a2e;
+            --lab-accent: #16213e;
+            --glow-green: #39ff14;
+            --glow-purple: #bf40bf;
+            --glow-blue: #00d4ff;
+            --text-cream: #e8e4d9;
+            --rust: #8b4513;
+            --metal: #4a5568;
+
+            /* Monster colors */
+            --azul: #4299e1;
+            --verde: #48bb78;
+            --rojo: #f56565;
+            --morado: #9f7aea;
+            --amarillo: #ecc94b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: var(--lab-dark);
+            min-height: 100vh;
+            overflow-x: hidden;
+            color: var(--text-cream);
+        }
+
+        /* Animated Background */
+        .lab-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(ellipse at 20% 80%, rgba(57, 255, 20, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(191, 64, 191, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(0, 212, 255, 0.05) 0%, transparent 70%),
+                repeating-linear-gradient(0deg,
+                    transparent,
+                    transparent 50px,
+                    rgba(255, 255, 255, 0.02) 50px,
+                    rgba(255, 255, 255, 0.02) 51px),
+                repeating-linear-gradient(90deg,
+                    transparent,
+                    transparent 50px,
+                    rgba(255, 255, 255, 0.02) 50px,
+                    rgba(255, 255, 255, 0.02) 51px),
+                var(--lab-wall);
+            z-index: -1;
+        }
+
+        /* Floating Bubbles Animation */
+        .bubbles {
+            position: fixed;
+            bottom: 0;
+            left: 5%;
+            width: 60px;
+            height: 200px;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .bubble {
+            position: absolute;
+            bottom: 0;
+            width: 10px;
+            height: 10px;
+            background: rgba(57, 255, 20, 0.4);
+            border-radius: 50%;
+            animation: rise 4s infinite ease-in;
+            box-shadow: 0 0 10px var(--glow-green);
+        }
+
+        .bubble:nth-child(1) {
+            left: 10%;
+            animation-delay: 0s;
+            width: 8px;
+            height: 8px;
+        }
+
+        .bubble:nth-child(2) {
+            left: 30%;
+            animation-delay: 1s;
+            width: 12px;
+            height: 12px;
+        }
+
+        .bubble:nth-child(3) {
+            left: 50%;
+            animation-delay: 2s;
+            width: 6px;
+            height: 6px;
+        }
+
+        .bubble:nth-child(4) {
+            left: 70%;
+            animation-delay: 0.5s;
+            width: 10px;
+            height: 10px;
+        }
+
+        .bubble:nth-child(5) {
+            left: 90%;
+            animation-delay: 1.5s;
+            width: 8px;
+            height: 8px;
+        }
+
+        @keyframes rise {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 0.6;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(-200px) scale(0.5);
+                opacity: 0;
+            }
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 1.5rem;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
+            position: relative;
+        }
+
+        .header h1 {
+            font-family: 'Creepster', cursive;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            color: var(--glow-green);
+            text-shadow:
+                0 0 10px var(--glow-green),
+                0 0 20px var(--glow-green),
+                0 0 40px var(--glow-green),
+                2px 2px 0 var(--lab-dark);
+            letter-spacing: 3px;
+            animation: flicker 3s infinite;
+        }
+
+        .header p {
+            font-size: 1rem;
+            opacity: 0.7;
+            margin-top: 0.5rem;
+        }
+
+        @keyframes flicker {
+
+            0%,
+            19%,
+            21%,
+            23%,
+            25%,
+            54%,
+            56%,
+            100% {
+                text-shadow:
+                    0 0 10px var(--glow-green),
+                    0 0 20px var(--glow-green),
+                    0 0 40px var(--glow-green),
+                    2px 2px 0 var(--lab-dark);
+            }
+
+            20%,
+            24%,
+            55% {
+                text-shadow: none;
+            }
+        }
+
+        /* Order Card */
+        .order-card {
+            max-width: 700px;
+            margin: 1rem auto;
+            background: linear-gradient(135deg, #2d1f0f 0%, #1a1209 100%);
+            border: 3px solid var(--rust);
+            border-radius: 8px;
+            padding: 1.5rem;
+            position: relative;
+            box-shadow:
+                inset 0 0 30px rgba(0, 0, 0, 0.5),
+                0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .order-card::before {
+            content: '📋 ORDEN DEL CLIENTE';
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: var(--rust);
+            padding: 0.25rem 1rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .order-text {
+            font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+            line-height: 1.8;
+            color: var(--text-cream);
+            text-align: center;
+            font-weight: 400;
+        }
+
+        .order-text .highlight {
+            color: var(--glow-green);
+            font-weight: 600;
+        }
+
+        /* Main Game Area */
+        .game-container {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        @media (max-width: 900px) {
+            .game-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Monster Stage */
+        .monster-stage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .stage-platform {
+            width: 100%;
+            max-width: 400px;
+            aspect-ratio: 1;
+            background:
+                radial-gradient(ellipse at center bottom, rgba(57, 255, 20, 0.2) 0%, transparent 60%),
+                linear-gradient(180deg, var(--lab-accent) 0%, var(--lab-dark) 100%);
+            border-radius: 20px;
+            border: 4px solid var(--metal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow:
+                inset 0 -20px 40px rgba(0, 0, 0, 0.5),
+                0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Electrodes */
+        .electrode {
+            position: absolute;
+            width: 30px;
+            height: 60px;
+            background: linear-gradient(90deg, #666 0%, #999 50%, #666 100%);
+            border-radius: 5px 5px 0 0;
+        }
+
+        .electrode.left {
+            left: -15px;
+            top: 30%;
+        }
+
+        .electrode.right {
+            right: -15px;
+            top: 30%;
+        }
+
+        .electrode::after {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle, #ffd700 0%, #ff8c00 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 15px #ffd700;
+            animation: spark 0.5s infinite alternate;
+        }
+
+        @keyframes spark {
+            0% {
+                box-shadow: 0 0 5px #ffd700;
+            }
+
+            100% {
+                box-shadow: 0 0 20px #ffd700, 0 0 40px #ff8c00;
+            }
+        }
+
+        /* Monster Body */
+        .monster-body {
+            width: 250px;
+            height: 280px;
+            background: #ffffff;
+            border-radius: 50% 50% 45% 45%;
+            position: relative;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            box-shadow:
+                inset 0 -30px 60px rgba(0, 0, 0, 0.2),
+                0 10px 30px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            overflow: visible;
+        }
+
+        .monster-body.drag-over {
+            transform: scale(1.05);
+            box-shadow:
+                inset 0 -30px 60px rgba(0, 0, 0, 0.2),
+                0 0 30px var(--glow-green),
+                0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .monster-body.success {
+            animation: monsterAlive 0.5s ease-in-out 3;
+        }
+
+        .monster-body.fail {
+            animation: monsterShake 0.5s ease-in-out;
+        }
+
+        @keyframes monsterAlive {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(0);
+            }
+
+            25% {
+                transform: translateY(-20px) rotate(-5deg);
+            }
+
+            75% {
+                transform: translateY(-20px) rotate(5deg);
+            }
+        }
+
+        @keyframes monsterShake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            20% {
+                transform: translateX(-10px);
+            }
+
+            40% {
+                transform: translateX(10px);
+            }
+
+            60% {
+                transform: translateX(-10px);
+            }
+
+            80% {
+                transform: translateX(10px);
+            }
+        }
+
+        /* Monster Parts (dropped) */
+        .monster-part {
+            position: absolute;
+            font-size: 2rem;
+            cursor: grab;
+            user-select: none;
+            filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.3));
+            transition: transform 0.2s ease;
+            z-index: 10;
+        }
+
+        .monster-part:hover {
+            transform: scale(1.2);
+        }
+
+        .monster-part.arm {
+            font-size: 2.5rem;
+        }
+
+        /* Paint Station */
+        .paint-station {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            border: 2px solid var(--metal);
+        }
+
+        .paint-bucket {
+            width: 50px;
+            height: 60px;
+            border: none;
+            border-radius: 5px 5px 10px 10px;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .paint-bucket::before {
+            content: '🪣';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8rem;
+        }
+
+        .paint-bucket:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .paint-bucket:active {
+            transform: scale(0.95);
+        }
+
+        .paint-bucket.azul {
+            background: linear-gradient(180deg, var(--azul) 0%, #2b6cb0 100%);
+        }
+
+        .paint-bucket.verde {
+            background: linear-gradient(180deg, var(--verde) 0%, #2f855a 100%);
+        }
+
+        .paint-bucket.rojo {
+            background: linear-gradient(180deg, var(--rojo) 0%, #c53030 100%);
+        }
+
+        .paint-bucket.morado {
+            background: linear-gradient(180deg, var(--morado) 0%, #6b46c1 100%);
+        }
+
+        .paint-bucket.amarillo {
+            background: linear-gradient(180deg, var(--amarillo) 0%, #d69e2e 100%);
+        }
+
+        .paint-bucket.selected {
+            box-shadow: 0 0 20px currentColor, 0 4px 8px rgba(0, 0, 0, 0.3);
+            transform: translateY(-8px);
+        }
+
+        /* Parts Panel */
+        .parts-panel {
+            background: linear-gradient(180deg, var(--lab-accent) 0%, var(--lab-dark) 100%);
+            border: 4px solid var(--metal);
+            border-radius: 15px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .panel-title {
+            font-family: 'Creepster', cursive;
+            font-size: 1.5rem;
+            color: var(--glow-purple);
+            text-align: center;
+            text-shadow: 0 0 10px var(--glow-purple);
+        }
+
+        .parts-shelf {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            padding: 1rem;
+        }
+
+        .shelf-label {
+            font-size: 0.85rem;
+            color: var(--glow-blue);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .shelf-items {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .part-item {
+            font-size: 2.5rem;
+            cursor: grab;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            transition: transform 0.2s ease, background 0.2s ease;
+            user-select: none;
+        }
+
+        .part-item:hover {
+            transform: scale(1.15);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .part-item:active {
+            cursor: grabbing;
+        }
+
+        .part-item.arm {
+            font-size: 3rem;
+        }
+
+        /* Lever Button */
+        .lever-container {
+            margin-top: auto;
+            text-align: center;
+        }
+
+        .lever-btn {
+            font-family: 'Creepster', cursive;
+            font-size: 1.5rem;
+            padding: 1rem 2.5rem;
+            background: linear-gradient(180deg, #c0392b 0%, #7b241c 100%);
+            color: white;
+            border: 4px solid #5a1a13;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow:
+                0 6px 0 #5a1a13,
+                0 10px 20px rgba(0, 0, 0, 0.4);
+            text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lever-btn::before {
+            content: '⚡';
+            margin-right: 0.5rem;
+        }
+
+        .lever-btn:hover {
+            background: linear-gradient(180deg, #e74c3c 0%, #922b21 100%);
+            transform: translateY(-2px);
+            box-shadow:
+                0 8px 0 #5a1a13,
+                0 14px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .lever-btn:active {
+            transform: translateY(4px);
+            box-shadow:
+                0 2px 0 #5a1a13,
+                0 4px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Reset Button */
+        .reset-btn {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 0.9rem;
+            padding: 0.5rem 1.5rem;
+            background: var(--metal);
+            color: white;
+            border: 2px solid #666;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .reset-btn:hover {
+            background: #666;
+        }
+
+        /* Result Message */
+        .result-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            padding: 2rem 4rem;
+            border-radius: 20px;
+            font-family: 'Creepster', cursive;
+            font-size: 3rem;
+            z-index: 1000;
+            text-align: center;
+            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            pointer-events: none;
+        }
+
+        .result-message.show {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .result-message.success {
+            background: linear-gradient(135deg, #1a472a 0%, #0d2818 100%);
+            border: 4px solid var(--glow-green);
+            color: var(--glow-green);
+            box-shadow:
+                0 0 40px var(--glow-green),
+                inset 0 0 40px rgba(57, 255, 20, 0.2);
+        }
+
+        .result-message.fail {
+            background: linear-gradient(135deg, #4a1a1a 0%, #2d0d0d 100%);
+            border: 4px solid #ff4444;
+            color: #ff4444;
+            box-shadow:
+                0 0 40px #ff4444,
+                inset 0 0 40px rgba(255, 68, 68, 0.2);
+        }
+
+        /* Screen Shake */
+        @keyframes screenShake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            10% {
+                transform: translateX(-10px) rotate(-1deg);
+            }
+
+            20% {
+                transform: translateX(10px) rotate(1deg);
+            }
+
+            30% {
+                transform: translateX(-10px) rotate(-1deg);
+            }
+
+            40% {
+                transform: translateX(10px) rotate(1deg);
+            }
+
+            50% {
+                transform: translateX(-5px);
+            }
+
+            60% {
+                transform: translateX(5px);
+            }
+
+            70% {
+                transform: translateX(-5px);
+            }
+
+            80% {
+                transform: translateX(5px);
+            }
+
+            90% {
+                transform: translateX(-2px);
+            }
+        }
+
+        body.shake {
+            animation: screenShake 0.6s ease-in-out;
+        }
+
+        /* Lightning Flash */
+        .lightning {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            opacity: 0;
+            z-index: 999;
+            pointer-events: none;
+        }
+
+        .lightning.flash {
+            animation: lightningFlash 0.3s ease-out;
+        }
+
+        @keyframes lightningFlash {
+            0% {
+                opacity: 0.8;
+            }
+
+            50% {
+                opacity: 0;
+            }
+
+            70% {
+                opacity: 0.4;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        /* Dragging State */
+        .dragging {
+            opacity: 0.7;
+            transform: scale(1.3) rotate(10deg);
+        }
+
+        /* Instructions */
+        .instructions {
+            max-width: 800px;
+            margin: 0 auto 1rem;
+            padding: 0 2rem;
+            text-align: center;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        /* Stats Display */
+        .stats {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 1rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            border: 2px solid var(--metal);
+        }
+
+        .stats-title {
+            color: var(--glow-blue);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        /* Remove Part Button */
+        .remove-hint {
+            font-size: 0.75rem;
+            color: #888;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="lab-background"></div>
+    <div class="lightning" id="lightning"></div>
+
+    <!-- Bubbling Effect -->
+    <div class="bubbles">
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <h1>🧪 Crea un Monstruo 🧪</h1>
+        <p>Laboratorio del Dr. Locura</p>
+    </header>
+
+    <!-- Order Card -->
+    <div class="order-card">
+        <p class="order-text" id="orderText">Cargando orden...</p>
+    </div>
+
+    <!-- Instructions -->
+    <div class="instructions">
+        💡 <strong>Instructions:</strong> Read the order. Paint the monster the correct color. Drag the body parts onto
+        it. Pull the lever to check!
+    </div>
+
+    <!-- Main Game -->
+    <main class="game-container">
+        <!-- Monster Stage -->
+        <section class="monster-stage">
+            <div class="stage-platform">
+                <div class="electrode left"></div>
+                <div class="electrode right"></div>
+                <div class="monster-body" id="monsterBody"></div>
+            </div>
+
+            <div class="paint-station">
+                <button class="paint-bucket azul" data-color="azul" title="Azul"></button>
+                <button class="paint-bucket verde" data-color="verde" title="Verde"></button>
+                <button class="paint-bucket rojo" data-color="rojo" title="Rojo"></button>
+                <button class="paint-bucket morado" data-color="morado" title="Morado"></button>
+                <button class="paint-bucket amarillo" data-color="amarillo" title="Amarillo"></button>
+            </div>
+        </section>
+
+        <!-- Parts Panel -->
+        <aside class="parts-panel">
+            <h2 class="panel-title">🗄️ Partes</h2>
+
+            <div class="parts-shelf">
+                <div class="shelf-label">👁️ Ojos</div>
+                <div class="shelf-items">
+                    <div class="part-item" draggable="true" data-part="eye">👁️</div>
+                </div>
+            </div>
+
+            <div class="parts-shelf">
+                <div class="shelf-label">👄 Bocas</div>
+                <div class="shelf-items">
+                    <div class="part-item" draggable="true" data-part="mouth">👄</div>
+                </div>
+            </div>
+
+            <div class="parts-shelf">
+                <div class="shelf-label">💪 Brazos</div>
+                <div class="shelf-items">
+                    <div class="part-item arm" draggable="true" data-part="arm">💪</div>
+                </div>
+            </div>
+
+            <div class="lever-container">
+                <button class="lever-btn" id="leverBtn">VERIFICAR</button>
+                <button class="reset-btn" id="resetBtn">🔄 Limpiar Monstruo</button>
+                <p class="remove-hint">Double-click a part to remove it</p>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Result Message -->
+    <div class="result-message" id="resultMessage"></div>
+
+    <!-- Stats -->
+    <div class="stats">
+        <div class="stats-title">📊 Tu Monstruo:</div>
+        <div id="currentStats">Color: —<br>Ojos: 0<br>Bocas: 0<br>Brazos: 0</div>
+    </div>
+
+    <script>
+        // ==========================================
+        // AUDIO MANAGER (with placeholder paths)
+        // ==========================================
+        const AudioManager = {
+            sounds: {
+                ambiance: '14%20Sounds/sfx_lab_ambiance.mp3',
+                paintSplat: '14%20Sounds/sfx_paint_splat.mp3',
+                suctionPop: '14%20Sounds/sfx_suction_pop.mp3',
+                leverPull: '14%20Sounds/sfx_level_pull.mp3',
+                success: '14%20Sounds/sfx_monster_roar_happy.mp3',
+                fail: '14%20Sounds/sfx_fail_breakdown.mp3'
+            },
+
+            play(soundName) {
+                // In production, this would play the actual sound
+                console.log(`🔊 Playing: ${this.sounds[soundName]}`);
+                // Uncomment below when you have actual audio files:
+                const audio = new Audio(this.sounds[soundName]);
+                audio.play().catch(e => console.log('Audio play failed:', e));
+            },
+
+            startAmbiance() {
+                console.log(`🔊 Starting ambient loop: ${this.sounds.ambiance}`);
+                const audio = new Audio(this.sounds.ambiance);
+                audio.loop = true;
+                audio.volume = 0.5;
+
+                const playPromise = audio.play();
+
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        console.log("Autoplay prevented. Waiting for user interaction.");
+                        // Add a one-time listener to start audio on first click
+                        const startAudio = () => {
+                            audio.play();
+                            document.removeEventListener('click', startAudio);
+                        };
+                        document.addEventListener('click', startAudio);
+                    });
+                }
+            }
+        };
+
+        // ==========================================
+        // GAME STATE
+        // ==========================================
+        let currentOrder = {
+            color: '',
+            eyes: 0,
+            mouths: 0,
+            arms: 0
+        };
+
+        let currentMonster = {
+            color: '',
+            parts: []
+        };
+
+        // ==========================================
+        // DATA & TEXT GENERATION
+        // ==========================================
+        const colors = [
+            { spanish: 'azul', css: 'var(--azul)' },
+            { spanish: 'verde', css: 'var(--verde)' },
+            { spanish: 'rojo', css: 'var(--rojo)' },
+            { spanish: 'morado', css: 'var(--morado)' },
+            { spanish: 'amarillo', css: 'var(--amarillo)' }
+        ];
+
+        const eyeOptions = [1, 2, 3, 4];
+        const mouthOptions = [1, 2];
+        const armOptions = [2, 4, 6];
+
+        function randomItem(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        function createAssignment() {
+            const color = randomItem(colors);
+            const eyes = randomItem(eyeOptions);
+            const mouths = randomItem(mouthOptions);
+            const arms = randomItem(armOptions);
+
+            currentOrder = {
+                color: color.spanish,
+                eyes,
+                mouths,
+                arms
+            };
+
+            return buildSpanishText(color.spanish, eyes, mouths, arms);
+        }
+
+        function buildSpanishText(color, eyes, mouths, arms) {
+            // Number words for grammar
+            const numberWords = {
+                1: 'un',
+                2: 'dos',
+                3: 'tres',
+                4: 'cuatro',
+                6: 'seis'
+            };
+
+            // Build sentences with proper grammar
+            let sentences = [];
+
+            // Color sentence
+            sentences.push(`El monstruo es <span class="highlight">${color}</span>.`);
+
+            // Eyes sentence
+            if (eyes === 1) {
+                sentences.push(`Tiene <span class="highlight">un ojo</span>.`);
+            } else {
+                sentences.push(`Tiene <span class="highlight">${numberWords[eyes]} ojos</span>.`);
+            }
+
+            // Mouths sentence
+            if (mouths === 1) {
+                sentences.push(`Tiene <span class="highlight">una boca</span>.`);
+            } else {
+                sentences.push(`Tiene <span class="highlight">${numberWords[mouths]} bocas</span>.`);
+            }
+
+            // Arms sentence
+            sentences.push(`Tiene <span class="highlight">${numberWords[arms]} brazos</span>.`);
+
+            return sentences.join(' ');
+        }
+
+        // ==========================================
+        // DOM ELEMENTS
+        // ==========================================
+        const orderText = document.getElementById('orderText');
+        const monsterBody = document.getElementById('monsterBody');
+        const leverBtn = document.getElementById('leverBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const resultMessage = document.getElementById('resultMessage');
+        const lightning = document.getElementById('lightning');
+        const currentStats = document.getElementById('currentStats');
+        const paintBuckets = document.querySelectorAll('.paint-bucket');
+        const partItems = document.querySelectorAll('.part-item');
+
+        // ==========================================
+        // PAINT LOGIC
+        // ==========================================
+        paintBuckets.forEach(bucket => {
+            bucket.addEventListener('click', () => {
+                const color = bucket.dataset.color;
+                const colorObj = colors.find(c => c.spanish === color);
+
+                // Update monster color
+                monsterBody.style.backgroundColor = colorObj.css;
+                currentMonster.color = color;
+
+                // Visual feedback
+                paintBuckets.forEach(b => b.classList.remove('selected'));
+                bucket.classList.add('selected');
+
+                // Play sound
+                AudioManager.play('paintSplat');
+
+                updateStats();
+            });
+        });
+
+        // ==========================================
+        // DRAG & DROP LOGIC
+        // ==========================================
+        let draggedPart = null;
+
+        partItems.forEach(item => {
+            item.addEventListener('dragstart', (e) => {
+                draggedPart = {
+                    type: item.dataset.part,
+                    emoji: item.textContent
+                };
+                item.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'copy';
+            });
+
+            item.addEventListener('dragend', () => {
+                item.classList.remove('dragging');
+            });
+        });
+
+        monsterBody.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+            monsterBody.classList.add('drag-over');
+        });
+
+        monsterBody.addEventListener('dragleave', () => {
+            monsterBody.classList.remove('drag-over');
+        });
+
+        monsterBody.addEventListener('drop', (e) => {
+            e.preventDefault();
+            monsterBody.classList.remove('drag-over');
+
+            if (!draggedPart) return;
+
+            // Calculate drop position relative to monster body
+            const rect = monsterBody.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Create part element
+            const part = document.createElement('div');
+            part.className = `monster-part ${draggedPart.type}`;
+            part.textContent = draggedPart.emoji;
+            part.dataset.partType = draggedPart.type;
+
+            // Position the part (centered on drop point)
+            const offsetX = draggedPart.type === 'arm' ? 20 : 16;
+            const offsetY = draggedPart.type === 'arm' ? 25 : 16;
+            part.style.left = `${Math.max(0, Math.min(x - offsetX, rect.width - 40))}px`;
+            part.style.top = `${Math.max(0, Math.min(y - offsetY, rect.height - 40))}px`;
+
+            // Add double-click to remove
+            part.addEventListener('dblclick', () => {
+                part.remove();
+                updateStats();
+                AudioManager.play('suctionPop');
+            });
+
+            // Make draggable within monster
+            makeDraggableWithinMonster(part);
+
+            monsterBody.appendChild(part);
+
+            // Track the part
+            currentMonster.parts.push({
+                type: draggedPart.type,
+                element: part
+            });
+
+            // Play sound
+            AudioManager.play('suctionPop');
+
+            draggedPart = null;
+            updateStats();
+        });
+
+        // Make parts draggable within monster body
+        function makeDraggableWithinMonster(element) {
+            let isDragging = false;
+            let startX, startY, initialLeft, initialTop;
+
+            element.addEventListener('mousedown', (e) => {
+                if (e.detail === 2) return; // Ignore double-click
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                initialLeft = parseInt(element.style.left) || 0;
+                initialTop = parseInt(element.style.top) || 0;
+                element.style.cursor = 'grabbing';
+                element.style.zIndex = '100';
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+
+                const rect = monsterBody.getBoundingClientRect();
+                const newLeft = Math.max(0, Math.min(initialLeft + dx, rect.width - 40));
+                const newTop = Math.max(0, Math.min(initialTop + dy, rect.height - 40));
+
+                element.style.left = `${newLeft}px`;
+                element.style.top = `${newTop}px`;
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    element.style.cursor = 'grab';
+                    element.style.zIndex = '10';
+                }
+            });
+        }
+
+        // ==========================================
+        // STATS UPDATE
+        // ==========================================
+        function updateStats() {
+            const eyes = monsterBody.querySelectorAll('[data-part-type="eye"]').length;
+            const mouths = monsterBody.querySelectorAll('[data-part-type="mouth"]').length;
+            const arms = monsterBody.querySelectorAll('[data-part-type="arm"]').length;
+
+            currentStats.innerHTML = `
+                Color: ${currentMonster.color || '—'}<br>
+                Ojos: ${eyes}<br>
+                Bocas: ${mouths}<br>
+                Brazos: ${arms}
+            `;
+        }
+
+        // ==========================================
+        // VALIDATION LOGIC
+        // ==========================================
+        function validateMonster() {
+            const eyes = monsterBody.querySelectorAll('[data-part-type="eye"]').length;
+            const mouths = monsterBody.querySelectorAll('[data-part-type="mouth"]').length;
+            const arms = monsterBody.querySelectorAll('[data-part-type="arm"]').length;
+
+            const colorMatch = currentMonster.color === currentOrder.color;
+            const eyesMatch = eyes === currentOrder.eyes;
+            const mouthsMatch = mouths === currentOrder.mouths;
+            const armsMatch = arms === currentOrder.arms;
+
+            return colorMatch && eyesMatch && mouthsMatch && armsMatch;
+        }
+
+        leverBtn.addEventListener('click', () => {
+            AudioManager.play('leverPull');
+
+            // Small delay for dramatic effect
+            setTimeout(() => {
+                if (validateMonster()) {
+                    handleSuccess();
+                } else {
+                    handleFail();
+                }
+            }, 500);
+        });
+
+        function handleSuccess() {
+            // Lightning flash
+            lightning.classList.add('flash');
+            setTimeout(() => lightning.classList.remove('flash'), 300);
+
+            // Monster animation
+            monsterBody.classList.add('success');
+            setTimeout(() => monsterBody.classList.remove('success'), 1500);
+
+            // Show message
+            resultMessage.textContent = '⚡ ¡ESTÁ VIVO! ⚡';
+            resultMessage.className = 'result-message success show';
+
+            // Play success sound
+            AudioManager.play('success');
+
+            // Generate new assignment after delay
+            setTimeout(() => {
+                resultMessage.classList.remove('show');
+                resetMonster();
+                startNewRound();
+            }, 3000);
+        }
+
+        function handleFail() {
+            // Screen shake
+            document.body.classList.add('shake');
+            setTimeout(() => document.body.classList.remove('shake'), 600);
+
+            // Monster shake
+            monsterBody.classList.add('fail');
+            setTimeout(() => monsterBody.classList.remove('fail'), 500);
+
+            // Show message
+            resultMessage.textContent = '💀 ¡MUTANTE RECHAZADO! 💀';
+            resultMessage.className = 'result-message fail show';
+
+            // Play fail sound
+            AudioManager.play('fail');
+
+            // Hide message after delay
+            setTimeout(() => {
+                resultMessage.classList.remove('show');
+            }, 2000);
+        }
+
+        // ==========================================
+        // RESET LOGIC
+        // ==========================================
+        function resetMonster() {
+            // Clear parts
+            const parts = monsterBody.querySelectorAll('.monster-part');
+            parts.forEach(part => part.remove());
+
+            // Reset color
+            monsterBody.style.backgroundColor = '#ffffff';
+            currentMonster = { color: '', parts: [] };
+
+            // Clear paint selection
+            paintBuckets.forEach(b => b.classList.remove('selected'));
+
+            updateStats();
+        }
+
+        resetBtn.addEventListener('click', () => {
+            resetMonster();
+        });
+
+        // ==========================================
+        // GAME INITIALIZATION
+        // ==========================================
+        function startNewRound() {
+            const orderHTML = createAssignment();
+            orderText.innerHTML = orderHTML;
+        }
+
+        // Start the game
+        document.addEventListener('DOMContentLoaded', () => {
+            AudioManager.startAmbiance();
+            startNewRound();
+        });
+
+        // Start immediately if DOM already loaded
+        if (document.readyState !== 'loading') {
+            AudioManager.startAmbiance();
+            startNewRound();
+        }
+    </script>
+</body>
+
+</html>

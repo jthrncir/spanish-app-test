@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Spanish Master Memory | Maestro de Memoria</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #e67e22;
+            --card-back: #3498db;
+            --match-color: #27ae60;
+            --error-color: #c0392b;
+            --bg-color: #ecf0f1;
+            --text-color: #fff;
+            --grid-cols: 4; /* Dynamic */
+        }
+
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            overflow: hidden; /* Prevent scrolling on game view */
+        }
+
+        /* --- Header & Controls --- */
+        header {
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            padding: 10px 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 5;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 { font-size: 1.2rem; }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        select {
+            padding: 8px;
+            border-radius: 5px;
+            border: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+            background: var(--text-color);
+            color: var(--primary-color);
+            font-weight: bold;
+            flex: 1;
+        }
+
+        .info-bar {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 20px;
+            background: #bdc3c7;
+            font-weight: bold;
+            font-size: 1rem;
+            color: var(--primary-color);
+        }
+
+        /* --- Game Grid --- */
+        .game-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            overflow: hidden;
+        }
+
+        .memory-game {
+            width: 100%;
+            height: 100%;
+            max-width: 900px;
+            max-height: 800px;
+            display: grid;
+            /* Dynamic columns variable controlled by JS */
+            grid-template-columns: repeat(var(--grid-cols), 1fr);
+            grid-gap: 8px;
+            perspective: 1000px;
+        }
+
+        /* --- Card Styling --- */
+        .memory-card {
+            position: relative;
+            cursor: pointer;
+            transform: scale(1);
+            transform-style: preserve-3d;
+            transition: transform 0.5s;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .memory-card:active { transform: scale(0.97); }
+        .memory-card.flip { transform: rotateY(180deg); }
+
+        .front-face, .back-face {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            backface-visibility: hidden;
+            user-select: none;
+            padding: 5px;
+        }
+
+        /* Content Side */
+        .front-face {
+            background: white;
+            color: var(--primary-color);
+            transform: rotateY(180deg);
+            border: 2px solid #ddd;
+            font-weight: bold;
+            font-size: clamp(0.8rem, 2.5vw, 1.2rem); /* Responsive text */
+            word-break: break-word;
+            line-height: 1.2;
+        }
+
+        /* Emoji Specific Styling */
+        .is-emoji {
+            font-size: clamp(2rem, 5vw, 4rem) !important; /* LARGE EMOJIS */
+        }
+
+        /* Back Side */
+        .back-face {
+            background: var(--card-back);
+            background-image: radial-gradient(circle, rgba(255,255,255,0.2) 2px, transparent 2.5px);
+            background-size: 15px 15px;
+            color: rgba(255,255,255,0.5);
+            font-size: 1.5rem;
+        }
+
+        /* Matches & Mismatches */
+        .memory-card.matched .front-face {
+            background-color: var(--match-color);
+            color: white;
+            border-color: var(--match-color);
+        }
+
+        .memory-card.mismatch .front-face {
+            background-color: var(--error-color);
+            color: white;
+        }
+
+        /* --- Modal --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .modal-content h2 { color: var(--match-color); font-size: 2rem; margin-bottom: 15px; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
+        .stat-box { background: #f1f2f6; padding: 10px; border-radius: 8px; }
+        .stat-label { display: block; font-size: 0.8rem; color: #7f8c8d; }
+        .stat-value { font-size: 1.5rem; font-weight: bold; color: var(--primary-color); }
+
+        .btn-restart {
+            width: 100%;
+            padding: 12px;
+            font-size: 1.1rem;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-restart:hover { background: #d35400; }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* --- Mobile Tweaks --- */
+        @media (max-width: 600px) {
+            header { padding: 10px; }
+            .controls { flex-direction: column; gap: 5px; }
+            h1 { font-size: 1rem; }
+            .game-container { padding: 5px; }
+            .memory-game { grid-gap: 5px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-top">
+            <h1>Spanish Memory Match</h1>
+            <div id="sound-toggle" style="font-size: 1.5rem; cursor:pointer;">🔊</div>
+        </div>
+        <div class="controls">
+            <select id="categorySelect"></select>
+            <select id="gridSelect">
+                <option value="16">Easy (16 Cards)</option>
+                <option value="24" selected>Medium (24 Cards)</option>
+                <option value="36">Hard (36 Cards)</option>
+            </select>
+        </div>
+    </header>
+
+    <div class="info-bar">
+        <span>Moves: <span id="moves">0</span></span>
+        <span>Time: <span id="time">0</span>s</span>
+    </div>
+
+    <div class="game-container">
+        <div class="memory-game" id="grid">
+            <!-- Cards Injected Here -->
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal-content">
+            <h2>¡Excelente!</h2>
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <span class="stat-label">Time</span>
+                    <span class="stat-value"><span id="finalTime">0</span>s</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Moves</span>
+                    <span class="stat-value" id="finalMoves">0</span>
+                </div>
+            </div>
+            <button class="btn-restart" onclick="initGame()">Jugar de Nuevo</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. Sound System (Web Audio API) ---
+        // Generates sounds programmatically to avoid external file dependencies
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let soundEnabled = true;
+
+        const playTone = (freq, type, duration) => {
+            if (!soundEnabled) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        };
+
+        const sfx = {
+            flip: () => playTone(600, 'sine', 0.1),
+            match: () => {
+                // Play a major chord (C-E-G)
+                setTimeout(() => playTone(523.25, 'sine', 0.3), 0);
+                setTimeout(() => playTone(659.25, 'sine', 0.3), 100);
+                setTimeout(() => playTone(783.99, 'sine', 0.6), 200);
+            },
+            mismatch: () => {
+                playTone(150, 'sawtooth', 0.4);
+            },
+            win: () => {
+                // Victory Fanfare
+                [523, 659, 783, 1046].forEach((f, i) => {
+                    setTimeout(() => playTone(f, 'square', 0.4), i * 150);
+                });
+            }
+        };
+
+        document.getElementById('sound-toggle').addEventListener('click', function() {
+            soundEnabled = !soundEnabled;
+            this.textContent = soundEnabled ? '🔊' : '🔇';
+        });
+
+        // --- 2. The Massive Data Library (20+ Categories) ---
+        // Format: [Spanish, Target (English or Emoji), isEmoji?]
+        // Note: For Hard Mode (36 cards), we need 18 pairs. Categories have ~18-20 pairs.
+        const vocabDB = {
+            "Animals (Emoji)": [
+                ['Perro', '🐶', true], ['Gato', '🐱', true], ['Ratón', '🐭', true], ['Vaca', '🐮', true], 
+                ['Cerdo', '🐷', true], ['Mono', '🐵', true], ['Gallina', '🐔', true], ['Pingüino', '🐧', true],
+                ['Rana', '🐸', true], ['Pulpo', '🐙', true], ['Pez', '🐠', true], ['Ballena', '🐳', true],
+                ['León', '🦁', true], ['Tigre', '🐯', true], ['Oso', '🐻', true], ['Conejo', '🐰', true],
+                ['Caballo', '🐴', true], ['Unicornio', '🦄', true], ['Abeja', '🐝', true], ['Mariquita', '🐞', true]
+            ],
+            "Food (Emoji)": [
+                ['Manzana', '🍎', true], ['Pera', '🍐', true], ['Naranja', '🍊', true], ['Limón', '🍋', true],
+                ['Plátano', '🍌', true], ['Sandía', '🍉', true], ['Uvas', '🍇', true], ['Fresa', '🍓', true],
+                ['Pizza', '🍕', true], ['Hamburguesa', '🍔', true], ['Huevo', '🍳', true], ['Pan', '🍞', true],
+                ['Queso', '🧀', true], ['Carne', '🥩', true], ['Pollo', '🍗', true], ['Helado', '🍦', true],
+                ['Chocolate', '🍫', true], ['Caramelo', '🍬', true], ['Café', '☕', true], ['Leche', '🥛', true]
+            ],
+            "Sports (Emoji)": [
+                ['Fútbol', '⚽', true], ['Baloncesto', '🏀', true], ['Fútbol Americano', '🏈', true], ['Béisbol', '⚾', true],
+                ['Tenis', '🎾', true], ['Voleibol', '🏐', true], ['Rugby', '🏉', true], ['Billar', '🎱', true],
+                ['Ping Pong', '🏓', true], ['Bádminton', '🏸', true], ['Hockey', '🏒', true], ['Arco', '🏹', true],
+                ['Pesca', '🎣', true], ['Boxeo', '🥊', true], ['Karate', '🥋', true], ['Esquí', '⛷️', true],
+                ['Surf', '🏄', true], ['Nadar', '🏊', true], ['Correr', '🏃', true], ['Bici', '🚴', true]
+            ],
+            "Transport (Emoji)": [
+                ['Coche', '🚗', true], ['Taxi', '🚕', true], ['Autobús', '🚌', true], ['Policía', '🚓', true],
+                ['Ambulancia', '🚑', true], ['Bomberos', '🚒', true], ['Bicicleta', '🚲', true], ['Moto', '🏍️', true],
+                ['Tren', '🚂', true], ['Metro', '🚇', true], ['Avión', '✈️', true], ['Helicóptero', '🚁', true],
+                ['Barco', '🚢', true], ['Cohete', '🚀', true], ['Tractor', '🚜', true], ['Patinete', '🛴', true],
+                ['Canoa', '🛶', true], ['Semáforo', '🚦', true], ['Gasolinera', '⛽', true], ['Mapa', '🗺️', true]
+            ],
+            "Weather (Emoji)": [
+                ['Sol', '☀️', true], ['Luna', '🌙', true], ['Estrella', '⭐', true], ['Nube', '☁️', true],
+                ['Lluvia', '🌧️', true], ['Nieve', '❄️', true], ['Rayo', '⚡', true], ['Fuego', '🔥', true],
+                ['Agua', '💧', true], ['Ola', '🌊', true], ['Viento', '💨', true], ['Tornado', '🌪️', true],
+                ['Arcoíris', '🌈', true], ['Paraguas', '☂️', true], ['Muñeco de Nieve', '⛄', true], ['Calor', '🥵', true],
+                ['Frío', '🥶', true], ['Día', '🏙️', true], ['Noche', '🌃', true], ['Amanecer', '🌅', true]
+            ],
+            "Colors": [
+                ['Rojo', 'Red', false], ['Azul', 'Blue', false], ['Verde', 'Green', false], ['Amarillo', 'Yellow', false],
+                ['Negro', 'Black', false], ['Blanco', 'White', false], ['Gris', 'Gray', false], ['Morado', 'Purple', false],
+                ['Naranja', 'Orange', false], ['Rosa', 'Pink', false], ['Marrón', 'Brown', false], ['Dorado', 'Gold', false],
+                ['Plateado', 'Silver', false], ['Claro', 'Light', false], ['Oscuro', 'Dark', false], ['Brillante', 'Bright', false],
+                ['Violeta', 'Violet', false], ['Turquesa', 'Turquoise', false], ['Beige', 'Beige', false], ['Añil', 'Indigo', false]
+            ],
+            "Numbers 1-20": [
+                ['Uno', 'One', false], ['Dos', 'Two', false], ['Tres', 'Three', false], ['Cuatro', 'Four', false],
+                ['Cinco', 'Five', false], ['Seis', 'Six', false], ['Siete', 'Seven', false], ['Ocho', 'Eight', false],
+                ['Nueve', 'Nine', false], ['Diez', 'Ten', false], ['Once', 'Eleven', false], ['Doce', 'Twelve', false],
+                ['Trece', 'Thirteen', false], ['Catorce', 'Fourteen', false], ['Quince', 'Fifteen', false], ['Dieciséis', 'Sixteen', false],
+                ['Veinte', 'Twenty', false], ['Treinta', 'Thirty', false], ['Cien', '100', false], ['Mil', '1000', false]
+            ],
+            "Family": [
+                ['Familia', 'Family', false], ['Madre', 'Mother', false], ['Padre', 'Father', false], ['Hermano', 'Brother', false],
+                ['Hermana', 'Sister', false], ['Abuelo', 'Grandpa', false], ['Abuela', 'Grandma', false], ['Tío', 'Uncle', false],
+                ['Tía', 'Aunt', false], ['Primo', 'Cousin', false], ['Hijo', 'Son', false], ['Hija', 'Daughter', false],
+                ['Bebé', 'Baby', false], ['Esposo', 'Husband', false], ['Esposa', 'Wife', false], ['Nieto', 'Grandson', false],
+                ['Nieta', 'Granddaughter', false], ['Amigo', 'Friend', false], ['Niño', 'Boy', false], ['Niña', 'Girl', false]
+            ],
+            "The House": [
+                ['Casa', 'House', false], ['Puerta', 'Door', false], ['Ventana', 'Window', false], ['Mesa', 'Table', false],
+                ['Silla', 'Chair', false], ['Cama', 'Bed', false], ['Baño', 'Bathroom', false], ['Cocina', 'Kitchen', false],
+                ['Salón', 'Living Room', false], ['Suelo', 'Floor', false], ['Techo', 'Ceiling', false], ['Pared', 'Wall', false],
+                ['Jardín', 'Garden', false], ['Llave', 'Key', false], ['Luz', 'Light', false], ['Espejo', 'Mirror', false],
+                ['Sofá', 'Sofa', false], ['Reloj', 'Clock', false], ['Escaleras', 'Stairs', false], ['Garaje', 'Garage', false]
+            ],
+            "Body Parts": [
+                ['Cuerpo', 'Body', false], ['Cabeza', 'Head', false], ['Ojo', 'Eye', false], ['Nariz', 'Nose', false],
+                ['Boca', 'Mouth', false], ['Oreja', 'Ear', false], ['Mano', 'Hand', false], ['Dedo', 'Finger', false],
+                ['Brazo', 'Arm', false], ['Pierna', 'Leg', false], ['Pie', 'Foot', false], ['Pelo', 'Hair', false],
+                ['Dientes', 'Teeth', false], ['Lengua', 'Tongue', false], ['Cuello', 'Neck', false], ['Espalda', 'Back', false],
+                ['Rodilla', 'Knee', false], ['Corazón', 'Heart', false], ['Estómago', 'Stomach', false], ['Hueso', 'Bone', false]
+            ],
+            "School": [
+                ['Escuela', 'School', false], ['Maestro', 'Teacher', false], ['Estudiante', 'Student', false], ['Libro', 'Book', false],
+                ['Lápiz', 'Pencil', false], ['Papel', 'Paper', false], ['Bolígrafo', 'Pen', false], ['Cuaderno', 'Notebook', false],
+                ['Mochila', 'Backpack', false], ['Clase', 'Class', false], ['Pizarra', 'Board', false], ['Tarea', 'Homework', false],
+                ['Examen', 'Exam', false], ['Regla', 'Ruler', false], ['Goma', 'Eraser', false], ['Escritorio', 'Desk', false],
+                ['Mapa', 'Map', false], ['Ordenador', 'Computer', false], ['Arte', 'Art', false], ['Música', 'Music', false]
+            ],
+            "Clothes": [
+                ['Ropa', 'Clothes', false], ['Camisa', 'Shirt', false], ['Pantalones', 'Pants', false], ['Zapatos', 'Shoes', false],
+                ['Calcetines', 'Socks', false], ['Vestido', 'Dress', false], ['Falda', 'Skirt', false], ['Sombrero', 'Hat', false],
+                ['Abrigo', 'Coat', false], ['Chaqueta', 'Jacket', false], ['Gafas', 'Glasses', false], ['Reloj', 'Watch', false],
+                ['Botas', 'Boots', false], ['Guantes', 'Gloves', false], ['Bufanda', 'Scarf', false], ['Cinturón', 'Belt', false],
+                ['Bolsa', 'Bag', false], ['Pijama', 'Pajamas', false], ['Traje', 'Suit', false], ['Corbata', 'Tie', false]
+            ],
+            "Verbs (Action)": [
+                ['Comer', 'To Eat', false], ['Beber', 'To Drink', false], ['Dormir', 'To Sleep', false], ['Correr', 'To Run', false],
+                ['Caminar', 'To Walk', false], ['Hablar', 'To Speak', false], ['Escuchar', 'To Listen', false], ['Ver', 'To See', false],
+                ['Escribir', 'To Write', false], ['Leer', 'To Read', false], ['Jugar', 'To Play', false], ['Trabajar', 'To Work', false],
+                ['Estudiar', 'To Study', false], ['Comprar', 'To Buy', false], ['Ir', 'To Go', false], ['Venir', 'To Come', false],
+                ['Dar', 'To Give', false], ['Hacer', 'To Do/Make', false], ['Querer', 'To Want', false], ['Poder', 'To Can', false]
+            ],
+            "Nature": [
+                ['Árbol', 'Tree', false], ['Flor', 'Flower', false], ['Hierba', 'Grass', false], ['Montaña', 'Mountain', false],
+                ['Río', 'River', false], ['Mar', 'Sea', false], ['Playa', 'Beach', false], ['Cielo', 'Sky', false],
+                ['Tierra', 'Earth/Dirt', false], ['Piedra', 'Stone', false], ['Lago', 'Lake', false], ['Bosque', 'Forest', false],
+                ['Isla', 'Island', false], ['Mundo', 'World', false], ['Camino', 'Path', false], ['Desierto', 'Desert', false],
+                ['Selva', 'Jungle', false], ['Campo', 'Field', false], ['Hoja', 'Leaf', false], ['Raíz', 'Root', false]
+            ],
+            "The City": [
+                ['Ciudad', 'City', false], ['Calle', 'Street', false], ['Edificio', 'Building', false], ['Tienda', 'Store', false],
+                ['Hospital', 'Hospital', false], ['Banco', 'Bank', false], ['Parque', 'Park', false], ['Hotel', 'Hotel', false],
+                ['Restaurante', 'Restaurant', false], ['Cine', 'Cinema', false], ['Mercado', 'Market', false], ['Iglesia', 'Church', false],
+                ['Plaza', 'Square', false], ['Puente', 'Bridge', false], ['Aeropuerto', 'Airport', false], ['Estación', 'Station', false],
+                ['Museo', 'Museum', false], ['Farmacia', 'Pharmacy', false], ['Biblioteca', 'Library', false], ['Correos', 'Post Office', false]
+            ],
+            "Jobs": [
+                ['Trabajo', 'Job', false], ['Doctor', 'Doctor', false], ['Enfermero', 'Nurse', false], ['Policía', 'Police', false],
+                ['Bombero', 'Firefighter', false], ['Cocinero', 'Chef', false], ['Camarero', 'Waiter', false], ['Actor', 'Actor', false],
+                ['Cantante', 'Singer', false], ['Dentista', 'Dentist', false], ['Granjero', 'Farmer', false], ['Mecánico', 'Mechanic', false],
+                ['Piloto', 'Pilot', false], ['Soldado', 'Soldier', false], ['Abogado', 'Lawyer', false], ['Juez', 'Judge', false],
+                ['Escritor', 'Writer', false], ['Artista', 'Artist', false], ['Jefe', 'Boss', false], ['Secretario', 'Secretary', false]
+            ],
+            "Adjectives": [
+                ['Grande', 'Big', false], ['Pequeño', 'Small', false], ['Bueno', 'Good', false], ['Malo', 'Bad', false],
+                ['Alto', 'Tall/High', false], ['Bajo', 'Short/Low', false], ['Gordo', 'Fat', false], ['Delgado', 'Thin', false],
+                ['Viejo', 'Old', false], ['Nuevo', 'New', false], ['Joven', 'Young', false], ['Fuerte', 'Strong', false],
+                ['Débil', 'Weak', false], ['Rápido', 'Fast', false], ['Lento', 'Slow', false], ['Bonito', 'Pretty', false],
+                ['Feo', 'Ugly', false], ['Rico', 'Rich', false], ['Pobre', 'Poor', false], ['Feliz', 'Happy', false]
+            ],
+            "Time": [
+                ['Hora', 'Hour/Time', false], ['Minuto', 'Minute', false], ['Segundo', 'Second', false], ['Día', 'Day', false],
+                ['Semana', 'Week', false], ['Mes', 'Month', false], ['Año', 'Year', false], ['Hoy', 'Today', false],
+                ['Ayer', 'Yesterday', false], ['Mañana', 'Tomorrow', false], ['Lunes', 'Monday', false], ['Martes', 'Tuesday', false],
+                ['Miércoles', 'Wednesday', false], ['Jueves', 'Thursday', false], ['Viernes', 'Friday', false], ['Sábado', 'Saturday', false],
+                ['Domingo', 'Sunday', false], ['Tarde', 'Afternoon', false], ['Noche', 'Night', false], ['Siempre', 'Always', false]
+            ],
+            "Technology": [
+                ['Móvil', 'Mobile Phone', false], ['Ordenador', 'Computer', false], ['Teclado', 'Keyboard', false], ['Ratón', 'Mouse', false],
+                ['Pantalla', 'Screen', false], ['Internet', 'Internet', false], ['Wifi', 'Wifi', false], ['Batería', 'Battery', false],
+                ['Cargador', 'Charger', false], ['Cámara', 'Camera', false], ['Video', 'Video', false], ['Juego', 'Game', false],
+                ['Robot', 'Robot', false], ['Cable', 'Cable', false], ['Botón', 'Button', false], ['Correo', 'Email', false],
+                ['Contraseña', 'Password', false], ['Usuario', 'User', false], ['Enlace', 'Link', false], ['Archivo', 'File', false]
+            ],
+            "Feelings": [
+                ['Feliz', 'Happy', false], ['Triste', 'Sad', false], ['Enfadado', 'Angry', false], ['Cansado', 'Tired', false],
+                ['Aburrido', 'Bored', false], ['Miedo', 'Fear', false], ['Sorpresa', 'Surprise', false], ['Amor', 'Love', false],
+                ['Odio', 'Hate', false], ['Nervioso', 'Nervous', false], ['Tranquilo', 'Calm', false], ['Enfermo', 'Sick', false],
+                ['Hambre', 'Hungry', false], ['Sed', 'Thirsty', false], ['Calor', 'Hot', false], ['Frío', 'Cold', false],
+                ['Vergüenza', 'Shame', false], ['Orgullo', 'Pride', false], ['Dolor', 'Pain', false], ['Risa', 'Laughter', false]
+            ]
+        };
+
+        // Populate Category Dropdown
+        const categorySelect = document.getElementById('categorySelect');
+        Object.keys(vocabDB).forEach(key => {
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = key;
+            categorySelect.appendChild(option);
+        });
+
+        // --- 3. Game Logic ---
+        const grid = document.getElementById('grid');
+        const gridSelect = document.getElementById('gridSelect');
+        const movesEl = document.getElementById('moves');
+        const timeEl = document.getElementById('time');
+        const modal = document.getElementById('modal');
+
+        let lockBoard = false;
+        let hasFlippedCard = false;
+        let firstCard, secondCard;
+        let moves = 0;
+        let timerInterval;
+        let seconds = 0;
+        let matchesFound = 0;
+        let totalPairs = 0;
+
+        function initGame() {
+            // Reset
+            grid.innerHTML = '';
+            modal.style.display = 'none';
+            moves = 0;
+            seconds = 0;
+            matchesFound = 0;
+            [hasFlippedCard, lockBoard] = [false, false];
+            [firstCard, secondCard] = [null, null];
+            
+            movesEl.textContent = moves;
+            timeEl.textContent = seconds;
+            
+            clearInterval(timerInterval);
+            startTimer();
+
+            // Setup Data
+            const category = categorySelect.value;
+            const numCards = parseInt(gridSelect.value); // 16, 24, or 36
+            totalPairs = numCards / 2;
+            
+            // Adjust CSS Grid Columns
+            // 16 cards -> 4 cols (4x4)
+            // 24 cards -> 4 cols (6x4) or 6 cols (4x6). Let's do 6 cols for desktop, mobile handles via media query
+            // 36 cards -> 6 cols (6x6)
+            let cols = 4;
+            if (numCards >= 24) cols = 6;
+            
+            // Mobile Override handled in CSS mostly, but let's set var
+            if (window.innerWidth < 600 && numCards === 24) cols = 4; // 6 rows of 4
+            
+            document.documentElement.style.setProperty('--grid-cols', cols);
+
+            // Fetch Pairs
+            let allPairs = vocabDB[category];
+            // Sort random to get different words each time
+            allPairs.sort(() => 0.5 - Math.random());
+            // Slice the number of pairs we need
+            let selectedPairs = allPairs.slice(0, totalPairs);
+
+            // Double them up
+            let deck = [];
+            selectedPairs.forEach((item, index) => {
+                // Item format: [Spanish, Target, isEmoji]
+                deck.push({ id: index, content: item[0], isEmoji: false });
+                deck.push({ id: index, content: item[1], isEmoji: item[2] });
+            });
+
+            // Shuffle final deck
+            deck.sort(() => 0.5 - Math.random());
+
+            // Render
+            deck.forEach(item => {
+                const card = document.createElement('div');
+                card.classList.add('memory-card');
+                card.dataset.id = item.id;
+
+                const emojiClass = item.isEmoji ? 'is-emoji' : '';
+
+                card.innerHTML = `
+                    <div class="front-face ${emojiClass}">${item.content}</div>
+                    <div class="back-face">?</div>
+                `;
+                
+                card.addEventListener('click', flipCard);
+                grid.appendChild(card);
+            });
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                seconds++;
+                timeEl.textContent = seconds;
+            }, 1000);
+        }
+
+        function flipCard() {
+            if (lockBoard) return;
+            if (this === firstCard) return;
+
+            sfx.flip();
+            this.classList.add('flip');
+
+            if (!hasFlippedCard) {
+                hasFlippedCard = true;
+                firstCard = this;
+                return;
+            }
+
+            secondCard = this;
+            moves++;
+            movesEl.textContent = moves;
+            checkForMatch();
+        }
+
+        function checkForMatch() {
+            let isMatch = firstCard.dataset.id === secondCard.dataset.id;
+
+            if (isMatch) {
+                disableCards();
+            } else {
+                unflipCards();
+            }
+        }
+
+        function disableCards() {
+            sfx.match();
+            firstCard.classList.add('matched');
+            secondCard.classList.add('matched');
+
+            firstCard.removeEventListener('click', flipCard);
+            secondCard.removeEventListener('click', flipCard);
+
+            matchesFound++;
+            resetBoard();
+
+            if (matchesFound === totalPairs) {
+                gameOver();
+            }
+        }
+
+        function unflipCards() {
+            lockBoard = true;
+            // Visual indicator of error
+            setTimeout(() => {
+                if(firstCard && secondCard) {
+                    firstCard.classList.add('mismatch');
+                    secondCard.classList.add('mismatch');
+                    sfx.mismatch();
+                }
+            }, 200);
+
+            setTimeout(() => {
+                if(firstCard && secondCard) {
+                    firstCard.classList.remove('flip', 'mismatch');
+                    secondCard.classList.remove('flip', 'mismatch');
+                }
+                resetBoard();
+            }, 1200);
+        }
+
+        function resetBoard() {
+            [hasFlippedCard, lockBoard] = [false, false];
+            [firstCard, secondCard] = [null, null];
+        }
+
+        function gameOver() {
+            clearInterval(timerInterval);
+            sfx.win();
+            setTimeout(() => {
+                document.getElementById('finalMoves').textContent = moves;
+                document.getElementById('finalTime').textContent = seconds;
+                modal.style.display = 'flex';
+            }, 500);
+        }
+
+        // Listeners
+        categorySelect.addEventListener('change', initGame);
+        gridSelect.addEventListener('change', initGame);
+
+        // Handle window resize for dynamic grid adjustment
+        window.addEventListener('resize', () => {
+             const numCards = parseInt(gridSelect.value);
+             let cols = 4;
+             if (numCards >= 24) cols = (window.innerWidth > 600) ? 6 : 4;
+             document.documentElement.style.setProperty('--grid-cols', cols);
+        });
+
+        // Initialize
+        initGame();
+
+    </script>
+</body>
+</html>
